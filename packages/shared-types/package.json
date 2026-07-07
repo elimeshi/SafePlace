@@ -1,0 +1,18 @@
+{
+  "name": "@safeplace/shared-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Domain types shared across apps and services (Post, Group, FamilySpace, User, etc). Visibility-specific types live in @safeplace/visibility-policy, not here.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@safeplace/visibility-policy": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}

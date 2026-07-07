@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Safe-Place",
+    "slug": "safe-place",
+    "scheme": "safeplace",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "primaryColor": "#2C5985",
+    "extra": {
+      "rtl": true
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "org.safeplace.app"
+    },
+    "android": {
+      "package": "org.safeplace.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
