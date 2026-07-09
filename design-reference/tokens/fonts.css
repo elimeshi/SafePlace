@@ -1,0 +1,19 @@
+/* ============================================================
+   Safe-Place — Webfonts
+   Hebrew-first, RTL product. Font choice is called out in
+   00-master-spec.md §6.3.5 as "especially critical for this
+   audience." packages/design-tokens/src/typography.ts names the
+   candidates: Assistant, Rubik, Heebo — all modern, warm,
+   fully Hebrew-hinted, open-licensed (OFL).
+
+   LOCKED HERE (design session): Rubik as the primary UI + display
+   family; Heebo as the companion for dense/secondary text and
+   tabular numerals. Both loaded from Google Fonts with full
+   Hebrew + Latin coverage.
+
+   NOTE: values in packages/design-tokens are placeholders; this
+   file is the design-session decision. Confirm license bundling
+   in apps/mobile before production ship (CLAUDE.md typography note).
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Heebo:wght@400;500;700&display=swap');

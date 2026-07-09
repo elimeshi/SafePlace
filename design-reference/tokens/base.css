@@ -1,0 +1,38 @@
+/* ============================================================
+   Safe-Place — Base / reset
+   RTL Hebrew is the default direction (CLAUDE.md invariant #9).
+   ============================================================ */
+
+html {
+  direction: rtl;
+}
+
+body {
+  margin: 0;
+  font: var(--type-body);
+  color: var(--text-primary);
+  background: var(--surface-muted);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+h1, h2, h3, h4, p { margin: 0; }
+
+/* Links — deep blue, never browser-default. Underline on hover only. */
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+a:hover {
+  color: var(--text-link-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Numerals — Heebo tabular feel where marked */
+.sp-numeric { font-family: var(--font-numeric); font-feature-settings: 'tnum' 1; }
+
+::selection { background: var(--blue-100); color: var(--blue-800); }

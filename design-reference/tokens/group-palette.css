@@ -1,0 +1,23 @@
+/* ============================================================
+   Safe-Place — Group color palette
+   docs/product/01-feed-spec.md §2.2.4: "a pre-defined palette
+   (not free choice), ~12-16 balanced colors" used for group
+   identity — the icon-tile background and the source label on
+   every post. Muted, restrained; never full-saturation.
+   Transcribed from packages/design-tokens/src/colors.ts groupPalette.
+   ============================================================ */
+
+:root {
+  --group-blue:     #2C5985; /* matches primary */
+  --group-sage:     #5B8C5A;
+  --group-terra:    #C97D4F; /* matches accent */
+  --group-plum:     #7C6A9C;
+  --group-tan:      #B08968;
+  --group-teal:     #4A7C7C;
+  --group-brick:    #A85751;
+  --group-slate:    #6B7A8F;
+  --group-olive:    #8C7355;
+  --group-indigo:   #5A6B8C;
+  --group-clay:     #9C7A6A;
+  --group-forest:   #557A6B;
+}

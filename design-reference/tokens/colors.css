@@ -1,0 +1,82 @@
+/* ============================================================
+   Safe-Place — Color tokens
+   Locked from docs/product/00-master-spec.md §6.3.5:
+   "a deep, soft blue as primary, generous white, one warm
+    accent used sparingly." Base hex transcribed from
+    packages/design-tokens/src/colors.ts.
+   ============================================================ */
+
+:root {
+  /* ---- Primary: deep, soft blue ---- */
+  --blue-900: #10263C;
+  --blue-800: #1B3B5C; /* primaryDark */
+  --blue-700: #234b73;
+  --blue-600: #2C5985; /* PRIMARY */
+  --blue-500: #3f6d99;
+  --blue-400: #5C82A8; /* primaryLight */
+  --blue-300: #8aa6c2;
+  --blue-200: #c2d2e1;
+  --blue-100: #e3ebf2;
+  --blue-050: #f2f6fa;
+
+  /* ---- Warm accent: used sparingly, primary CTA only ---- */
+  --terracotta-700: #a35f36;
+  --terracotta-600: #b96e42;
+  --terracotta-500: #C97D4F; /* ACCENT */
+  --terracotta-400: #d79a74;
+  --terracotta-100: #f6e7dc;
+
+  /* ---- Neutrals / ink ---- */
+  --ink-900: #1A1D21; /* textPrimary */
+  --ink-700: #3c4149;
+  --ink-500: #6B7280; /* textSecondary */
+  --ink-400: #9aa1ac;
+  --ink-300: #c3c8d0;
+  --ink-200: #E5E7EB; /* border */
+  --ink-100: #eef0f3;
+  --ink-050: #F7F8FA; /* backgroundMuted */
+  --white: #FFFFFF;
+
+  /* ---- Semantic status ---- */
+  --success: #2F855A;
+  --success-050: #eaf5ef;
+  --warning: #B7791F; /* Settings "dangerous zone" §3.6 */
+  --warning-050: #fbf3e2;
+  --danger: #C53030;
+  --danger-050: #fbeaea;
+
+  /* ---- Feed source-label semantics (01-feed-spec §2.3.5) ---- */
+  --label-suggested: #F59E0B; /* "מוצע עבורך" — warm amber */
+  --label-neutral: #94A3B8;   /* "פוסט ציבורי" — slate blue-grey */
+
+  /* ============================================================
+     Semantic aliases — reference these in components
+     ============================================================ */
+  --color-primary: var(--blue-600);
+  --color-primary-hover: var(--blue-700);
+  --color-primary-active: var(--blue-800);
+  --color-primary-soft: var(--blue-050);
+  --color-accent: var(--terracotta-500);
+  --color-accent-hover: var(--terracotta-600);
+  --color-accent-active: var(--terracotta-700);
+
+  --text-primary: var(--ink-900);
+  --text-secondary: var(--ink-500);
+  --text-muted: var(--ink-400);
+  --text-on-primary: var(--white);
+  --text-on-accent: var(--white);
+  --text-link: var(--blue-600);
+  --text-link-hover: var(--blue-800);
+
+  --surface-page: var(--white);
+  --surface-muted: var(--ink-050);
+  --surface-card: var(--white);
+  --surface-sunken: var(--blue-050);
+
+  --border-subtle: var(--ink-200);
+  --border-strong: var(--ink-300);
+  --border-focus: var(--blue-600);
+
+  /* Focus ring */
+  --ring-focus: 0 0 0 3px var(--blue-100);
+}

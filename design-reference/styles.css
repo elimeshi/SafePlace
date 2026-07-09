@@ -1,0 +1,13 @@
+/* ============================================================
+   Safe-Place Design System — global entry point.
+   Consumers link THIS file only. Order matters: fonts and
+   raw tokens first, then semantics, then base reset.
+   ============================================================ */
+
+@import "tokens/fonts.css";
+@import "tokens/colors.css";
+@import "tokens/group-palette.css";
+@import "tokens/typography.css";
+@import "tokens/spacing.css";
+@import "tokens/motion.css";
+@import "tokens/base.css";

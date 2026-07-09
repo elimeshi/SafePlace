@@ -1,0 +1,15 @@
+<!-- @dsCard group="Brand" viewport="700x200" name="Motion — fade & rise, press, halo" subtitle="Motion serves pacing, never decoration (§6.3)" -->
+<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body{margin:0;padding:24px;background:var(--surface-page);font-family:var(--font-sans);display:flex;gap:28px;align-items:center;flex-wrap:wrap}
+  .demo{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .m{font:var(--type-label);color:var(--text-muted)}
+  .chip{padding:12px 20px;background:var(--white);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);color:var(--text-primary);font:var(--type-body-strong)}
+  .rise{animation:sp-rise-in .5s var(--ease-standard) infinite alternate}
+  .cta{padding:12px 24px;background:var(--terracotta-500);color:#fff;border:none;border-radius:var(--radius-md);font:var(--type-body-strong);animation:sp-cta-halo var(--cta-halo-cycle) var(--ease-standard) infinite}
+  .press:active{transform:scale(.97)}
+</style></head><body>
+<div class="demo"><span class="chip rise">כניסת אלמנט</span><span class="m">fade & rise · translateY 8px</span></div>
+<div class="demo"><button class="cta press">יצירת חשבון</button><span class="m">CTA halo · 3.5s · press 0.97</span></div>
+<div class="demo"><span class="m" style="max-width:200px;text-align:center;line-height:1.5">200–400ms · ease-out<br>gated on prefers-reduced-motion</span></div>
+</body></html>

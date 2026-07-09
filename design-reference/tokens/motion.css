@@ -1,0 +1,51 @@
+/* ============================================================
+   Safe-Place — Motion tokens
+   NOT placeholders. Transcribed directly from
+   packages/design-tokens/src/motion.ts and 00-master-spec §6.3.
+   "If we remove the animation, does the screen still work?" —
+   motion serves navigation & pacing, never decoration.
+   ALWAYS gate custom motion on prefers-reduced-motion (§6.3.4).
+   ============================================================ */
+
+:root {
+  /* ---- Durations ---- */
+  --dur-fast: 200ms;   /* @kind other */
+  --dur-base: 300ms;   /* @kind other */
+  --dur-slow: 400ms;   /* @kind other */
+
+  /* ---- Easing: "soft deceleration at the end" (§6.3.1) ---- */
+  --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1); /* @kind other */
+
+  /* ---- Staggered element entrance (§6.3.2) ---- */
+  --stagger-min: 80ms;  /* @kind other */
+  --stagger-max: 120ms; /* @kind other */
+  --entrance-rise: 8px; /* translateY offset for fade-and-rise */
+
+  /* ---- Primary CTA idle "breathing" halo (§6.3.2) ---- */
+  --cta-halo-cycle: 3500ms; /* @kind other */
+
+  /* ---- Press feedback (§6.3.2) ---- */
+  --press-scale: 0.97; /* @kind other */
+}
+
+/* Fade-and-rise entrance — the product's signature motion.
+   Base (visible) state is the DEFAULT so print / reduced-motion
+   / no-JS always show content; animate FROM hidden. */
+@keyframes sp-rise-in {
+  from { opacity: 0; transform: translateY(var(--entrance-rise)); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* CTA breathing halo — 3-4s cycle, very subtle */
+@keyframes sp-cta-halo {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 125, 79, 0.0); }
+  50%      { box-shadow: 0 0 0 6px rgba(201, 125, 79, 0.14); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

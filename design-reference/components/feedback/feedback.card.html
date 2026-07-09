@@ -1,0 +1,38 @@
+<!-- @dsCard group="Components" viewport="700x360" name="Feedback" subtitle="System notices — the neutral upload alert & dangerous-zone" -->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--surface-page); }
+  .stack { display: flex; flex-direction: column; gap: 16px; max-width: 460px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+const { SystemNotice } = window.SafePlaceDesignSystem_58efd0;
+function Demo() {
+  return (
+    <div className="stack">
+      <SystemNotice tone="info" title="זוהו נשים במדיה שהעלית" confirmLabel="אישור" cancelLabel="חזרה">
+        עליך לדעת שבעקבות זאת משתמשים רבים ברשת לא יוכלו לראות את תוכן המדיה שלך בפוסט הנוכחי.
+      </SystemNotice>
+      <SystemNotice tone="warning" title="שינוי העדפת סינון תוכן">
+        פעולה זו משנה מה יופיע בפיד שלך. נדרש אישור נוסף כדי להמשיך.
+      </SystemNotice>
+      <SystemNotice tone="danger" title="מחיקת חשבון" confirmLabel="מחק לצמיתות" cancelLabel="ביטול">
+        הפעולה בלתי הפיכה. כל התוכן שלך יימחק.
+      </SystemNotice>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>
