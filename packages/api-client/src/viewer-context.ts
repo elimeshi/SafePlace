@@ -62,5 +62,12 @@ async function fetchIdSet(
     throw new Error(`fetchIdSet(${table}): ${error.message}`);
   }
 
-  return new Set((data ?? []).map((row: Record<string, string>) => row[selectColumn]));
+  // `error` is checked above, so `data` is the success payload; Supabase types it
+  // loosely without generated DB types, hence the cast. Filter drops any null ids
+  // (and satisfies noUncheckedIndexedAccess) so the Set never contains undefined.
+  const rows = (data ?? []) as unknown as Array<Record<string, string>>;
+  const ids = rows
+    .map((row) => row[selectColumn])
+    .filter((id): id is string => typeof id === "string");
+  return new Set(ids);
 }
