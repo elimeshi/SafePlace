@@ -7,6 +7,7 @@
 - `0004-vision-classifier-provider.md` — Claude vision behind a swappable provider.
 - `0005-ui-component-library.md` — `packages/ui`, RN primitives ported from design-reference.
 - `0006-rls-test-strategy.md` — integration tests through the Supabase client, local-first.
+- `0007-i18n-and-direction.md` — build direction/locale-agnostic now; English+LTR is a future opt-in setting.
 - `open-questions-backlog.md` — every item the product specs explicitly
   deferred (97 items), organized by area. Check here before assuming
   something was overlooked.
