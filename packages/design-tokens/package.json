@@ -2,14 +2,17 @@
   "name": "@safeplace/design-tokens",
   "version": "0.1.0",
   "private": true,
-  "description": "Colors, typography scale, spacing, and motion constants. PLACEHOLDER values pending the Claude Design visual lock-in session — see docs/decisions/0003-first-push-scope.md and docs/design/README.md.",
+  "description": "Colors, typography, spacing, radius, elevation, and motion tokens — finalized from the locked design system (design-reference/). Platform-agnostic TypeScript consumed by packages/ui and apps/mobile.",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src"
   },
   "devDependencies": {
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
   }
 }

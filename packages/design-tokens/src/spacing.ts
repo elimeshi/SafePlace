@@ -15,8 +15,9 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 6,
-  md: 10,
-  lg: 16,
-  full: 9999,
+  sm: 6, // inputs, small chips
+  md: 10, // buttons, source labels
+  lg: 16, // cards, sheets
+  xl: 22, // large media, onboarding panels
+  full: 9999, // avatars, pills
 } as const;
