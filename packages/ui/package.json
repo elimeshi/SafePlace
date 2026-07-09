@@ -1,0 +1,30 @@
+{
+  "name": "@safeplace/ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "React Native component library for Safe-Place, ported from design-reference/. Token-driven, RTL- and reduced-motion-correct. See docs/decisions/0005-ui-component-library.md.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@safeplace/design-tokens": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.2.0",
+    "react-native": ">=0.74.0",
+    "react-native-reanimated": ">=3.10.0"
+  },
+  "devDependencies": {
+    "@types/react": "~18.2.0",
+    "react": "18.2.0",
+    "react-native": "0.74.0",
+    "react-native-reanimated": "~3.10.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
