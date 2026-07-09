@@ -9,11 +9,12 @@ Android. See `docs/decisions/0001-client-platform.md` for why.
 apps/mobile/
 ├── app/                 ← expo-router file-based routes
 │   ├── _layout.tsx       ← root layout; bootstraps RTL before first render
-│   └── index.tsx         ← current entry point (wiring-check placeholder)
+│   ├── index.tsx         ← current entry point (wiring-check placeholder)
+│   └── gallery.tsx       ← dev-only component gallery (/gallery route)
 ├── src/
 │   ├── lib/
 │   │   ├── rtl.ts         ← forces RTL — see CLAUDE.md invariant #9
-│   │   └── theme.ts       ← bridges @safeplace/design-tokens into RN
+│   │   └── theme.ts       ← re-exports the @safeplace/ui theme bridge
 │   ├── screens/
 │   │   ├── onboarding/    ← next up: the 3-step wizard (see its README)
 │   │   └── feed/          ← second push (see its README)
@@ -32,6 +33,18 @@ pnpm --filter @safeplace/mobile start
 This currently renders a minimal wiring-check screen (RTL Hebrew text,
 themed via `@safeplace/design-tokens`) — not a real product screen yet.
 See `src/screens/onboarding/README.md` for what to build next.
+
+## Component gallery
+
+`@safeplace/ui` is the RN component kit (ported from `design-reference/`,
+token-driven, RTL- and reduced-motion-correct). Open the **`/gallery`** route
+to eyeball every primitive's states, RTL layout, and the fade-and-rise / press
+/ CTA-halo motion on a device — toggle the OS "reduce motion" setting to verify
+the gating. It is a dev screen, not part of the product flow.
+
+**Fonts:** the Rubik/Heebo families named in the tokens are not yet loaded via
+`expo-font` — that lands with the onboarding screen (Phase 2), where they first
+render. Until then the device falls back to its default sans.
 
 ## Before you build a screen
 
