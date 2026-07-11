@@ -15,6 +15,10 @@ export interface TextFieldProps {
   placeholder?: string;
   secureTextEntry?: boolean;
   keyboardType?: TextInputProps["keyboardType"];
+  autoCapitalize?: TextInputProps["autoCapitalize"];
+  autoComplete?: TextInputProps["autoComplete"];
+  autoCorrect?: TextInputProps["autoCorrect"];
+  textContentType?: TextInputProps["textContentType"];
   /** Shows the small success check at the field's end. */
   valid?: boolean;
   errorText?: string;
@@ -37,6 +41,10 @@ export function TextField({
   placeholder,
   secureTextEntry = false,
   keyboardType,
+  autoCapitalize,
+  autoComplete,
+  autoCorrect,
+  textContentType,
   valid = false,
   errorText,
 }: TextFieldProps) {
@@ -68,6 +76,10 @@ export function TextField({
             placeholderTextColor={theme.colors.textSecondary}
             secureTextEntry={secureTextEntry}
             keyboardType={keyboardType}
+            autoCapitalize={autoCapitalize}
+            autoComplete={autoComplete}
+            autoCorrect={autoCorrect}
+            textContentType={textContentType}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             style={input}

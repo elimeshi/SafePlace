@@ -65,6 +65,13 @@ See ADR 0003. All of these are placeholder-until-locked:
   required, step 3 would show manual preference selection instead of
   assigned defaults (`00-master-spec.md` §6.2.2)
 - Final legal sign-off on default-display wording and policy (§3.6.2)
+- Session-store hardening before production: evaluate an encrypted-at-rest
+  store (`expo-secure-store`, with JWT chunking) vs. the current AsyncStorage
+  default, and decide whether to drop the legacy `NEXT_PUBLIC_*` env keys now
+  that the client reads `EXPO_PUBLIC_*` (see ADR 0008)
+- Auto-return from the email-confirmation link via a `safeplace://` deep link,
+  so the user lands back in the app signed-in instead of manually returning to
+  sign in (Phase 2 ships the manual path; `00-master-spec.md` §6.2)
 
 ## E. Feed
 
