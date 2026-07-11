@@ -1,0 +1,36 @@
+# Supabase local stack config. Used by `supabase start` / `supabase db reset`
+# once Docker is available (ADR 0006's canonical full-stack harness). The
+# Phase 1 RLS parity suite runs Docker-free on PGlite (real Postgres, WASM)
+# against the same migrations in packages/db-testing — see the ADR 0006
+# implementation note.
+
+project_id = "safeplace"
+
+# Ports live in the 55xxx block to avoid clashing with other local Supabase
+# projects on this machine (the default 543xx block may already be taken).
+[api]
+port = 55321
+
+[db]
+port = 55322
+shadow_port = 55320
+# Match the Postgres major version Supabase hosts so migrations behave
+# identically locally, on PGlite, and in the cloud project.
+major_version = 15
+
+[db.migrations]
+schema_paths = ["./migrations/*.sql"]
+
+[studio]
+port = 55323
+
+[inbucket]
+port = 55334
+
+[analytics]
+port = 55327
+
+[auth]
+# Users declare gender at signup; the handle_new_user trigger reads it from
+# raw_user_meta_data. See supabase/migrations and ADR (defaults-are-not-rules).
+enable_signup = true

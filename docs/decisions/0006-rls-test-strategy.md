@@ -57,3 +57,40 @@ local stack, not a hosted project.
   layers in lockstep as required by invariant #2.
 - Confidence thresholds and classification values are treated as fixtures, not
   hardcoded percentages, matching ADR 0004.
+
+## Implementation note (Phase 1)
+
+The strategy above is realized as **two complementary suites that run the same
+`supabase/migrations/*.sql`**, differing only in transport:
+
+1. **`packages/db-testing` — the always-on, hermetic RLS parity suite.** It runs
+   the migrations against an in-process **PGlite** (real Postgres compiled to
+   WASM) — no Docker, no daemon — and asserts, over a shared fixture matrix
+   (users × gender × filter, content × exposure × classification, plus
+   family-space/blocks/frozen), that the row set the database exposes to each
+   signed-in user **equals `@safeplace/visibility-policy`'s decision** for the
+   same inputs. A test-only shim injects the objects Supabase's platform
+   normally provides before migrations run (`anon`/`authenticated`/`service_role`
+   roles, `auth.uid()` reading the JWT-claims GUC, minimal `auth`/`storage`
+   schemas). Identity is assumed exactly as PostgREST assumes it — `set local
+   role authenticated` + `set_config('request.jwt.claims', …)` — so the RLS
+   access path is faithfully reproduced. This is the CI gate: fast, reproducible,
+   Docker-free. A mutation test (deliberately leaking `contains_women`) confirms
+   the suite actually fails on a leak.
+
+2. **`packages/api-client` client-integration suite — the full-transport check.**
+   It drives the api-client helpers through a live `supabase start` stack
+   (GoTrue signup, PostgREST + RLS, Storage signed URLs) — the literal
+   access path of ADR 0006's decision. It self-skips unless
+   `SUPABASE_TEST_URL`/`_ANON_KEY`/`_SERVICE_KEY` are set, so it complements
+   rather than gates the hermetic suite. The one fidelity gap PGlite leaves
+   (PostgREST/GoTrue behavior) is covered here.
+
+Why both: PGlite gives real-Postgres RLS semantics with zero infrastructure
+(the CI backstop invariant #2 demands), while `supabase start` validates the
+same migrations on the genuine platform. The split already earned its keep:
+running `supabase start` surfaced that `storage.objects` is owned by
+`supabase_storage_admin`, so a `postgres`-run migration may not `alter` it to
+enable RLS — the platform already has RLS enabled there, so migration 0006 only
+adds policies, and the harness shim reproduces that pre-enabled state. That
+portability bug was invisible to PGlite alone.

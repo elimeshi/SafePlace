@@ -1,0 +1,5 @@
+# Supabase CLI local artifacts (Docker volumes, generated files). Migrations,
+# seed, and config are tracked; the running stack's state is not.
+.branches
+.temp
+.env

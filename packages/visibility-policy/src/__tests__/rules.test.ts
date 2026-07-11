@@ -163,6 +163,7 @@ describe("canViewMedia — both axes combined", () => {
         classification: "contains_women",
         exposure: { kind: "public" },
         isWithinViewersFamilySpace: false,
+        uploaderId: "author-1",
       })
     ).toBe(false);
 
@@ -172,6 +173,7 @@ describe("canViewMedia — both axes combined", () => {
         classification: "general",
         exposure: { kind: "group", groupId: "some-other-group" },
         isWithinViewersFamilySpace: false,
+        uploaderId: "author-1",
       })
     ).toBe(false);
 
@@ -181,8 +183,59 @@ describe("canViewMedia — both axes combined", () => {
         classification: "general",
         exposure: { kind: "public" },
         isWithinViewersFamilySpace: false,
+        uploaderId: "author-1",
       })
     ).toBe(true);
+  });
+});
+
+describe("the uploader always sees their own content", () => {
+  it("shows the uploader their own contains_women media even with their filter on", () => {
+    const viewer = makeViewer({
+      userId: "me",
+      filterSettings: {
+        ...resolveDefaultFilterSettings("male"),
+        hideContentWithWomen: true,
+      },
+    });
+    expect(
+      canViewMedia(viewer, {
+        classification: "contains_women",
+        exposure: { kind: "public" },
+        isWithinViewersFamilySpace: false,
+        uploaderId: "me",
+      })
+    ).toBe(true);
+  });
+
+  it("shows the uploader their own frozen (pending_review) media", () => {
+    const viewer = makeViewer({ userId: "me" });
+    expect(
+      canViewMedia(viewer, {
+        classification: "pending_review",
+        exposure: { kind: "public" },
+        isWithinViewersFamilySpace: false,
+        uploaderId: "me",
+      })
+    ).toBe(true);
+  });
+
+  it("still filters the SAME media for a non-uploader with the filter on", () => {
+    const viewer = makeViewer({
+      userId: "someone-else",
+      filterSettings: {
+        ...resolveDefaultFilterSettings("male"),
+        hideContentWithWomen: true,
+      },
+    });
+    expect(
+      canViewMedia(viewer, {
+        classification: "contains_women",
+        exposure: { kind: "public" },
+        isWithinViewersFamilySpace: false,
+        uploaderId: "me",
+      })
+    ).toBe(false);
   });
 });
 
@@ -196,7 +249,10 @@ describe("canViewProfilePhoto", () => {
       },
     });
     expect(
-      canViewProfilePhoto(viewer, { classification: "contains_women" })
+      canViewProfilePhoto(viewer, {
+        classification: "contains_women",
+        ownerId: "someone-else",
+      })
     ).toBe(true);
   });
 
@@ -209,8 +265,28 @@ describe("canViewProfilePhoto", () => {
       },
     });
     expect(
-      canViewProfilePhoto(viewer, { classification: "contains_women" })
+      canViewProfilePhoto(viewer, {
+        classification: "contains_women",
+        ownerId: "someone-else",
+      })
     ).toBe(false);
+  });
+
+  it("always shows the owner their own profile photo, even when filtered", () => {
+    const viewer = makeViewer({
+      userId: "me",
+      filterSettings: {
+        ...resolveDefaultFilterSettings("male"),
+        hideContentWithWomen: true,
+        filterAppliesToAvatars: true,
+      },
+    });
+    expect(
+      canViewProfilePhoto(viewer, {
+        classification: "contains_women",
+        ownerId: "me",
+      })
+    ).toBe(true);
   });
 });
 

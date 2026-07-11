@@ -55,9 +55,9 @@ export function viewerSatisfiesClassification(
       // moderation-pipeline.md §2. It is not treated as filtered content.
       return true;
     case "pending_review":
-      // Frozen for everyone except the uploader until a moderator decides.
-      // Calling code should check `isUploader` separately before reaching
-      // this function for the uploader's own view of their pending post.
+      // Frozen until a moderator decides. This pure axis returns false for
+      // everyone; the uploader's own view is granted by canViewMedia's
+      // uploader short-circuit (they always see their own content).
       return false;
     case "contains_women":
       return !viewer.filterSettings.hideContentWithWomen;
@@ -74,6 +74,11 @@ export function canViewMedia(
   viewer: Viewer,
   media: MediaItemContext
 ): boolean {
+  // The uploader always sees their own content, regardless of classification,
+  // exposure, or their own filter settings. This subsumes the frozen
+  // (pending_review) uploader case that used to be a separate caller concern.
+  if (viewer.userId === media.uploaderId) return true;
+
   return (
     viewerSatisfiesExposure(viewer, media.exposure) &&
     viewerSatisfiesClassification(
@@ -92,8 +97,11 @@ export function canViewMedia(
  */
 export function canViewProfilePhoto(
   viewer: Viewer,
-  photo: { classification: MediaClassification }
+  photo: { classification: MediaClassification; ownerId: string }
 ): boolean {
+  // The owner always sees their own profile photo (same principle as
+  // canViewMedia's uploader rule).
+  if (viewer.userId === photo.ownerId) return true;
   if (!viewer.filterSettings.filterAppliesToAvatars) return true;
   return viewerSatisfiesClassification(
     viewer,

@@ -2,8 +2,9 @@
 
 This file compiles every point the product specs in `docs/product/` marked
 "⏳ לתכנון בהמשך" (to be planned later) — **97 items** across all 11
-documents. These are deliberate, explicit deferrals made during the
-characterization phase, not gaps that were missed. Treat an item here as
+documents (plus a few surfaced during implementation, marked inline with the
+phase that raised them). These are deliberate, explicit deferrals made during
+the characterization phase, not gaps that were missed. Treat an item here as
 "already flagged, not yet decided" rather than as an invitation to invent an
 answer silently while implementing.
 
@@ -116,6 +117,16 @@ See ADR 0003. All of these are placeholder-until-locked:
 - Synchronization between the default post-exposure setting here and the
   same control surfaced in the post-composer (`06-settings-spec.md` §3.2)
 - Supported language list beyond Hebrew-only MVP (§3.5)
+- **`hideWomenAccounts` filter flag — semantics undefined.** The flag exists in
+  `FilterSettings` (data-model + shared-types) but no rule in
+  `packages/visibility-policy` consumes it (only `hideContentWithWomen`,
+  `filterAppliesToAvatars`, and the two `genderSeparation*` flags are). Per
+  invariant #2 ("if the policy package doesn't expose the check you need, add it
+  there first"), Phase 1 deliberately does **not** invent an RLS meaning for it
+  — hiding whole accounts by a gender attribute also brushes against invariant
+  #1 (classify content, not users), so its exact, legally-defensible semantics
+  need product + legal definition before any enforcement is written. Until then
+  the column is stored but unenforced. Raised during Phase 1 (data layer).
 
 ## K. Moderation
 

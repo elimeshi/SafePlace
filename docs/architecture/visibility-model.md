@@ -64,11 +64,15 @@ evaluated on every read.
 
 ```
 canViewMedia(viewer, mediaItem) =
-     viewerSatisfiesExposure(viewer, mediaItem.exposure)
-  AND viewerSatisfiesClassification(viewer, mediaItem.classification)
+     viewer.id == mediaItem.uploaderId          // the uploader always sees their own content
+  OR (   viewerSatisfiesExposure(viewer, mediaItem.exposure)
+     AND viewerSatisfiesClassification(viewer, mediaItem.classification) )
 ```
 
-Where, roughly:
+The uploader always sees their own uploaded media — any classification,
+including `pending_review` (frozen) and `contains_women`, regardless of their
+own filter settings. The same principle applies to a user's own profile photo
+(`canViewProfilePhoto`). Otherwise:
 
 ```
 viewerSatisfiesClassification(viewer, classification) =

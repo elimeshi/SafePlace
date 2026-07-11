@@ -1,0 +1,94 @@
+/**
+ * The expected-decision oracle for the parity suite. It computes what a viewer
+ * SHOULD be able to see purely from @safeplace/visibility-policy (+ the two
+ * DB-layer concerns the policy package deliberately doesn't model: blocks, and
+ * the documented uploader-sees-own-frozen carve-out). The DB is then asserted
+ * to agree. If these two ever diverge, one of them has an enforcement bug.
+ */
+import {
+  canViewMedia,
+  canViewProfilePhoto,
+  viewerSatisfiesExposure,
+  type Viewer,
+} from "@safeplace/visibility-policy";
+import { BLOCKS, type MediaFixture, type UserFixture } from "./seed";
+
+export function viewerOf(u: UserFixture): Viewer {
+  return {
+    userId: u.id,
+    gender: u.gender,
+    filterSettings: u.filter,
+    groupMemberships: new Set(u.groups),
+    familySpaceMemberships: new Set(u.familySpaces),
+    following: new Set(u.follows),
+  };
+}
+
+export function isBlockedBetween(a: string, b: string): boolean {
+  return BLOCKS.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+}
+
+export interface ExpectedMedia {
+  /** Viewer can even KNOW the media exists (base RLS row visibility). */
+  rowPresent: boolean;
+  /** Viewer can see the actual media content (real URL served). */
+  contentVisible: boolean;
+  /** Row present but content withheld → neutral placeholder. */
+  isFiltered: boolean;
+}
+
+export function expectedMedia(u: UserFixture, m: MediaFixture): ExpectedMedia {
+  const v = viewerOf(u);
+
+  // The uploader always sees their own content — row present, real URL served,
+  // for any classification. (No self-block is possible.)
+  if (m.uploaderId === u.id) {
+    return { rowPresent: true, contentVisible: true, isFiltered: false };
+  }
+
+  if (isBlockedBetween(u.id, m.uploaderId)) {
+    return { rowPresent: false, contentVisible: false, isFiltered: false };
+  }
+
+  const isWithinFamilySpace =
+    m.familySpaceId !== null && v.familySpaceMemberships.has(m.familySpaceId);
+  const exposureOk = viewerSatisfiesExposure(v, m.exposure);
+
+  // A non-uploader can KNOW the media exists only when exposure passes and it's
+  // not frozen (pending_review is uploader-only).
+  const rowPresent = exposureOk && m.classification !== "pending_review";
+  const contentVisible =
+    rowPresent &&
+    canViewMedia(v, {
+      classification: m.classification,
+      exposure: m.exposure,
+      isWithinViewersFamilySpace: isWithinFamilySpace,
+      uploaderId: m.uploaderId,
+    });
+
+  return { rowPresent, contentVisible, isFiltered: rowPresent && !contentVisible };
+}
+
+export interface ExpectedAvatar {
+  /** Target profile is visible to the viewer at all (not blocked / deleted). */
+  profileVisible: boolean;
+  /** Real avatar served vs. generic. */
+  avatarVisible: boolean;
+}
+
+export function expectedAvatar(
+  viewer: UserFixture,
+  target: UserFixture
+): ExpectedAvatar {
+  const profileVisible =
+    viewer.id === target.id || !isBlockedBetween(viewer.id, target.id);
+  const avatarVisible =
+    profileVisible &&
+    canViewProfilePhoto(viewerOf(viewer), {
+      classification: target.avatar?.classification ?? "general",
+      // The avatar's owner is the profile it belongs to — canViewProfilePhoto
+      // grants the owner their own photo.
+      ownerId: target.id,
+    });
+  return { profileVisible, avatarVisible };
+}

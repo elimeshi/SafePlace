@@ -50,10 +50,18 @@ export interface User {
 
 export interface MediaItem {
   id: string;
-  /** Polymorphic: exactly one of these should be set. */
+  /** Polymorphic parent: exactly one of these is set. `profileId` is the
+   * avatar/profile-photo case — avatars are real, classified media, not a
+   * bare URL (visibility-model §4, invariant #8). */
   postId: string | null;
   commentId: string | null;
   messageId: string | null;
+  profileId: string | null;
+  /** Author of the parent surface; denormalized so frozen-media + block
+   * visibility checks avoid a parent join. Immutable. */
+  uploaderId: string;
+  /** Object path in the private media bucket — never a public/guessable URL,
+   * and withheld from a filtered viewer (served only via a signed URL). */
   storageUrl: string;
   classification: MediaClassification;
   classifiedAt: string | null;

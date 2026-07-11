@@ -40,12 +40,17 @@ don't let individual screens read denormalized copies of these flags.
 - `taggedUserIds`
 
 ### MediaItem
-- `id`, `postId` (or `commentId` / `messageId` — media is polymorphic across
-  surfaces, see the table in `visibility-model.md` §4)
+- `id`, `postId` (or `commentId` / `messageId` / `profileId` — media is
+  polymorphic across surfaces, see the table in `visibility-model.md` §4;
+  `profileId` is the avatar/profile-photo case — avatars are real classified
+  media, per invariant #8, not a bare URL)
+- `uploaderId`: author of the parent surface, denormalized so the frozen-media
+  and block visibility checks avoid a parent join (see impl notes below)
 - `storageUrl` (original, never exposed directly to a filtered viewer)
 - `classification`: `'unclassified' | 'general' | 'pending_review' | 'contains_women'`
-- `classificationConfidence`: raw model score, **not** exposed to clients —
-  only the resolved `classification` field is.
+- `classificationConfidence`: raw model score — **not stored on this row and
+  not exposed to clients.** It belongs to the pipeline's job record (Phase 3);
+  only the resolved `classification` enum lives here.
 - `classifiedAt`
 
 ### Comment
@@ -108,3 +113,33 @@ don't let individual screens read denormalized copies of these flags.
   storage policy — never a publicly guessable static URL — since a filtered
   viewer must not be able to fetch the underlying file even if they obtain
   its reference some other way.
+
+## Phase 1 implementation notes (where the schema diverged from this sketch)
+
+The conceptual map above became `supabase/migrations/*.sql`. Where the concrete
+schema made a deliberate choice, it's recorded here (this doc is the sketch; the
+migrations are authoritative):
+
+- **`FilterSettings` is its own table** (`filter_settings`, 1:1 with `profiles`,
+  typed boolean columns) rather than a jsonb blob — so RLS predicates read
+  individual flags directly and each flag stays independently editable
+  (defaults-are-not-rules). `hideWomenAccounts` is stored but **not enforced**:
+  `visibility-policy` exposes no rule for it (see the open-questions backlog,
+  §J).
+- **Avatars are real `media_items`** via a `profile_id` polymorphic branch, with
+  `profiles.avatar_media_id` referencing the current one — so profile photos go
+  through the same classification pipeline as any other media (invariant #8),
+  and `canViewProfilePhoto` reads a genuine classification.
+- **`media_items.uploader_id`** denormalizes the parent author (immutable) so the
+  "uploader sees their own frozen media" and block checks need no parent join.
+- **Enforcement is two-layer, both derived from `visibility-policy`:** RLS
+  policies (exposure axis + blocks + frozen carve-out) plus two
+  `security_invoker` read models — `media_items_visible` and `profiles_visible`
+  — that withhold `storage_path`/`avatar` and set an `is_filtered` /
+  `avatar_filtered` flag for viewers the classification filter applies to
+  (the "placeholder, not leak" behaviour of visibility-model §6).
+- **"Number without list"** (invariant #5) is `follower_count` /
+  `following_count` / `group_member_count` SECURITY DEFINER functions; the
+  underlying follow/membership rows are SELECT-visible only to their owner.
+- Every rule above is proven to agree with `packages/visibility-policy` by the
+  parity suite in `packages/db-testing` (ADR 0006).

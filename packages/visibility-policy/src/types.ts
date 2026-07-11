@@ -71,6 +71,12 @@ export interface MediaItemContext {
   classification: MediaClassification;
   exposure: ContentExposure;
   /**
+   * The id of the user who uploaded this media. The uploader always sees their
+   * own content — regardless of classification or their own filter settings —
+   * so canViewMedia short-circuits to true when viewer.userId === uploaderId.
+   */
+  uploaderId: string;
+  /**
    * True if this media is being evaluated within the context of a
    * confirmed Family Space the viewer belongs to. When true, standard
    * classification-based filtering is lifted for this item — see
