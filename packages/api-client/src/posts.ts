@@ -15,12 +15,24 @@ export function exposureToColumns(exposure: ContentExposure): ExposureColumns {
   };
 }
 
+/**
+ * A media object already uploaded to the private bucket (see uploadMedia),
+ * ready to be attached to content. The content type travels with it because
+ * the classification pipeline needs to know what it is looking at before it
+ * looks — an image classifier must not be handed a video, and a type it
+ * cannot read is routed to a human rather than guessed at.
+ */
+export interface AttachedMedia {
+  storagePath: string;
+  contentType: string;
+}
+
 export interface CreatePostParams {
   authorId: string;
   exposure: ContentExposure;
   text?: string;
-  /** storage paths of already-uploaded media (see uploadMedia). */
-  media?: string[];
+  /** Already-uploaded media to attach (see uploadMedia). */
+  media?: AttachedMedia[];
   locationTag?: string | null;
 }
 
@@ -51,11 +63,14 @@ export async function createPost(
   const postId = (post as { id: string }).id;
 
   if (params.media && params.media.length > 0) {
-    const rows = params.media.map((storagePath) => ({
+    const rows = params.media.map((item) => ({
       post_id: postId,
       uploader_id: params.authorId,
-      storage_path: storagePath,
-      // classification omitted → DB default 'unclassified'
+      storage_path: item.storagePath,
+      content_type: item.contentType,
+      // classification omitted → DB default 'unclassified'. The insert also
+      // enqueues a classification job via trigger (migration 0008), so there
+      // is no separate "remember to call the pipeline" step here.
     }));
     const { error: mediaError } = await supabase.from("media_items").insert(rows);
     if (mediaError) {

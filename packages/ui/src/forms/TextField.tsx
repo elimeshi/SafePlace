@@ -54,6 +54,10 @@ export function TextField({
   const [focused, setFocused] = useState(false);
   const hasValue = value.length > 0;
   const floated = focused || hasValue;
+  // The default danger red (#C53030) is near-invisible on the dark glass card,
+  // so on glass use a light red that reads on both the near-white field border
+  // and the darker card behind the message.
+  const errorColor = onGlass ? "#FF8792" : theme.colors.danger;
   const { wrapper, input, label: labelStyle, showCheck, checkColor } = resolveFieldStyle({
     focused,
     valid,
@@ -71,7 +75,7 @@ export function TextField({
         }}
       >
         <View
-          style={[wrapper, errorText ? { borderColor: theme.colors.danger } : null]}
+          style={[wrapper, errorText ? { borderColor: errorColor } : null]}
         >
           <TextInput
             value={value}
@@ -107,7 +111,7 @@ export function TextField({
         </View>
       </View>
       {errorText ? (
-        <Text style={[theme.typeRole.meta, { color: theme.colors.danger }]}>
+        <Text style={[theme.typeRole.meta, { color: errorColor }]}>
           {errorText}
         </Text>
       ) : null}

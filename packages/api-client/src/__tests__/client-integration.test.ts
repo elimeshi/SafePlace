@@ -119,7 +119,7 @@ describe.skipIf(!enabled)("api-client against a live Supabase stack", () => {
       authorId: uploader.id,
       exposure: { kind: "public" },
       text: "hello",
-      media: [storagePath],
+      media: [{ storagePath, contentType: "image/png" }],
     });
 
     // Pipeline (service_role) classifies it as containing women.

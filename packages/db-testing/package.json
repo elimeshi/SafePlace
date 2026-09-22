@@ -15,7 +15,8 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.2.0",
     "@safeplace/shared-types": "workspace:*",
-    "@safeplace/visibility-policy": "workspace:*"
+    "@safeplace/visibility-policy": "workspace:*",
+    "@safeplace/moderation-pipeline": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

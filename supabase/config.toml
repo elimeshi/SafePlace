@@ -10,6 +10,10 @@ project_id = "safeplace"
 # projects on this machine (the default 543xx block may already be taken).
 [api]
 port = 55321
+# PostgREST needs the moderation schema exposed for the worker's RPCs. Exposure
+# is not access: no client role holds usage on that schema or privileges on its
+# tables (migration 0008), so only a service-role request reaches anything.
+schemas = ["public", "graphql_public", "moderation"]
 
 [db]
 port = 55322

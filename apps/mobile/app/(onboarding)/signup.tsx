@@ -19,6 +19,10 @@ import {
 } from "@/screens/onboarding/validation";
 import { theme } from "@/lib/theme";
 
+/** Light red for validation messages on the dark glass card — the default
+ * danger red (#C53030) is near-invisible there. */
+const DANGER_ON_GLASS = "#FF8792";
+
 /**
  * Step 2 — Account details + gender selection (master spec §6.2.2), "Full-bleed"
  * composition (design-lab FINAL-SPEC.md): a cyan→indigo gradient behind a
@@ -164,13 +168,14 @@ export default function SignUp() {
               }}
             />
             {errors.gender ? (
-              <Text style={{ ...theme.typeRole.meta, color: theme.colors.white }}>{errors.gender}</Text>
+              <Text style={{ ...theme.typeRole.meta, color: DANGER_ON_GLASS }}>{errors.gender}</Text>
             ) : null}
           </View>
 
           <View style={{ gap: theme.spacing.xs }}>
             <Checkbox
               onGlass
+              error={!!errors.terms}
               checked={termsAccepted}
               onChange={(v) => {
                 setTermsAccepted(v);
@@ -179,7 +184,7 @@ export default function SignUp() {
               label={<TermsLabel />}
             />
             {errors.terms ? (
-              <Text style={{ ...theme.typeRole.meta, color: theme.colors.white }}>{errors.terms}</Text>
+              <Text style={{ ...theme.typeRole.meta, color: DANGER_ON_GLASS }}>{errors.terms}</Text>
             ) : null}
           </View>
 

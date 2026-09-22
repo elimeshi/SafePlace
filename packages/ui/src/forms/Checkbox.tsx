@@ -16,6 +16,8 @@ export interface CheckboxProps {
   disabled?: boolean;
   /** Render for the full-bleed onboarding glass card (translucent box). */
   onGlass?: boolean;
+  /** Flag the box when a required consent was left unchecked on submit. */
+  error?: boolean;
 }
 
 /**
@@ -30,8 +32,9 @@ export function Checkbox({
   label,
   disabled = false,
   onGlass = false,
+  error = false,
 }: CheckboxProps) {
-  const { box, checkColor } = resolveCheckboxStyle({ checked, onGlass });
+  const { box, checkColor } = resolveCheckboxStyle({ checked, onGlass, error });
 
   return (
     <Pressable
