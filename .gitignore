@@ -44,3 +44,8 @@ android/
 
 # Misc
 *.tsbuildinfo
+
+# Local secrets & working material (never commit)
+cloudflare_workers_api
+Inspirations/
+design-lab/
