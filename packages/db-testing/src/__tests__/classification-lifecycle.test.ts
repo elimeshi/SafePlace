@@ -41,7 +41,7 @@ async function canSignAs(userId: string) {
       [PATH]
     )
   );
-  return rows[0].n === 1;
+  return rows[0]?.n === 1;
 }
 
 async function setClassification(value: string) {
@@ -95,7 +95,7 @@ describe("1. a client can insert media, and only as 'unclassified'", () => {
     );
     expect(rows).toHaveLength(0);
     const truth = await db.raw.query<{ classification: string }>(`select classification from public.media_items where id = $1`, [MEDIA_ID]);
-    expect(truth.rows[0].classification).toBe("unclassified");
+    expect(truth.rows[0]?.classification).toBe("unclassified");
   });
 });
 
