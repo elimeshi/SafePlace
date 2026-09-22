@@ -36,7 +36,27 @@ export {
 } from "./providers/anthropic";
 
 export {
+  clampRegion,
+  coverageFraction,
+  createStubLocalizer,
+  padRegion,
+  readLocalizerOutput,
+  type LocalizerOutput,
+  type Region,
+  type RegionLocalizer,
+} from "./regions";
+
+export { createSharpRedactor, type ImageRedactor } from "./redactor";
+
+export { createAnthropicLocalizer } from "./providers/anthropic-localizer";
+
+export { LOCALIZER_SYSTEM_PROMPT, LOCALIZER_OUTPUT_SCHEMA } from "./localizer-prompt";
+
+export {
   drainOnce,
+  type DerivativeStore,
+  type RedactionDeps,
+  type RedactionRecord,
   type ClaimedJob,
   type CompletedClassification,
   type DrainSummary,

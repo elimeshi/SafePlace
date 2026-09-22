@@ -147,6 +147,14 @@ See ADR 0003. All of these are placeholder-until-locked:
   review (ADR 0010, raised Phase 3)
 - Scheduling the retention sweep for `moderation.classification_scores`; the
   function exists, the schedule does not (ADR 0011, raised Phase 3)
+- **Region blur (ADR 0012), built but switched off, needs product answers before
+  the switch is thrown:** (a) whether a blurred-region image is acceptable to
+  the community at all, or reads as worse than no image — plausibly a rabbinic
+  question; (b) how much of a woman a box must cover — the whole visible figure
+  (current answer) or head and face only; (c) that it creates a third filtered
+  state `05-personal-area-spec.md` §2.6.3 does not describe, and makes the
+  master-spec uploader notice ("many users will not be able to see this media")
+  inaccurate for a post served blurred
 - Whether an illustration, statue or mannequin depicting a woman counts as a
   depiction, and where childhood ends for classification purposes. The
   classifier prompt answers both conservatively today; both are community

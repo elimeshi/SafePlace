@@ -117,6 +117,25 @@ for review, rather than leaving it stranded as `unclassified` — under
 fail-closed visibility, stranded means invisible to everyone but its uploader,
 permanently, with nobody looking at it.
 
+## Region blur (off)
+
+```sql
+-- Switch it on (and see ADR 0012 first — the switch is a product decision)
+update moderation.pipeline_config set region_blur_enabled = true;
+
+-- How often derivatives are actually being produced
+select count(*) filter (where verified) as served,
+       round(avg(region_count), 1) as avg_regions,
+       round(avg(coverage), 3) as avg_coverage
+  from moderation.redactions;
+```
+
+A flagged image costs about three model calls instead of one when this is on,
+and nothing changes for unflagged images. If the numbers above show few
+derivatives, the re-classification gate is rejecting them — which is the system
+working, not failing: it means the redacted output still looked like it
+contained a woman, so the original was withheld as before.
+
 ## Before this runs against real users
 
 `docs/legal/legal-tracker.md` item 7 — automated LLM content scanning,

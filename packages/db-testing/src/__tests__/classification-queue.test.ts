@@ -75,6 +75,58 @@ describe("every media insert enqueues a classification job", () => {
   });
 });
 
+describe("every media parent surface enqueues — invariant #8 has no exceptions", () => {
+  // media_items is polymorphic across post / comment / message / profile, and
+  // the trigger is parent-agnostic by construction. This asserts that rather
+  // than assuming it: the whole argument for enqueueing in the database is
+  // that no surface can be forgotten, which is only true if it holds for
+  // every parent the table allows.
+  it("enqueues for post, comment, message and profile media alike", async () => {
+    const postId = "00000000-0000-0000-0000-0000000005a1";
+    const commentId = "00000000-0000-0000-0000-0000000005a2";
+    const conversationId = "00000000-0000-0000-0000-0000000005a3";
+    const messageId = "00000000-0000-0000-0000-0000000005a4";
+
+    await db.raw.query(
+      `insert into public.posts (id, author_id, text, exposure_kind) values ($1, $2, 'p', 'public')`,
+      [postId, author.id]
+    );
+    await db.raw.query(
+      `insert into public.comments (id, post_id, author_id, text) values ($1, $2, $3, 'c')`,
+      [commentId, postId, author.id]
+    );
+    await db.raw.query(
+      `insert into public.conversations (id, participant_a, participant_b) values ($1, $2, $3)`,
+      [conversationId, author.id, other.id]
+    );
+    await db.raw.query(
+      `insert into public.messages (id, conversation_id, sender_id, text) values ($1, $2, $3, 'm')`,
+      [messageId, conversationId, author.id]
+    );
+
+    const parents: Array<[string, string, string]> = [
+      ["post_id", postId, "00000000-0000-0000-0000-0000000005b1"],
+      ["comment_id", commentId, "00000000-0000-0000-0000-0000000005b2"],
+      ["message_id", messageId, "00000000-0000-0000-0000-0000000005b3"],
+      ["profile_id", author.id, "00000000-0000-0000-0000-0000000005b4"],
+    ];
+
+    for (const [column, parentId, mediaId] of parents) {
+      await db.raw.query(
+        `insert into public.media_items (id, ${column}, uploader_id, storage_path, content_type)
+         values ($1, $2, $3, $4, 'image/jpeg')`,
+        [mediaId, parentId, author.id, `media/${mediaId}`]
+      );
+      const { rows } = await db.asService((q) =>
+        q.query(`select 1 from moderation.classification_jobs where media_item_id = $1`, [
+          mediaId,
+        ])
+      );
+      expect(rows, `${column} did not enqueue`).toHaveLength(1);
+    }
+  });
+});
+
 describe("the moderation schema is invisible to clients", () => {
   const tables = [
     "classification_jobs",
@@ -106,10 +158,12 @@ describe("the moderation schema is invisible to clients", () => {
 describe("claiming work", () => {
   it("claims queued jobs and marks them running", async () => {
     const mediaId = await newMediaAsAuthor();
+    // Batch generously: this asserts the job IS claimed, not that it is the
+    // only one queued — other suites in this file leave work behind.
     const { rows } = await db.asService((q) =>
       q.query<{ media_item_id: string }>(
         `select * from moderation.claim_classification_jobs($1, $2)`,
-        [10, "worker-a"]
+        [200, "worker-a"]
       )
     );
     expect(rows.map((r) => r.media_item_id)).toContain(mediaId);

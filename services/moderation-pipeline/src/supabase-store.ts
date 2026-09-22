@@ -11,7 +11,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { MEDIA_BUCKET } from "@safeplace/api-client";
 import type { ClassificationThresholds } from "./classification";
-import type { ClaimedJob, CompletedClassification, JobStore, MediaFetcher } from "./worker";
+import type {
+  ClaimedJob,
+  CompletedClassification,
+  DerivativeStore,
+  JobStore,
+  MediaFetcher,
+  RedactionRecord,
+} from "./worker";
 
 const MODERATION_SCHEMA = "moderation";
 
@@ -29,6 +36,8 @@ export interface PipelineConfig {
   thresholds: ClassificationThresholds;
   modelId: string;
   batchSize: number;
+  /** Gates the redaction stage. Off until the feature has product sign-off. */
+  regionBlurEnabled: boolean;
 }
 
 /**
@@ -47,7 +56,13 @@ export async function loadPipelineConfig(
     throw new Error(`loadPipelineConfig: ${error.message}`);
   }
   const row = (Array.isArray(data) ? data[0] : data) as
-    | { low_max: number; high_min: number; model_id: string; batch_size: number }
+    | {
+        low_max: number;
+        high_min: number;
+        model_id: string;
+        batch_size: number;
+        region_blur_enabled: boolean;
+      }
     | undefined;
   if (!row) {
     throw new Error("loadPipelineConfig: no configuration row");
@@ -57,6 +72,56 @@ export async function loadPipelineConfig(
     thresholds: { lowMax: Number(row.low_max), highMin: Number(row.high_min) },
     modelId: row.model_id,
     batchSize: row.batch_size,
+    regionBlurEnabled: row.region_blur_enabled === true,
+  };
+}
+
+/**
+ * Stores redacted derivatives beside their originals, in the same private
+ * bucket. The derivative is subject to exactly the same storage policy as
+ * everything else: it is reachable only if media_items_visible hands the
+ * caller its path.
+ */
+export function createSupabaseDerivativeStore(
+  supabase: SupabaseClient
+): DerivativeStore {
+  return {
+    async put(mediaItemId: string, bytes: Uint8Array): Promise<string> {
+      const { data: media, error: lookupError } = await supabase
+        .from("media_items")
+        .select("storage_path")
+        .eq("id", mediaItemId)
+        .single();
+      if (lookupError || !media) {
+        throw new Error(`derivative put: ${lookupError?.message ?? "media not found"}`);
+      }
+
+      const storagePath = `${(media as { storage_path: string }).storage_path}.redacted.png`;
+      const { error } = await supabase.storage
+        .from(MEDIA_BUCKET)
+        .upload(storagePath, bytes, { contentType: "image/png", upsert: true });
+      if (error) {
+        throw new Error(`derivative put: ${error.message}`);
+      }
+      return storagePath;
+    },
+
+    async attach(record: RedactionRecord): Promise<void> {
+      const { error } = await supabase
+        .schema(MODERATION_SCHEMA)
+        .rpc("attach_redaction", {
+          p_media_item_id: record.mediaItemId,
+          p_storage_path: record.storagePath,
+          p_region_count: record.regionCount,
+          p_coverage: record.coverage,
+          p_localizer: record.localizer,
+          p_model_id: record.modelId,
+          p_verified: record.verified,
+        });
+      if (error) {
+        throw new Error(`attach redaction: ${error.message}`);
+      }
+    },
   };
 }
 

@@ -93,6 +93,14 @@ a "processing" state — distinguishable from the filtered state by the
 `classification` value served alongside it — but the reference is withheld.
 See migration `20260922000001_unclassified_fail_closed.sql`.
 
+**A third filtered state exists in code but is switched off.** With region
+blur enabled (ADR 0012), a viewer the filter applies to may be served a
+redacted derivative — `is_filtered` true *and* `is_redacted` true — rather than
+nothing. It is off by default because it is a product change the screen specs
+do not yet describe: `05-personal-area-spec.md` §2.6.3 defines the filtered
+state as a placeholder, and the uploader notice's "many users will not be able
+to see this media" stops being accurate for a post served blurred.
+
 This function — and only this function, via `packages/visibility-policy` —
 decides whether a piece of media is rendered or replaced with a neutral
 "filtered content" placeholder. Text content of a post is **never** filtered
@@ -116,6 +124,23 @@ reinforced in every downstream spec):
 
 If you add a new upload surface, it must be added to this table and wired
 into the same pipeline. There is no fast-path that skips classification.
+
+**Since Phase 3 this is enforced rather than promised.** Every one of these
+surfaces stores its media as a `media_items` row, and an insert trigger on
+that table enqueues the classification job (migration 0008). A surface that
+forgets to call the pipeline therefore cannot exist — the row's own insert is
+what enqueues it. The parity suite asserts this holds for every parent the
+table allows (post, comment, message, profile).
+
+Two notes on the surfaces above:
+
+- **Poll option images** are `media_items` rows parented to their post and
+  referenced by `poll_options.image_media_id`, so they are covered by the same
+  trigger with no special handling.
+- **Story/status media has no table yet** — stories are post-MVP, so there is
+  nothing to classify today. When that table lands, its media must be
+  `media_items` rows like everything else; do not give it its own storage path.
+
 
 ## 5. Defaults vs. rules — why the distinction is load-bearing
 

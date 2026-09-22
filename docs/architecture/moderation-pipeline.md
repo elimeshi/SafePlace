@@ -68,6 +68,35 @@ This is shown **before** publish completes, as a confirm/cancel choice, not
 as a post-hoc notification. It is neutral and factual — never moralizing,
 never phrased as "your content was rejected."
 
+## 3a. Region blur (ADR 0012 — built, switched off)
+
+When an item is flagged, the pipeline can optionally produce a second object
+with the women in the frame obscured, and serve that to viewers the filter
+applies to instead of withholding the image entirely. A woman incidental to a
+street photograph then costs the obscured region rather than the photograph.
+
+The sequencing is what makes it safe, because blurring regions fails OPEN
+where withholding fails closed — a missed figure leaves a viewer looking at an
+image they believe was filtered:
+
+```
+ flagged ─► localize ─► pad boxes ─► too much coverage? ─► give up, withhold
+                                          │
+                                          ▼
+                              redact server-side, irreversibly
+                                          │
+                                          ▼
+                        RE-CLASSIFY the redacted output
+                          ├─ confident "no woman" ─► store + serve it
+                          └─ anything else ────────► discard, withhold
+```
+
+Every uncertainty falls back to withholding: an incomplete set of boxes, an
+unreadable answer, a truncated generation, a failed redaction, a re-check that
+is merely unsure. The feature is gated on
+`moderation.pipeline_config.region_blur_enabled`, default false — see ADR 0012
+for why the switch is a product decision rather than an engineering one.
+
 ## 4. Human review queue
 
 A moderator working a queued item sees (per `07-moderation-spec.md` §4.2):

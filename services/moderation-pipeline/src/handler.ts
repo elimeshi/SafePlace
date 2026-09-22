@@ -10,11 +10,15 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createAnthropicClassifierFromConfig } from "./providers/anthropic";
 import { createStubClassifier, type ClassifierProvider } from "./classifier";
 import {
+  createSupabaseDerivativeStore,
   createSupabaseJobStore,
   createSupabaseMediaFetcher,
   loadPipelineConfig,
 } from "./supabase-store";
-import { drainOnce, type DrainSummary, type Logger } from "./worker";
+import { createAnthropicLocalizerFromConfig } from "./providers/anthropic-localizer";
+import { createStubLocalizer } from "./regions";
+import { createSharpRedactor } from "./redactor";
+import { drainOnce, type DrainSummary, type Logger, type RedactionDeps } from "./worker";
 
 export interface PipelineEnv {
   SUPABASE_URL?: string;
@@ -82,16 +86,43 @@ export async function runClassificationPass(
   );
 
   const config = await loadPipelineConfig(supabase);
+  const provider = resolveClassifierFromEnv(env, config.modelId);
+
+  // Only build the redaction stage when the feature is switched on. If nobody
+  // will be served a derivative, producing one is two model calls spent on an
+  // object no viewer can reach.
+  let redaction: RedactionDeps | undefined;
+  if (config.regionBlurEnabled) {
+    redaction = {
+      localizer:
+        env.VISION_MODEL_PROVIDER === "anthropic" && env.VISION_MODEL_API_KEY
+          ? createAnthropicLocalizerFromConfig({
+              apiKey: env.VISION_MODEL_API_KEY,
+              modelId: config.modelId,
+            })
+          : createStubLocalizer(),
+      redactor: createSharpRedactor(),
+      derivatives: createSupabaseDerivativeStore(supabase),
+      // Re-classified by the same classifier that flagged it, on purpose: the
+      // question asked of the derivative is exactly the question asked of the
+      // original, so a model that sees a woman in one and not the other is
+      // telling us something meaningful.
+      recheck: provider,
+      maxCoverage: 0.5,
+      padding: 0.15,
+    };
+  }
 
   return drainOnce(
     {
       store: createSupabaseJobStore(supabase),
       media: createSupabaseMediaFetcher(supabase),
-      provider: resolveClassifierFromEnv(env, config.modelId),
+      provider,
       modelId: config.modelId,
       workerId: env.MODERATION_WORKER_ID ?? "worker",
       thresholds: config.thresholds,
       logger,
+      redaction,
     },
     config.batchSize
   );

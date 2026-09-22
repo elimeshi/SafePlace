@@ -7,7 +7,9 @@
 import type {
   ClaimedJob,
   CompletedClassification,
+  DerivativeStore,
   JobStore,
+  RedactionRecord,
 } from "@safeplace/moderation-pipeline";
 import type { TestDb } from "./harness";
 
@@ -50,6 +52,55 @@ export function createPgliteJobStore(db: TestDb): JobStore {
     async fail(mediaItemId: string, error: string): Promise<void> {
       await db.asService((q) =>
         q.query(`select moderation.fail_classification_job($1, $2)`, [mediaItemId, error])
+      );
+    },
+  };
+}
+
+/**
+ * DerivativeStore backed by the harness. "Uploading" is inserting the object
+ * row that storage RLS gates on — which is the part the visibility guarantee
+ * actually depends on.
+ */
+export function createPglitePersistedDerivativeStore(db: TestDb): DerivativeStore {
+  return {
+    async put(mediaItemId: string, bytes: Uint8Array): Promise<string> {
+      const { rows } = await db.asService((q) =>
+        q.query<{ storage_path: string; uploader_id: string }>(
+          `select storage_path, uploader_id from public.media_items where id = $1`,
+          [mediaItemId]
+        )
+      );
+      const source = rows[0];
+      if (!source) throw new Error(`no media ${mediaItemId}`);
+      const path = `${source.storage_path}.redacted.png`;
+      await db.asService((q) =>
+        q.query(
+          `insert into storage.objects (bucket_id, name, owner) values ('media', $1, $2)
+           on conflict do nothing`,
+          [path, source.uploader_id]
+        )
+      );
+      // Byte count only — the harness has no object store, and what this test
+      // proves is the wiring and the visibility rules, not blob persistence.
+      void bytes.byteLength;
+      return path;
+    },
+
+    async attach(record: RedactionRecord): Promise<void> {
+      await db.asService((q) =>
+        q.query(
+          `select moderation.attach_redaction($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            record.mediaItemId,
+            record.storagePath,
+            record.regionCount,
+            record.coverage,
+            record.localizer,
+            record.modelId,
+            record.verified,
+          ]
+        )
       );
     },
   };

@@ -77,3 +77,52 @@ it("a filtered viewer NEVER receives a withheld storage path (leak backstop)", a
     }
   }
 });
+
+it("the base table exposes a storage_path the view withholds — but it cannot be used", async () => {
+  // A known, accepted gap (visibility-audit, Phase 3). Phase 1 granted SELECT
+  // on every public table to `authenticated`, and media_items' row policy
+  // deliberately admits contains_women rows so a placeholder can render — so
+  // the row it admits carries the path column that media_items_visible exists
+  // to withhold.
+  //
+  // Closing it with column-level grants is not available: media_items_visible
+  // is security_invoker, so it reads the base table with the CALLER's
+  // privileges, and revoking the column from the caller revokes it from the
+  // view too. security_invoker is what guarantees the view can never widen row
+  // visibility, which is worth more than the column.
+  //
+  // So the guarantee is enforced one layer down, and this test pins it: the
+  // path is readable, and it is inert. If a future change makes a withheld
+  // object signable, this fails.
+  const cw = MEDIA.find(
+    (m) => m.classification === "contains_women" && m.exposure.kind === "public"
+  )!;
+  const viewer = USERS.find((u) => u.key === "maleFiltered")!;
+
+  const base = await db.asUser(viewer.id, (q) =>
+    q.query<{ storage_path: string | null }>(
+      `select storage_path from public.media_items where id = $1`,
+      [cw.mediaId]
+    )
+  );
+  const view = await db.asUser(viewer.id, (q) =>
+    q.query<{ storage_path: string | null }>(
+      `select storage_path from media_items_visible where id = $1`,
+      [cw.mediaId]
+    )
+  );
+
+  expect(base.rows[0]?.storage_path).toBeTruthy();
+  expect(view.rows[0]?.storage_path).toBeNull();
+
+  // The part that actually matters: holding the path buys nothing, because
+  // storage will not sign an object the view withheld.
+  const signable = await db.asUser(viewer.id, (q) =>
+    q.query<{ n: number }>(
+      `select count(*)::int as n from storage.objects
+        where bucket_id = 'media' and name = $1`,
+      [base.rows[0]?.storage_path]
+    )
+  );
+  expect(signable.rows[0]?.n).toBe(0);
+});

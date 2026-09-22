@@ -21,6 +21,12 @@ import {
   type ClassifierProvider,
   type ClassifierVerdict,
 } from "./classifier";
+import {
+  coverageFraction,
+  padRegion,
+  type RegionLocalizer,
+} from "./regions";
+import type { ImageRedactor } from "./redactor";
 import type { MediaClassification } from "@safeplace/visibility-policy";
 
 export interface ClaimedJob {
@@ -57,7 +63,12 @@ export interface MediaFetcher {
  * different surface with different retention.
  */
 export interface WorkerLogEntry {
-  event: "classified" | "failed" | "skipped_unsupported";
+  event:
+    | "classified"
+    | "failed"
+    | "skipped_unsupported"
+    | "redacted"
+    | "redaction_declined";
   mediaItemId: string;
   classification?: MediaClassification;
   band?: string;
@@ -77,6 +88,8 @@ export interface WorkerDeps {
   workerId: string;
   thresholds: ClassificationThresholds;
   logger?: Logger;
+  /** Omit to keep the previous behaviour: filtered viewers get no image. */
+  redaction?: RedactionDeps;
 }
 
 export interface DrainSummary {
@@ -149,6 +162,14 @@ async function processJob(
       band,
       durationMs: Date.now() - startedAt,
     });
+
+    // Only flagged media is worth redacting, and only if it is configured.
+    // Runs AFTER the classification is written: this stage is additive, and a
+    // failure in it must not undo or retry a classification that succeeded.
+    if (classification === "contains_women" && deps.redaction) {
+      await runRedaction(deps, job, bytes);
+    }
+
     return "classified";
   } catch (error) {
     const message = messageOf(error);
@@ -181,4 +202,139 @@ export async function drainOnce(
   }
 
   return summary;
+}
+
+// ---------------------------------------------------------------------------
+// Redaction stage (ADR 0012)
+//
+// Optional and additive. When it is not configured, or when anything about it
+// is uncertain, the pipeline behaves exactly as it did before: the original is
+// withheld from viewers the filter applies to. Blurring is an improvement
+// offered when the pipeline is confident, never a weaker substitute for
+// withholding.
+// ---------------------------------------------------------------------------
+
+export interface RedactionRecord {
+  mediaItemId: string;
+  storagePath: string;
+  regionCount: number;
+  coverage: number;
+  localizer: string;
+  modelId: string;
+  verified: boolean;
+}
+
+export interface DerivativeStore {
+  /** Store the redacted bytes; returns the object path. */
+  put(mediaItemId: string, bytes: Uint8Array): Promise<string>;
+  /** Point the media row at the derivative and record what was done. */
+  attach(record: RedactionRecord): Promise<void>;
+}
+
+export interface RedactionDeps {
+  localizer: RegionLocalizer;
+  redactor: ImageRedactor;
+  derivatives: DerivativeStore;
+  /**
+   * Re-classifies the REDACTED output. This is the gate that makes the whole
+   * feature safe: a woman the localizer missed is still visible in the
+   * derivative, and this is what notices.
+   */
+  recheck: ClassifierProvider;
+  /**
+   * Above this fraction of the frame, don't bother. Blurring most of an image
+   * looks the same as withholding it, so it buys nothing and costs two model
+   * calls.
+   */
+  maxCoverage: number;
+  /** Grown on each side, to absorb the imprecision of model coordinates. */
+  padding: number;
+}
+
+/**
+ * Produce and attach a redacted derivative, or decline. Declining is a normal
+ * outcome, not an error: the caller has already written the classification,
+ * and without a derivative the media is simply withheld as before.
+ *
+ * Every failure inside here is swallowed for that reason — the job is done.
+ */
+async function runRedaction(
+  deps: WorkerDeps,
+  job: ClaimedJob,
+  bytes: Uint8Array
+): Promise<void> {
+  const redaction = deps.redaction;
+  if (!redaction) return;
+
+  const decline = (reason: string): void =>
+    deps.logger?.log({
+      event: "redaction_declined",
+      mediaItemId: job.mediaItemId,
+      error: reason,
+    });
+
+  try {
+    const located = await redaction.localizer.locate({
+      mediaItemId: job.mediaItemId,
+      bytes,
+      contentType: job.contentType,
+    });
+
+    // A partial set of boxes is the dangerous case: it would blur some of the
+    // women and leave the rest visible, to a viewer who believes the filter
+    // worked. Only a complete answer is usable.
+    if (!located.foundAll || located.regions.length === 0) {
+      decline("no complete set of regions");
+      return;
+    }
+
+    const padded = located.regions.map((r) => padRegion(r, redaction.padding));
+    const coverage = coverageFraction(padded);
+    if (coverage > redaction.maxCoverage) {
+      decline("regions cover too much of the frame");
+      return;
+    }
+
+    const redacted = await redaction.redactor.redact(
+      bytes,
+      padded,
+      job.contentType
+    );
+
+    // The gate. Anything short of a confident "no woman here" means the
+    // derivative is not trustworthy, and it never reaches storage.
+    const recheck = await redaction.recheck.classify({
+      mediaItemId: job.mediaItemId,
+      bytes: redacted,
+      contentType: job.contentType,
+    });
+    const recheckBand = resolveConfidenceBand(
+      womanProbabilityFrom(recheck),
+      deps.thresholds
+    );
+    if (recheckBand !== "low") {
+      decline("redacted output did not come back clean");
+      return;
+    }
+
+    const storagePath = await redaction.derivatives.put(job.mediaItemId, redacted);
+    await redaction.derivatives.attach({
+      mediaItemId: job.mediaItemId,
+      storagePath,
+      regionCount: padded.length,
+      coverage,
+      localizer: redaction.localizer.name,
+      modelId: deps.modelId,
+      verified: true,
+    });
+
+    deps.logger?.log({
+      event: "redacted",
+      mediaItemId: job.mediaItemId,
+      classification: "contains_women",
+    });
+  } catch (error) {
+    // The classification stands; only the extra derivative was lost.
+    decline(error instanceof Error ? error.message : String(error));
+  }
 }
