@@ -2,44 +2,57 @@ import type { ViewStyle } from "react-native";
 import { theme } from "../theme";
 
 /**
- * Pure styling for Toggle — the switch used in Settings (interactive) and
- * the onboarding step-3 defaults preview (readOnly). Ported from
- * design-reference/components/forms/Toggle.jsx.
+ * Pure styling for Toggle — the switch used in Settings (interactive) and the
+ * onboarding step-3 defaults preview (readOnly). Two tones:
+ *  - default: deep-indigo `primary` track + white knob when on, quiet `ink300`
+ *    track when off.
+ *  - onGlass: as it sits on the full-bleed onboarding glass card (design-lab
+ *    `.glass .tg`) — translucent-white track off, solid white track on, with
+ *    a white knob off / indigo knob on.
  *
- * RTL: the reference positions the knob with CSS `right` — the *start* edge
- * in a right-to-left document — so "on" slides the knob toward the start
- * edge. We express that with the flow-relative `start` offset instead of
- * `right`/`left` so it keeps mirroring correctly (the app forces RTL
- * globally, but `start` is the correct primitive either way).
+ * RTL: knob offset is expressed flow-relative via `start`. Per the lab
+ * (`.tg.on::after{inset-inline-start:22}`) the knob sits near the start edge
+ * when OFF and slides toward the end edge when ON.
  */
 
 const TRACK_WIDTH = 46;
-const TRACK_HEIGHT = 28;
-const KNOB_SIZE = 22;
+const TRACK_HEIGHT = 27;
+const KNOB_SIZE = 21;
 const KNOB_INSET = 3;
 
 /** The knob's `start` offset in each state — single source of truth shared
- * with the view's slide animation. */
+ * with the view's slide animation. Matches lab: off = 3, on = 22. */
 export const TOGGLE_KNOB_START = {
-  on: KNOB_INSET,
-  off: TRACK_WIDTH - KNOB_SIZE - KNOB_INSET,
+  on: TRACK_WIDTH - KNOB_SIZE - KNOB_INSET, // 22
+  off: KNOB_INSET, // 3
 } as const;
 
 export interface ResolveToggleStyleArgs {
   on: boolean;
   disabled: boolean;
+  /** Render for the full-bleed onboarding glass card. */
+  onGlass?: boolean;
 }
 
 export function resolveToggleStyle({
   on,
   disabled,
+  onGlass = false,
 }: ResolveToggleStyleArgs): { track: ViewStyle; knob: ViewStyle } {
+  const trackBg = onGlass
+    ? on
+      ? "#FFFFFF"
+      : "rgba(255,255,255,0.3)"
+    : on
+      ? theme.colors.primary
+      : theme.colors.ink300;
+  const knobBg = onGlass ? (on ? theme.colors.primary : "#FFFFFF") : theme.colors.white;
   return {
     track: {
       width: TRACK_WIDTH,
       height: TRACK_HEIGHT,
       borderRadius: theme.radius.full,
-      backgroundColor: on ? theme.colors.primary : theme.colors.ink300,
+      backgroundColor: trackBg,
       opacity: disabled ? 0.5 : 1,
     },
     knob: {
@@ -49,7 +62,7 @@ export function resolveToggleStyle({
       width: KNOB_SIZE,
       height: KNOB_SIZE,
       borderRadius: theme.radius.full,
-      backgroundColor: theme.colors.white,
+      backgroundColor: knobBg,
       ...theme.elevation.sm,
     },
   };

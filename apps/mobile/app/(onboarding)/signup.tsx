@@ -6,6 +6,7 @@ import { Button, Checkbox, GenderChoice, SystemNotice, TextField } from "@safepl
 import { signUpWithGender } from "@safeplace/api-client";
 import { supabase } from "@/lib/supabase";
 import { WizardScreen, RiseIn } from "@/screens/onboarding/WizardScreen";
+import { GlassCard } from "@/screens/onboarding/GlassCard";
 import { onboardingCopy } from "@/screens/onboarding/copy";
 import { mapAuthError } from "@/screens/onboarding/authErrors";
 import {
@@ -18,13 +19,14 @@ import {
 import { theme } from "@/lib/theme";
 
 /**
- * Step 2 — Account details + gender selection (master spec §6.2.2). Collects
- * the only mandatory data (name, email, password), the neutral gender choice
- * (no loaded explanation here — its meaning is deferred to Step 3, §6.1.1),
- * and a single terms consent. On submit it calls signUpWithGender: the gender
- * rides in auth metadata and the DB trigger seeds the gender-conditioned
- * DEFAULTS (invariant #3 — defaults, not rules; never an upload-side gate,
- * invariant #1).
+ * Step 2 — Account details + gender selection (master spec §6.2.2), "Full-bleed"
+ * composition (design-lab FINAL-SPEC.md): a cyan→indigo gradient behind a
+ * frosted-glass card. Collects the only mandatory data (name, email, password),
+ * the neutral gender choice (no loaded explanation here — its meaning is
+ * deferred to Step 3, §6.1.1), and a single terms consent. On submit it calls
+ * signUpWithGender: the gender rides in auth metadata and the DB trigger seeds
+ * the gender-conditioned DEFAULTS (invariant #3 — defaults, not rules; never an
+ * upload-side gate, invariant #1).
  *
  * With email confirmation ON, signUp returns no session; we still advance to
  * Step 3 (which needs only the chosen gender), then to the verify-email gate.
@@ -78,14 +80,24 @@ export default function SignUp() {
   }
 
   return (
-    <WizardScreen step={2}>
+    <WizardScreen variant="fullbleed">
       <RiseIn index={0}>
-        <Text style={{ ...theme.typeRole.h2, color: theme.colors.textPrimary }}>{c.title}</Text>
-      </RiseIn>
+        <GlassCard>
+          <Text
+            style={{
+              fontFamily: theme.fontFamily.display,
+              fontSize: 24, // lab .h-title is an <h2> → 1.5em
+              lineHeight: 28, // 1.18
+              color: theme.colors.white,
+              marginTop: 20, // <h2> default 0.83em block margins (lab has no reset)
+              marginBottom: 20,
+            }}
+          >
+            {c.title}
+          </Text>
 
-      <RiseIn index={1}>
-        <View style={{ gap: theme.spacing.lg }}>
           <TextField
+            onGlass
             value={name}
             onChangeText={(t) => {
               setName(t);
@@ -97,6 +109,7 @@ export default function SignUp() {
             errorText={errors.name}
           />
           <TextField
+            onGlass
             value={email}
             onChangeText={(t) => {
               setEmail(t);
@@ -112,6 +125,7 @@ export default function SignUp() {
             errorText={errors.email}
           />
           <TextField
+            onGlass
             value={password}
             onChangeText={(t) => {
               setPassword(t);
@@ -125,11 +139,19 @@ export default function SignUp() {
             errorText={errors.password}
           />
 
-          <View style={{ gap: theme.spacing.sm }}>
-            <Text style={{ ...theme.typeRole.label, color: theme.colors.textSecondary }}>
+          <View style={{ gap: 8.4 /* lab doorlbl margin-bottom 0.9u */ }}>
+            <Text
+              style={{
+                fontFamily: theme.fontFamily.semibold,
+                fontSize: 11.5, // lab .doorlbl 0.72·fs
+                letterSpacing: 0.96, // 0.06em
+                color: theme.colors.white,
+              }}
+            >
               {c.genderLabel}
             </Text>
             <GenderChoice
+              onGlass
               value={gender}
               onChange={(v) => {
                 setGender(v as Gender);
@@ -137,12 +159,13 @@ export default function SignUp() {
               }}
             />
             {errors.gender ? (
-              <Text style={{ ...theme.typeRole.meta, color: theme.colors.danger }}>{errors.gender}</Text>
+              <Text style={{ ...theme.typeRole.meta, color: theme.colors.white }}>{errors.gender}</Text>
             ) : null}
           </View>
 
           <View style={{ gap: theme.spacing.xs }}>
             <Checkbox
+              onGlass
               checked={termsAccepted}
               onChange={(v) => {
                 setTermsAccepted(v);
@@ -151,47 +174,39 @@ export default function SignUp() {
               label={<TermsLabel />}
             />
             {errors.terms ? (
-              <Text style={{ ...theme.typeRole.meta, color: theme.colors.danger }}>{errors.terms}</Text>
+              <Text style={{ ...theme.typeRole.meta, color: theme.colors.white }}>{errors.terms}</Text>
             ) : null}
           </View>
-        </View>
-      </RiseIn>
 
-      <RiseIn index={2}>
-        <View style={{ gap: theme.spacing.md }}>
           {formError ? <SystemNotice tone="danger" message={formError} /> : null}
-          <Button variant="cta" halo block disabled={submitting} onPress={handleSubmit}>
+
+          <Button variant="onGlass" size="onboarding" block disabled={submitting} onPress={handleSubmit}>
             {submitting ? c.submitting : c.submit}
           </Button>
-          <View style={{ flexDirection: "row", justifyContent: "center", gap: theme.spacing.xs }}>
-            <Text style={{ ...theme.typeRole.meta, color: theme.colors.textSecondary }}>{c.haveAccount}</Text>
-            <Text
-              onPress={() => router.push("/signin")}
-              style={{ ...theme.typeRole.meta, color: theme.colors.primary, fontFamily: theme.typeRole.bodyStrong.fontFamily }}
-            >
-              {c.goToSignIn}
-            </Text>
-          </View>
-        </View>
+        </GlassCard>
       </RiseIn>
     </WizardScreen>
   );
 }
 
 /**
- * Terms consent label with the two legal documents emphasized. The linked
- * documents themselves are pending legal sign-off (docs/legal/legal-tracker.md)
- * so the phrases are styled but not yet navigable.
+ * Terms consent label with the two legal documents emphasized. On the glass
+ * card the text and links are white (links underlined). The linked documents
+ * themselves are pending legal sign-off (docs/legal/legal-tracker.md) so the
+ * phrases are styled but not yet navigable.
  */
 function TermsLabel() {
   const c = onboardingCopy.signup;
+  // lab .terms p: 0.84·fs ≈ 13.4, line-height 1.5.
+  const base = { fontFamily: theme.fontFamily.base, fontSize: 13.4, lineHeight: 20 };
   const linkStyle = {
-    ...theme.typeRole.body,
-    color: theme.colors.primary,
-    fontFamily: theme.typeRole.bodyStrong.fontFamily,
+    ...base,
+    color: theme.colors.white,
+    fontFamily: theme.fontFamily.semibold,
+    textDecorationLine: "underline" as const,
   };
   return (
-    <Text style={{ ...theme.typeRole.body, color: theme.colors.textPrimary }}>
+    <Text style={{ ...base, color: theme.colors.white }}>
       {c.termsPrefix}
       {/* TODO(legal): link to Terms of Use once the document exists — legal-tracker.md */}
       <Text style={linkStyle}>{c.termsOfUse}</Text>

@@ -4,13 +4,19 @@ import { theme } from "../theme";
 /**
  * Pure styling for Button — kept separate from the view so it can be
  * unit-tested with vitest (no RN renderer). Ported from
- * design-reference/components/forms/Button.jsx. The one warm terracotta
- * accent is reserved for the `cta` variant (the single most important CTA of
- * a screen); everything else leads with deep blue.
+ * design-reference/components/forms/Button.jsx. The bright cyan accent backs
+ * the `cta` variant; `primary` leads with deep indigo; `onGlass` is the white
+ * pill used on the full-bleed onboarding cards (indigo label on white).
  */
 
-export type ButtonVariant = "primary" | "cta" | "secondary" | "ghost" | "danger";
-export type ButtonSize = "sm" | "md" | "lg";
+export type ButtonVariant =
+  | "primary"
+  | "cta"
+  | "secondary"
+  | "ghost"
+  | "danger"
+  | "onGlass";
+export type ButtonSize = "sm" | "md" | "lg" | "onboarding";
 export type ButtonState = "rest" | "pressed";
 
 interface VariantColors {
@@ -29,15 +35,22 @@ const VARIANTS: Record<ButtonVariant, VariantColors> = {
   },
   cta: {
     bg: theme.colors.accent,
-    bgPressed: theme.colors.terracotta700,
+    bgPressed: theme.colors.cyan700,
     text: theme.colors.white,
     border: "transparent",
   },
   secondary: {
-    bg: theme.colors.white,
+    bg: "transparent",
     bgPressed: theme.colors.blue050,
     text: theme.colors.primary,
     border: theme.colors.borderStrong,
+  },
+  // Full-bleed onboarding card CTA: solid white pill, indigo label.
+  onGlass: {
+    bg: theme.colors.white,
+    bgPressed: theme.colors.blue050,
+    text: theme.colors.primary,
+    border: "transparent",
   },
   ghost: {
     bg: "transparent",
@@ -81,6 +94,15 @@ const SIZES: Record<ButtonSize, SizeSpec> = {
     paddingVertical: 15,
     paddingHorizontal: 28,
     fontSize: theme.fontSize.lg,
+    borderRadius: theme.radius.lg,
+  },
+  // Onboarding CTA — exact lab metrics (design-lab .cta): padding 2u≈18.6,
+  // font 1.02·fs≈16.3, radius = --radius (18).
+  onboarding: {
+    minHeight: 54,
+    paddingVertical: 18.6,
+    paddingHorizontal: 18.6,
+    fontSize: 16.3,
     borderRadius: theme.radius.lg,
   },
 };

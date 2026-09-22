@@ -9,8 +9,8 @@
  */
 export const onboardingCopy = {
   welcome: {
-    tagline:
-      "מרחב חברתי שמכבד את אורח חייך — אתה שולט במה שאתה רואה, ובמה שאתה חולק.",
+    // Matches the locked design-lab welcome line (gender-neutral plural).
+    tagline: "המרחב החברתי שמכבד את אורח חייכם — ונעים לחזור אליו.",
     createAccount: "יצירת חשבון",
     signIn: "כניסה לחשבון קיים",
   },
@@ -50,6 +50,9 @@ export const onboardingCopy = {
     // same mechanism, symmetric for both (invariant #4).
     hideContentWithWomen: "אינך רואה תוכן הכולל נשים",
     hideWomenAccounts: "אינך רואה חשבונות שהוגדרו כנשיים",
+    // Small flag beside each toggle — this preview only shows the defaults, it
+    // doesn't ask (spec §6.2.3); editing lives in the personal area.
+    readonly: "תצוגה בלבד",
     continue: "הבנתי, המשך",
   },
 

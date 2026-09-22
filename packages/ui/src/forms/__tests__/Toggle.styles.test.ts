@@ -47,7 +47,15 @@ describe("resolveToggleStyle", () => {
     expect(off.knob.start).toBe(TOGGLE_KNOB_START.off);
   });
 
-  it("on slides the knob closer to the start edge than off", () => {
-    expect(TOGGLE_KNOB_START.on).toBeLessThan(TOGGLE_KNOB_START.off);
+  it("on slides the knob toward the end edge (lab: on=22 > off=3)", () => {
+    expect(TOGGLE_KNOB_START.on).toBeGreaterThan(TOGGLE_KNOB_START.off);
+  });
+
+  it("onGlass uses a white/translucent track with an indigo knob when on", () => {
+    const on = resolveToggleStyle({ on: true, disabled: false, onGlass: true });
+    const off = resolveToggleStyle({ on: false, disabled: false, onGlass: true });
+    expect(on.track.backgroundColor).toBe("#FFFFFF");
+    expect(on.knob.backgroundColor).toBe(theme.colors.primary);
+    expect(off.knob.backgroundColor).toBe("#FFFFFF");
   });
 });

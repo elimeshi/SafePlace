@@ -9,7 +9,7 @@ describe("resolveButtonStyle", () => {
     expect(s.label.color).toBe(theme.colors.textOnPrimary);
   });
 
-  it("cta uses the one warm terracotta accent", () => {
+  it("cta uses the bright cyan accent", () => {
     const s = resolveButtonStyle({ variant: "cta", size: "md", state: "rest", disabled: false });
     expect(s.container.backgroundColor).toBe(theme.colors.accent);
   });

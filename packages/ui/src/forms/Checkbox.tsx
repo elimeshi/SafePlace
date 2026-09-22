@@ -14,6 +14,8 @@ export interface CheckboxProps {
   /** Caller-provided label — often contains inline links (e.g. terms of use). */
   label?: ReactNode;
   disabled?: boolean;
+  /** Render for the full-bleed onboarding glass card (translucent box). */
+  onGlass?: boolean;
 }
 
 /**
@@ -27,8 +29,9 @@ export function Checkbox({
   onChange,
   label,
   disabled = false,
+  onGlass = false,
 }: CheckboxProps) {
-  const { box } = resolveCheckboxStyle({ checked });
+  const { box, checkColor } = resolveCheckboxStyle({ checked, onGlass });
 
   return (
     <Pressable
@@ -40,10 +43,14 @@ export function Checkbox({
     >
       <View style={box}>
         {checked ? (
-          <Icon name="check" size={16} color={theme.colors.white} strokeWidth={3} />
+          <Icon name="check" size={16} color={checkColor} strokeWidth={3} />
         ) : null}
       </View>
-      {label ? <Text style={checkboxLabelStyle}>{label}</Text> : null}
+      {label ? (
+        <Text style={[checkboxLabelStyle, onGlass ? { color: theme.colors.white } : null]}>
+          {label}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }

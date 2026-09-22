@@ -1,7 +1,8 @@
-import { Text, View } from "react-native";
+import { Text } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "@safeplace/ui";
 import { WizardScreen, RiseIn } from "@/screens/onboarding/WizardScreen";
+import { GlassCard } from "@/screens/onboarding/GlassCard";
 import { onboardingCopy } from "@/screens/onboarding/copy";
 import { theme } from "@/lib/theme";
 
@@ -21,29 +22,23 @@ export default function VerifyEmail() {
   const body = c.body.replace("{email}", email && email.length > 0 ? email : "");
 
   return (
-    <WizardScreen>
-      <View style={{ flex: 1, justifyContent: "center", gap: theme.spacing.lg }}>
-        <RiseIn index={0}>
-          <Text style={{ ...theme.typeRole.h2, color: theme.colors.textPrimary, textAlign: "center" }}>
+    <WizardScreen variant="fullbleed">
+      <RiseIn index={0}>
+        <GlassCard>
+          <Text style={{ ...theme.typeRole.h2, color: theme.colors.white, textAlign: "center" }}>
             {c.title}
           </Text>
-        </RiseIn>
-        <RiseIn index={1}>
-          <Text style={{ ...theme.typeRole.body, color: theme.colors.textSecondary, textAlign: "center" }}>
+          <Text style={{ ...theme.typeRole.body, color: "rgba(255,255,255,0.9)", textAlign: "center" }}>
             {body}
           </Text>
-        </RiseIn>
-        <RiseIn index={2}>
-          <Text style={{ ...theme.typeRole.meta, color: theme.colors.ink400, textAlign: "center" }}>
+          <Text style={{ ...theme.typeRole.meta, color: "rgba(255,255,255,0.7)", textAlign: "center" }}>
             {c.hint}
           </Text>
-        </RiseIn>
-        <RiseIn index={3}>
-          <Button variant="cta" halo block onPress={() => router.replace("/signin")}>
+          <Button variant="onGlass" size="lg" halo block onPress={() => router.replace("/signin")}>
             {c.goToSignIn}
           </Button>
-        </RiseIn>
-      </View>
+        </GlassCard>
+      </RiseIn>
     </WizardScreen>
   );
 }

@@ -26,9 +26,9 @@ export interface ButtonProps {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
- * Safe-Place Button. Deep-blue `primary` by default; the single warm
- * terracotta `cta` variant is reserved for the most important action on a
- * screen and can carry the breathing `halo`. Press feedback is a subtle
+ * Safe-Place Button. Deep-indigo `primary` by default; the bright cyan `cta`
+ * variant can carry the breathing `halo`; `onGlass` is the white pill used on
+ * the full-bleed onboarding cards. Press feedback is a subtle
  * scale(0.97); both animations gate on reduced motion. Label text is RTL by
  * default (the app forces RTL globally), so no manual mirroring is needed.
  */

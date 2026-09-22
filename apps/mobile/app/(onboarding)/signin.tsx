@@ -5,6 +5,7 @@ import { Button, SystemNotice, TextField } from "@safeplace/ui";
 import { signIn } from "@safeplace/api-client";
 import { supabase } from "@/lib/supabase";
 import { WizardScreen, RiseIn } from "@/screens/onboarding/WizardScreen";
+import { GlassCard } from "@/screens/onboarding/GlassCard";
 import { onboardingCopy } from "@/screens/onboarding/copy";
 import { mapAuthError } from "@/screens/onboarding/authErrors";
 import { isValidEmail, validateSignin, hasErrors, type SigninErrors } from "@/screens/onboarding/validation";
@@ -51,14 +52,13 @@ export default function SignIn() {
   }
 
   return (
-    <WizardScreen>
+    <WizardScreen variant="fullbleed">
       <RiseIn index={0}>
-        <Text style={{ ...theme.typeRole.h2, color: theme.colors.textPrimary }}>{c.title}</Text>
-      </RiseIn>
+        <GlassCard>
+          <Text style={{ ...theme.typeRole.h2, color: theme.colors.white }}>{c.title}</Text>
 
-      <RiseIn index={1}>
-        <View style={{ gap: theme.spacing.lg }}>
           <TextField
+            onGlass
             value={email}
             onChangeText={(t) => {
               setEmail(t);
@@ -74,6 +74,7 @@ export default function SignIn() {
             errorText={errors.email}
           />
           <TextField
+            onGlass
             value={password}
             onChangeText={(t) => {
               setPassword(t);
@@ -85,25 +86,27 @@ export default function SignIn() {
             textContentType="password"
             errorText={errors.password}
           />
-        </View>
-      </RiseIn>
 
-      <RiseIn index={2}>
-        <View style={{ gap: theme.spacing.md }}>
           {formError ? <SystemNotice tone="danger" message={formError} /> : null}
-          <Button variant="cta" halo block disabled={submitting} onPress={handleSubmit}>
+
+          <Button variant="onGlass" size="lg" halo block disabled={submitting} onPress={handleSubmit}>
             {submitting ? c.submitting : c.submit}
           </Button>
           <View style={{ flexDirection: "row", justifyContent: "center", gap: theme.spacing.xs }}>
-            <Text style={{ ...theme.typeRole.meta, color: theme.colors.textSecondary }}>{c.noAccount}</Text>
+            <Text style={{ ...theme.typeRole.meta, color: "rgba(255,255,255,0.85)" }}>{c.noAccount}</Text>
             <Text
               onPress={() => router.push("/signup")}
-              style={{ ...theme.typeRole.meta, color: theme.colors.primary, fontFamily: theme.typeRole.bodyStrong.fontFamily }}
+              style={{
+                ...theme.typeRole.meta,
+                color: theme.colors.white,
+                fontFamily: theme.typeRole.bodyStrong.fontFamily,
+                textDecorationLine: "underline",
+              }}
             >
               {c.goToSignUp}
             </Text>
           </View>
-        </View>
+        </GlassCard>
       </RiseIn>
     </WizardScreen>
   );

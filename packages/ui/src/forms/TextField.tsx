@@ -22,6 +22,8 @@ export interface TextFieldProps {
   /** Shows the small success check at the field's end. */
   valid?: boolean;
   errorText?: string;
+  /** Render for the full-bleed onboarding glass card (white fill, dark text). */
+  onGlass?: boolean;
 }
 
 /**
@@ -47,23 +49,25 @@ export function TextField({
   textContentType,
   valid = false,
   errorText,
+  onGlass = false,
 }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
   const hasValue = value.length > 0;
   const floated = focused || hasValue;
-  const { wrapper, input, label: labelStyle, showCheck } = resolveFieldStyle({
+  const { wrapper, input, label: labelStyle, showCheck, checkColor } = resolveFieldStyle({
     focused,
     valid,
     hasValue,
+    onGlass,
   });
 
   return (
     <View style={{ gap: theme.spacing.xs }}>
       <View
         style={{
-          borderRadius: theme.radius.sm + FOCUS_RING_WIDTH,
-          padding: focused ? FOCUS_RING_WIDTH : 0,
-          backgroundColor: focused ? theme.colors.blue100 : "transparent",
+          borderRadius: theme.radius.lg + FOCUS_RING_WIDTH,
+          padding: focused && !onGlass ? FOCUS_RING_WIDTH : 0,
+          backgroundColor: focused && !onGlass ? theme.colors.blue100 : "transparent",
         }}
       >
         <View
@@ -92,7 +96,7 @@ export function TextField({
             <Icon
               name="check"
               size={CHECK_ICON_SIZE}
-              color={theme.colors.success}
+              color={checkColor}
               style={{
                 position: "absolute",
                 end: theme.spacing.md,

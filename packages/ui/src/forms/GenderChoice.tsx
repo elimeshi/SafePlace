@@ -12,6 +12,8 @@ export interface GenderChoiceProps {
   /** Defaults to גבר / אישה — prop-overridable, never hardcoded downstream. */
   options?: GenderChoiceOption[];
   style?: ViewStyle;
+  /** Render for the full-bleed onboarding glass card (translucent doors). */
+  onGlass?: boolean;
 }
 
 const DEFAULT_OPTIONS: GenderChoiceOption[] = [
@@ -32,12 +34,13 @@ export function GenderChoice({
   onChange,
   options = DEFAULT_OPTIONS,
   style,
+  onGlass = false,
 }: GenderChoiceProps) {
   return (
     <View style={[resolveGenderChoiceRowStyle(), style]}>
       {options.map((opt) => {
         const selected = value === opt.value;
-        const { container, label } = resolveDoorStyle({ selected });
+        const { container, label } = resolveDoorStyle({ selected, onGlass });
         return (
           <Pressable
             key={opt.value}

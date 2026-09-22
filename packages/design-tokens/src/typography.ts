@@ -1,19 +1,22 @@
 /**
- * Safe-Place typography tokens — finalized from the locked design system
- * (design-reference/tokens/typography.css). Rubik = primary UI + display;
- * Heebo = companion for numerals/dense text. Near-zero letter-spacing
- * (Hebrew wants it tight), comfortable body line-height.
+ * Safe-Place typography tokens — "Indigo Nights" (design-lab/FINAL-SPEC.md).
+ * Rubik = display / headings / buttons; Assistant = body, fields, meta.
+ * Both cover Hebrew. Near-zero letter-spacing (Hebrew wants it tight),
+ * comfortable body line-height.
  *
- * Font files are loaded via expo-font in apps/mobile (wired in Phase 2 —
- * the onboarding screen is where they first render on a device).
+ * Family names match the loaded @expo-google-fonts identifiers, wired via
+ * expo-font/useFonts in apps/mobile/app/_layout.tsx — until loading finishes
+ * RN falls back to the system font.
  */
 
 export const fontFamily = {
-  base: "Rubik",
-  medium: "Rubik-Medium",
-  semibold: "Rubik-SemiBold",
-  bold: "Rubik-Bold",
-  numeric: "Heebo",
+  base: "Assistant_400Regular",
+  medium: "Assistant_500Medium",
+  semibold: "Assistant_600SemiBold",
+  bold: "Assistant_700Bold",
+  display: "Rubik_700Bold",
+  displaySemibold: "Rubik_600SemiBold",
+  numeric: "Assistant_400Regular",
 } as const;
 
 export const fontSize = {
@@ -51,14 +54,16 @@ export const tracking = {
  * Semantic type roles as React Native TextStyle fragments (fontSize and
  * lineHeight in px). Compose with a color at the call site; RTL text
  * direction is handled by the app's global RTL bootstrap, not here.
+ * Display roles ride Rubik; reading roles ride Assistant.
  */
 export const typeRole = {
-  display: { fontFamily: "Rubik-Bold", fontSize: 38, lineHeight: 44 },
-  h1: { fontFamily: "Rubik-Bold", fontSize: 30, lineHeight: 36 },
-  h2: { fontFamily: "Rubik-SemiBold", fontSize: 24, lineHeight: 30 },
-  h3: { fontFamily: "Rubik-SemiBold", fontSize: 20, lineHeight: 26 },
-  body: { fontFamily: "Rubik", fontSize: 16, lineHeight: 26 },
-  bodyStrong: { fontFamily: "Rubik-Medium", fontSize: 16, lineHeight: 26 },
-  meta: { fontFamily: "Rubik", fontSize: 14, lineHeight: 20 },
-  label: { fontFamily: "Rubik-Medium", fontSize: 12, lineHeight: 16 },
+  display: { fontFamily: "Rubik_700Bold", fontSize: 38, lineHeight: 44 },
+  wordmark: { fontFamily: "Rubik_700Bold", fontSize: 37, lineHeight: 44 },
+  h1: { fontFamily: "Rubik_700Bold", fontSize: 30, lineHeight: 36 },
+  h2: { fontFamily: "Rubik_700Bold", fontSize: 26, lineHeight: 32 },
+  h3: { fontFamily: "Rubik_600SemiBold", fontSize: 20, lineHeight: 26 },
+  body: { fontFamily: "Assistant_400Regular", fontSize: 16, lineHeight: 26 },
+  bodyStrong: { fontFamily: "Assistant_600SemiBold", fontSize: 16, lineHeight: 26 },
+  meta: { fontFamily: "Assistant_400Regular", fontSize: 14, lineHeight: 20 },
+  label: { fontFamily: "Assistant_600SemiBold", fontSize: 12, lineHeight: 16 },
 } as const;

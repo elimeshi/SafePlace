@@ -3,13 +3,15 @@ import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { resolveDefaultFilterSettings, type Gender } from "@safeplace/visibility-policy";
 import { Button, Toggle } from "@safeplace/ui";
 import { WizardScreen, RiseIn } from "@/screens/onboarding/WizardScreen";
+import { GlassCard } from "@/screens/onboarding/GlassCard";
 import { onboardingCopy } from "@/screens/onboarding/copy";
 import { theme } from "@/lib/theme";
 
 /**
- * Step 3 — "Your defaults" (master spec §6.2.3). READ-ONLY BY DESIGN, not a
- * loophole (visibility-model.md §5): it fulfils the transparency duty — the
- * user is *told* what was set for them and told they can change it — without
+ * Step 3 — "Your defaults" (master spec §6.2.3), "Full-bleed" composition
+ * (design-lab FINAL-SPEC.md). READ-ONLY BY DESIGN, not a loophole
+ * (visibility-model.md §5): it fulfils the transparency duty — the user is
+ * *told* what was set for them and told they can change it — without
  * overwhelming a brand-new user with settings. Editing lives in the personal
  * area (Phase 6).
  *
@@ -42,49 +44,83 @@ export default function Defaults() {
   ];
 
   return (
-    <WizardScreen step={3}>
+    <WizardScreen variant="fullbleed">
       <RiseIn index={0}>
-        <Text style={{ ...theme.typeRole.h2, color: theme.colors.textPrimary }}>{c.title}</Text>
-      </RiseIn>
+        <GlassCard>
+          <Text
+            style={{
+              fontFamily: theme.fontFamily.display,
+              fontSize: 24, // lab .h-title <h2> 1.5em
+              lineHeight: 28, // 1.18
+              color: theme.colors.white,
+              marginTop: 20, // <h2> default 0.83em margins (lab has no reset)
+              marginBottom: 20,
+            }}
+          >
+            {c.title}
+          </Text>
 
-      <RiseIn index={1}>
-        <Text style={{ ...theme.typeRole.body, color: theme.colors.textSecondary }}>{c.intro}</Text>
-      </RiseIn>
+          <Text
+            style={{
+              fontFamily: theme.fontFamily.base,
+              fontSize: 15, // lab .fb-intro 0.94·fs
+              lineHeight: 22.5, // 1.5
+              color: "rgba(255,255,255,0.9)",
+            }}
+          >
+            {c.intro}
+          </Text>
 
-      <View style={{ gap: theme.spacing.md }}>
-        {rows.map((row, i) => (
-          <RiseIn key={row.key} index={2 + i}>
+          {rows.map((row) => (
             <View
+              key={row.key}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "space-between",
-                gap: theme.spacing.md,
-                paddingVertical: theme.spacing.md,
-                paddingHorizontal: theme.spacing.lg,
-                borderRadius: theme.radius.lg,
-                backgroundColor: theme.colors.backgroundMuted,
+                gap: 13, // lab .trow gap 1.4u
+                paddingTop: 13, // lab divider padding-top 1.4u
+                borderTopWidth: 1,
+                borderTopColor: "rgba(255,255,255,0.22)",
               }}
             >
-              <Text style={{ ...theme.typeRole.body, color: theme.colors.textPrimary, flex: 1 }}>
+              <Text
+                style={{
+                  fontFamily: theme.fontFamily.base,
+                  fontSize: 15.4, // lab .trow p 0.96·fs
+                  lineHeight: 21.8, // 1.42
+                  color: theme.colors.white,
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
                 {row.label}
               </Text>
               {/* Display-only: informs, never asks (spec §6.2.3). */}
-              <Toggle value={row.value} readOnly />
+              <View style={{ alignItems: "center", gap: 4 }}>
+                <Toggle value={row.value} readOnly onGlass />
+                <Text
+                  style={{
+                    fontFamily: theme.fontFamily.base,
+                    fontSize: 9.6, // lab .roflag 0.6·fs
+                    color: "rgba(255,255,255,0.75)",
+                  }}
+                >
+                  {c.readonly}
+                </Text>
+              </View>
             </View>
-          </RiseIn>
-        ))}
-      </View>
+          ))}
 
-      <RiseIn index={2 + rows.length}>
-        <Button
-          variant="cta"
-          halo
-          block
-          onPress={() => router.push({ pathname: "/verify", params: { email: email ?? "" } })}
-        >
-          {c.continue}
-        </Button>
+          <Button
+            variant="onGlass"
+            size="onboarding"
+            block
+            onPress={() => router.push({ pathname: "/verify", params: { email: email ?? "" } })}
+          >
+            {c.continue}
+          </Button>
+        </GlassCard>
       </RiseIn>
     </WizardScreen>
   );

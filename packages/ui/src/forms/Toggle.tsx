@@ -18,6 +18,8 @@ export interface ToggleProps {
    * onboarding step-3 defaults preview (spec §6.2.3): the user is informed
    * of their defaults, not asked. */
   readOnly?: boolean;
+  /** Render for the full-bleed onboarding glass card. */
+  onGlass?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -34,9 +36,10 @@ export function Toggle({
   onValueChange,
   disabled = false,
   readOnly = false,
+  onGlass = false,
 }: ToggleProps) {
   const reducedMotion = useReducedMotion();
-  const { track, knob } = resolveToggleStyle({ on: value, disabled });
+  const { track, knob } = resolveToggleStyle({ on: value, disabled, onGlass });
   const knobStart = useSharedValue(
     value ? TOGGLE_KNOB_START.on : TOGGLE_KNOB_START.off
   );

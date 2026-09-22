@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
-    "primaryColor": "#2C5985",
+    "primaryColor": "#2E3A8C",
     "extra": {
       "rtl": true
     },

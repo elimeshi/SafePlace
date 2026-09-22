@@ -3,13 +3,13 @@ import { colors, groupPalette } from "../colors";
 
 describe("colors", () => {
   it("primary + accent match the locked brand", () => {
-    expect(colors.primary).toBe("#2C5985");
-    expect(colors.accent).toBe("#C97D4F");
+    expect(colors.primary).toBe("#2E3A8C");
+    expect(colors.accent).toBe("#22C3D6");
   });
 
   it("exposes the full blue ramp", () => {
-    expect(colors.blue900).toBe("#10263C");
-    expect(colors.blue050).toBe("#F2F6FA");
+    expect(colors.blue900).toBe("#101A3A");
+    expect(colors.blue050).toBe("#F3F5FC");
   });
 
   it("exposes semantic status + feed-label tokens", () => {
@@ -20,14 +20,15 @@ describe("colors", () => {
 
   it("keeps the flat semantic aliases wired to the ramp", () => {
     expect(colors.textPrimary).toBe(colors.ink900);
-    expect(colors.background).toBe(colors.white);
+    expect(colors.background).toBe(colors.blue050);
+    expect(colors.surface).toBe(colors.white);
   });
 });
 
 describe("groupPalette", () => {
   it("has the 12 locked colors (pre-defined, not free choice)", () => {
     expect(groupPalette).toHaveLength(12);
-    expect(groupPalette[0]).toBe("#2C5985"); // matches primary
-    expect(groupPalette[2]).toBe("#C97D4F"); // matches accent
+    expect(groupPalette[0]).toBe("#2E3A8C"); // matches primary
+    expect(groupPalette[2]).toBe("#22C3D6"); // matches accent
   });
 });

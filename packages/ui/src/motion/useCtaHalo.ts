@@ -12,7 +12,7 @@ import { colors, motion } from "@safeplace/design-tokens";
 
 /**
  * The very slow "breathing" halo on a primary CTA (§6.3.2, ~3.5s cycle) — a
- * soft terracotta glow that swells and fades to signal the button is live.
+ * soft cyan glow that swells and fades to signal the button is live.
  * Apply the returned style to the CTA's Animated wrapper. Disabled under
  * reduced motion or when `enabled` is false.
  */
@@ -38,7 +38,7 @@ export function useCtaHalo(enabled = true) {
   }, [enabled, reducedMotion, pulse]);
 
   return useAnimatedStyle(() => ({
-    shadowColor: colors.terracotta500,
+    shadowColor: colors.cyan500,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: pulse.value * 0.14,
     shadowRadius: 2 + pulse.value * 6,

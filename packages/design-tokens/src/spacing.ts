@@ -15,9 +15,9 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 6, // inputs, small chips
-  md: 10, // buttons, source labels
-  lg: 16, // cards, sheets
-  xl: 22, // large media, onboarding panels
-  full: 9999, // avatars, pills
+  sm: 6, // checkboxes, small chips
+  md: 12, // source labels
+  lg: 18, // inputs, doors, buttons — "Indigo Nights" base radius
+  xl: 24, // glass cards, sheets, onboarding panels
+  full: 9999, // avatars, pills, toggles
 } as const;

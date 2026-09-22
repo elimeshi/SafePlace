@@ -4,8 +4,8 @@ import { radius } from "../spacing";
 import { elevation } from "../elevation";
 
 describe("typography", () => {
-  it("adds Heebo as the numeric companion family", () => {
-    expect(fontFamily.numeric).toBe("Heebo");
+  it("uses Assistant as the numeric companion family", () => {
+    expect(fontFamily.numeric).toBe("Assistant_400Regular");
   });
 
   it("adds the 4xl onboarding display size", () => {
@@ -19,13 +19,13 @@ describe("typography", () => {
 
   it("exposes a semantic display type role", () => {
     expect(typeRole.display.fontSize).toBe(38);
-    expect(typeRole.display.fontFamily).toBe("Rubik-Bold");
+    expect(typeRole.display.fontFamily).toBe("Rubik_700Bold");
   });
 });
 
 describe("radius", () => {
-  it("adds the large-media xl radius", () => {
-    expect(radius.xl).toBe(22);
+  it("adds the large glass-card xl radius", () => {
+    expect(radius.xl).toBe(24);
   });
 });
 

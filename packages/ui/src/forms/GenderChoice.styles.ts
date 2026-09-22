@@ -13,30 +13,55 @@ import { theme } from "../theme";
 
 export interface ResolveDoorStyleArgs {
   selected: boolean;
+  /** Render for the full-bleed onboarding glass card (translucent doors). */
+  onGlass?: boolean;
 }
 
 export function resolveDoorStyle({
   selected,
+  onGlass = false,
 }: ResolveDoorStyleArgs): { container: ViewStyle; label: TextStyle } {
+  const base: ViewStyle = {
+    flex: 1,
+    minWidth: 0, // rn-web: let the door shrink below its label width
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+    minHeight: 65, // lab .door min-height 7u
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.radius.lg,
+  };
+
+  if (onGlass) {
+    return {
+      container: {
+        ...base,
+        borderWidth: selected ? 2 : 1.5,
+        borderColor: selected ? "#FFFFFF" : "rgba(255,255,255,0.3)",
+        backgroundColor: selected ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0.15)",
+      },
+      label: {
+        color: selected ? theme.colors.primary : theme.colors.white,
+        fontFamily: theme.fontFamily.display,
+        fontSize: 16.3, // lab .door span 1.02·fs
+        textAlign: "center",
+      },
+    };
+  }
+
   return {
     container: {
-      flex: 1,
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: theme.spacing.sm,
-      minHeight: 108,
-      paddingVertical: theme.spacing.xl,
-      paddingHorizontal: theme.spacing.xl,
-      borderRadius: theme.radius.lg,
-      borderWidth: 2,
+      ...base,
+      borderWidth: selected ? 2 : 1.5,
       borderColor: selected ? theme.colors.primary : theme.colors.border,
-      backgroundColor: selected ? theme.colors.blue050 : theme.colors.white,
+      backgroundColor: selected ? theme.colors.blue050 : theme.colors.surface,
     },
     label: {
       color: selected ? theme.colors.primary : theme.colors.textPrimary,
-      fontFamily: theme.fontFamily.semibold,
-      fontSize: theme.fontSize.xl,
+      fontFamily: theme.fontFamily.display,
+      fontSize: 16.3, // lab .door span 1.02·fs
       textAlign: "center",
     },
   };
@@ -49,6 +74,6 @@ export function resolveDoorStyle({
 export function resolveGenderChoiceRowStyle(): ViewStyle {
   return {
     flexDirection: "row",
-    gap: theme.spacing.md,
+    gap: 13, // lab .doors gap 1.4u
   };
 }

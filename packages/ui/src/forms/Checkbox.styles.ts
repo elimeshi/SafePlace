@@ -12,11 +12,29 @@ const BOX_SIZE = 22;
 
 export interface ResolveCheckboxStyleArgs {
   checked: boolean;
+  /** Render for the full-bleed onboarding glass card. */
+  onGlass?: boolean;
 }
 
 export function resolveCheckboxStyle({
   checked,
-}: ResolveCheckboxStyleArgs): { box: ViewStyle } {
+  onGlass = false,
+}: ResolveCheckboxStyleArgs): { box: ViewStyle; checkColor: string } {
+  if (onGlass) {
+    return {
+      box: {
+        width: BOX_SIZE,
+        height: BOX_SIZE,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: theme.radius.sm,
+        borderWidth: 1.5,
+        borderColor: checked ? "#FFFFFF" : "rgba(255,255,255,0.5)",
+        backgroundColor: checked ? "#FFFFFF" : "rgba(255,255,255,0.28)",
+      },
+      checkColor: theme.colors.primary,
+    };
+  }
   return {
     box: {
       width: BOX_SIZE,
@@ -28,6 +46,7 @@ export function resolveCheckboxStyle({
       borderColor: checked ? theme.colors.primary : theme.colors.borderStrong,
       backgroundColor: checked ? theme.colors.primary : theme.colors.white,
     },
+    checkColor: theme.colors.white,
   };
 }
 
@@ -40,7 +59,7 @@ export function resolveCheckboxStyle({
 export const checkboxRowStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "flex-start",
-  gap: theme.spacing.md,
+  gap: 10, // lab .terms gap 1.1u
 };
 
 /** Label text beside the box — caller-provided content, may contain links. */
@@ -48,4 +67,7 @@ export const checkboxLabelStyle: TextStyle = {
   ...theme.typeRole.meta,
   color: theme.colors.textSecondary,
   flexShrink: 1,
+  // rn-web: allow the label to shrink below its content width so long consent
+  // text wraps inside the row instead of forcing the card past the viewport.
+  minWidth: 0,
 };
