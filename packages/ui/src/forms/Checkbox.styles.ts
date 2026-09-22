@@ -10,15 +10,22 @@ import { theme } from "../theme";
 
 const BOX_SIZE = 22;
 
+/** Light red for the error box border on the dark glass — the default danger
+ * (#C53030) is near-invisible there. */
+const DANGER_ON_GLASS = "#FF8792";
+
 export interface ResolveCheckboxStyleArgs {
   checked: boolean;
   /** Render for the full-bleed onboarding glass card. */
   onGlass?: boolean;
+  /** Flag the box (unchecked required consent submitted). */
+  error?: boolean;
 }
 
 export function resolveCheckboxStyle({
   checked,
   onGlass = false,
+  error = false,
 }: ResolveCheckboxStyleArgs): { box: ViewStyle; checkColor: string } {
   if (onGlass) {
     return {
@@ -28,8 +35,8 @@ export function resolveCheckboxStyle({
         alignItems: "center",
         justifyContent: "center",
         borderRadius: theme.radius.sm,
-        borderWidth: 1.5,
-        borderColor: checked ? "#FFFFFF" : "rgba(255,255,255,0.5)",
+        borderWidth: error && !checked ? 2 : 1.5,
+        borderColor: error && !checked ? DANGER_ON_GLASS : checked ? "#FFFFFF" : "rgba(255,255,255,0.5)",
         backgroundColor: checked ? "#FFFFFF" : "rgba(255,255,255,0.28)",
       },
       checkColor: theme.colors.primary,
@@ -42,8 +49,8 @@ export function resolveCheckboxStyle({
       alignItems: "center",
       justifyContent: "center",
       borderRadius: theme.radius.sm,
-      borderWidth: 1.5,
-      borderColor: checked ? theme.colors.primary : theme.colors.borderStrong,
+      borderWidth: error && !checked ? 2 : 1.5,
+      borderColor: error && !checked ? theme.colors.danger : checked ? theme.colors.primary : theme.colors.borderStrong,
       backgroundColor: checked ? theme.colors.primary : theme.colors.white,
     },
     checkColor: theme.colors.white,

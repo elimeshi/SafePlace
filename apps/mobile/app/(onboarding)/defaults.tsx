@@ -4,6 +4,7 @@ import { resolveDefaultFilterSettings, type Gender } from "@safeplace/visibility
 import { Button, Toggle } from "@safeplace/ui";
 import { WizardScreen, RiseIn } from "@/screens/onboarding/WizardScreen";
 import { GlassCard } from "@/screens/onboarding/GlassCard";
+import { Pdots } from "@/screens/onboarding/Pdots";
 import { onboardingCopy } from "@/screens/onboarding/copy";
 import { theme } from "@/lib/theme";
 
@@ -45,7 +46,11 @@ export default function Defaults() {
 
   return (
     <WizardScreen variant="fullbleed">
-      <RiseIn index={0}>
+      {/* Step 3 of 3 — same progress dots as Welcome, light tone for the dark ground. */}
+      <RiseIn index={0} style={{ alignItems: "center", marginBottom: 20.4 }}>
+        <Pdots current={3} tone="light" />
+      </RiseIn>
+      <RiseIn index={1}>
         <GlassCard>
           <Text
             style={{

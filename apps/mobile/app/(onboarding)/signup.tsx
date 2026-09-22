@@ -7,6 +7,7 @@ import { signUpWithGender } from "@safeplace/api-client";
 import { supabase } from "@/lib/supabase";
 import { WizardScreen, RiseIn } from "@/screens/onboarding/WizardScreen";
 import { GlassCard } from "@/screens/onboarding/GlassCard";
+import { Pdots } from "@/screens/onboarding/Pdots";
 import { onboardingCopy } from "@/screens/onboarding/copy";
 import { mapAuthError } from "@/screens/onboarding/authErrors";
 import {
@@ -17,6 +18,10 @@ import {
   type SignupErrors,
 } from "@/screens/onboarding/validation";
 import { theme } from "@/lib/theme";
+
+/** Light red for validation messages on the dark glass card — the default
+ * danger red (#C53030) is near-invisible there. */
+const DANGER_ON_GLASS = "#FF8792";
 
 /**
  * Step 2 — Account details + gender selection (master spec §6.2.2), "Full-bleed"
@@ -81,7 +86,11 @@ export default function SignUp() {
 
   return (
     <WizardScreen variant="fullbleed">
-      <RiseIn index={0}>
+      {/* Step 2 of 3 — same progress dots as Welcome, light tone for the dark ground. */}
+      <RiseIn index={0} style={{ alignItems: "center", marginBottom: 20.4 }}>
+        <Pdots current={2} tone="light" />
+      </RiseIn>
+      <RiseIn index={1}>
         <GlassCard>
           <Text
             style={{
@@ -159,13 +168,14 @@ export default function SignUp() {
               }}
             />
             {errors.gender ? (
-              <Text style={{ ...theme.typeRole.meta, color: theme.colors.white }}>{errors.gender}</Text>
+              <Text style={{ ...theme.typeRole.meta, color: DANGER_ON_GLASS }}>{errors.gender}</Text>
             ) : null}
           </View>
 
           <View style={{ gap: theme.spacing.xs }}>
             <Checkbox
               onGlass
+              error={!!errors.terms}
               checked={termsAccepted}
               onChange={(v) => {
                 setTermsAccepted(v);
@@ -174,7 +184,7 @@ export default function SignUp() {
               label={<TermsLabel />}
             />
             {errors.terms ? (
-              <Text style={{ ...theme.typeRole.meta, color: theme.colors.white }}>{errors.terms}</Text>
+              <Text style={{ ...theme.typeRole.meta, color: DANGER_ON_GLASS }}>{errors.terms}</Text>
             ) : null}
           </View>
 

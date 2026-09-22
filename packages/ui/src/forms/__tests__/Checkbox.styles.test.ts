@@ -30,4 +30,22 @@ describe("resolveCheckboxStyle", () => {
     expect(s.box.width as number).toBeGreaterThanOrEqual(20);
     expect(s.box.width as number).toBeLessThanOrEqual(22);
   });
+
+  it("flags an unchecked box on error (default: danger border, thicker)", () => {
+    const s = resolveCheckboxStyle({ checked: false, error: true });
+    expect(s.box.borderColor).toBe(theme.colors.danger);
+    expect(s.box.borderWidth).toBe(2);
+  });
+
+  it("error is ignored once the box is checked", () => {
+    const s = resolveCheckboxStyle({ checked: true, error: true });
+    expect(s.box.borderColor).toBe(theme.colors.primary);
+    expect(s.box.borderWidth).toBe(1.5);
+  });
+
+  it("on glass, an error border uses a light red (readable on the dark card)", () => {
+    const s = resolveCheckboxStyle({ checked: false, onGlass: true, error: true });
+    expect(s.box.borderColor).toBe("#FF8792");
+    expect(s.box.borderWidth).toBe(2);
+  });
 });
