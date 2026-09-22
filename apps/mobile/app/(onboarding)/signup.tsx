@@ -7,6 +7,7 @@ import { signUpWithGender } from "@safeplace/api-client";
 import { supabase } from "@/lib/supabase";
 import { WizardScreen, RiseIn } from "@/screens/onboarding/WizardScreen";
 import { GlassCard } from "@/screens/onboarding/GlassCard";
+import { Pdots } from "@/screens/onboarding/Pdots";
 import { onboardingCopy } from "@/screens/onboarding/copy";
 import { mapAuthError } from "@/screens/onboarding/authErrors";
 import {
@@ -81,7 +82,11 @@ export default function SignUp() {
 
   return (
     <WizardScreen variant="fullbleed">
-      <RiseIn index={0}>
+      {/* Step 2 of 3 — same progress dots as Welcome, light tone for the dark ground. */}
+      <RiseIn index={0} style={{ alignItems: "center", marginBottom: 20.4 }}>
+        <Pdots current={2} tone="light" />
+      </RiseIn>
+      <RiseIn index={1}>
         <GlassCard>
           <Text
             style={{

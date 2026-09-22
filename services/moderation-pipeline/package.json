@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@safeplace/shared-types": "workspace:*",
     "@safeplace/visibility-policy": "workspace:*",
     "@supabase/supabase-js": "^2.45.0"
