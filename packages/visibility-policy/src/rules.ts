@@ -50,10 +50,20 @@ export function viewerSatisfiesClassification(
 
   switch (classification) {
     case "general":
-    case "unclassified":
-      // Unclassified media is shown as "processing", not hidden — see
-      // moderation-pipeline.md §2. It is not treated as filtered content.
       return true;
+    case "unclassified":
+      // Fail CLOSED until the pipeline resolves the item. Classification is
+      // asynchronous (moderation-pipeline.md §2), so there is a window
+      // between upload and the worker's write in which nothing is known
+      // about the content — serving the original during that window would
+      // show a filtered viewer exactly what the filter exists to withhold.
+      //
+      // This withholds the reference, not the row: media_items stays
+      // SELECTable so the UI can render a "processing" state (distinguished
+      // from the filtered state by the classification value it is served
+      // alongside). The uploader is unaffected — canViewMedia short-circuits
+      // for them before this axis is evaluated.
+      return false;
     case "pending_review":
       // Frozen until a moderator decides. This pure axis returns false for
       // everyone; the uploader's own view is granted by canViewMedia's

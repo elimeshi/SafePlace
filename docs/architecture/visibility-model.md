@@ -45,7 +45,8 @@ Set automatically by the LLM classification pipeline at upload time.
 Answers "does this media contain women, and how confident is the
 classifier":
 
-- `unclassified` (queued/processing)
+- `unclassified` (queued/processing — withheld from everyone but the
+  uploader until the pipeline resolves it; see §3)
 - `general` (low probability — approved automatically)
 - `pending_review` (medium probability — frozen until human review)
 - `contains_women` (high probability — auto-flagged)
@@ -76,10 +77,21 @@ own filter settings. The same principle applies to a user's own profile photo
 
 ```
 viewerSatisfiesClassification(viewer, classification) =
-     classification != 'contains_women'
-  OR viewer.filterSettings.hideContentWithWomen == false
-  OR isFamilySpaceContext(viewer, mediaItem)   // family space lifts standard filtering
+     isFamilySpaceContext(viewer, mediaItem)   // family space lifts standard filtering
+  OR classification == 'general'
+  OR (classification == 'contains_women' AND !viewer.filterSettings.hideContentWithWomen)
+  // 'unclassified' and 'pending_review' are false for everyone here — the
+  // uploader's own access comes from canViewMedia's short-circuit above.
 ```
+
+**`unclassified` fails closed.** Classification is asynchronous, so every
+upload has a window between the INSERT and the worker's write during which
+nothing is known about the content. Serving the original during that window
+would show a filtered viewer exactly the media the filter exists to withhold,
+with every layer waving it through. The row stays visible so the UI can render
+a "processing" state — distinguishable from the filtered state by the
+`classification` value served alongside it — but the reference is withheld.
+See migration `20260922000001_unclassified_fail_closed.sql`.
 
 This function — and only this function, via `packages/visibility-policy` —
 decides whether a piece of media is rendered or replaced with a neutral
@@ -151,6 +163,7 @@ Three-tier probability model (full detail in
 
 | Confidence band | Outcome |
 |---|---|
+| (pre-classification) | `unclassified` — withheld from all but the uploader |
 | Low | Auto-approved, tagged `general` |
 | Medium | Frozen, routed to human moderator, uploader sees "content under review" |
 | High | Auto-tagged `contains_women`, filtered per viewer settings |

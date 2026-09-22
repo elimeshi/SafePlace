@@ -103,10 +103,37 @@ describe("viewerSatisfiesClassification", () => {
     );
   });
 
-  it("always shows unclassified (processing) content", () => {
+  it("withholds unclassified content from everyone but the uploader", () => {
+    // Fail closed while the pipeline has not yet resolved the item: an
+    // async classifier means there is a window between upload and the
+    // worker's write, and serving the original during that window would
+    // show filtered viewers exactly the media the filter exists to
+    // withhold. The row stays visible (so the UI can render "processing"),
+    // only the underlying reference is withheld — the uploader's own view
+    // is granted by canViewMedia's uploader short-circuit.
     const viewer = makeViewer();
     expect(
       viewerSatisfiesClassification(viewer, "unclassified", false)
+    ).toBe(false);
+  });
+
+  it("withholds unclassified content even from a viewer with the filter off", () => {
+    // Not a filter decision — nobody can know what the item contains yet.
+    const viewer = makeViewer({
+      filterSettings: {
+        ...resolveDefaultFilterSettings("male"),
+        hideContentWithWomen: false,
+      },
+    });
+    expect(
+      viewerSatisfiesClassification(viewer, "unclassified", false)
+    ).toBe(false);
+  });
+
+  it("lifts the unclassified hold inside a family space", () => {
+    const viewer = makeViewer();
+    expect(
+      viewerSatisfiesClassification(viewer, "unclassified", true)
     ).toBe(true);
   });
 
@@ -239,6 +266,25 @@ describe("the uploader always sees their own content", () => {
   });
 });
 
+describe("canViewMedia — unclassified (pipeline in flight)", () => {
+  const unclassifiedPost = {
+    classification: "unclassified" as const,
+    exposure: { kind: "public" as const },
+    uploaderId: "author-1",
+    isWithinViewersFamilySpace: false,
+  };
+
+  it("lets the uploader see their own media while it is still unclassified", () => {
+    const viewer = makeViewer({ userId: "author-1" });
+    expect(canViewMedia(viewer, unclassifiedPost)).toBe(true);
+  });
+
+  it("withholds it from another viewer until the pipeline resolves it", () => {
+    const viewer = makeViewer({ userId: "viewer-1" });
+    expect(canViewMedia(viewer, unclassifiedPost)).toBe(false);
+  });
+});
+
 describe("canViewProfilePhoto", () => {
   it("respects filterAppliesToAvatars opt-out", () => {
     const viewer = makeViewer({
@@ -347,5 +393,43 @@ describe("resolveDefaultFilterSettings", () => {
     const b = resolveDefaultFilterSettings("male");
     expect(a).not.toBe(b);
     expect(a).toEqual(b);
+  });
+});
+
+describe("canViewProfilePhoto — unclassified avatar", () => {
+  it("shows a generic avatar to others until the photo is classified", () => {
+    const viewer = makeViewer({ userId: "viewer-1" });
+    expect(
+      canViewProfilePhoto(viewer, {
+        classification: "unclassified",
+        ownerId: "owner-1",
+      })
+    ).toBe(false);
+  });
+
+  it("still shows the owner their own unclassified photo", () => {
+    const viewer = makeViewer({ userId: "owner-1" });
+    expect(
+      canViewProfilePhoto(viewer, {
+        classification: "unclassified",
+        ownerId: "owner-1",
+      })
+    ).toBe(true);
+  });
+
+  it("shows an unclassified avatar to a viewer who opted out of avatar filtering", () => {
+    const viewer = makeViewer({
+      userId: "viewer-1",
+      filterSettings: {
+        ...resolveDefaultFilterSettings("male"),
+        filterAppliesToAvatars: false,
+      },
+    });
+    expect(
+      canViewProfilePhoto(viewer, {
+        classification: "unclassified",
+        ownerId: "owner-1",
+      })
+    ).toBe(true);
   });
 });

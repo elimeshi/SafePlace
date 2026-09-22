@@ -46,6 +46,15 @@ The product spec is explicit that upload must never be blocked outright
 (master spec §3.5) — the user is informed and chooses whether to proceed,
 not prevented from posting.
 
+**While a job is in flight the media is withheld from everyone but the
+uploader.** "Processing" is an uploader-facing state, not a licence to serve
+the original to other viewers: because classification is async, an item that
+has not been scored is an item nothing is known about, and serving it would
+show a filtered viewer exactly what the filter exists to withhold. Other
+viewers see the post with the media in a processing placeholder until the
+worker writes a resolved classification. See `visibility-model.md` §3 and
+migration `20260922000001_unclassified_fail_closed.sql`.
+
 ## 3. The uploader notice (male uploader, content classified as containing women)
 
 Exact required copy (master spec §3.5, §4.4.2) — do not rephrase this as a

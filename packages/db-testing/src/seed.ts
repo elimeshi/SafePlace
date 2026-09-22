@@ -116,7 +116,19 @@ export const USERS: UserFixture[] = [
     groups: [],
     familySpaces: [],
   },
-  { key: "follower", id: FOLLOWER, gender: "male", filter: withFilter("male"), follows: [AUTHOR], groups: [], familySpaces: [] },
+  {
+    key: "follower",
+    id: FOLLOWER,
+    gender: "male",
+    filter: withFilter("male"),
+    follows: [AUTHOR],
+    groups: [],
+    familySpaces: [],
+    // An avatar still in the pipeline — exercises the fail-closed
+    // 'unclassified' branch on the avatar path (migration 0007), which no
+    // other fixture reaches.
+    avatar: { id: hx("b05"), classification: "unclassified" },
+  },
   { key: "groupMember", id: GROUP_MEMBER, gender: "male", filter: withFilter("male"), follows: [], groups: [GROUP_ID], familySpaces: [] },
   { key: "fsMember", id: FS_MEMBER, gender: "male", filter: withFilter("male"), follows: [], groups: [], familySpaces: [FAMILY_SPACE_ID] },
   {
