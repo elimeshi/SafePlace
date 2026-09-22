@@ -5,6 +5,8 @@ import {
   canViewMedia,
   canViewProfilePhoto,
   resolveDefaultFilterSettings,
+  resolveUploaderMediaState,
+  shouldShowWomenDetectedNotice,
   viewerSatisfiesClassification,
   viewerSatisfiesExposure,
 } from "../rules";
@@ -431,5 +433,48 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
         ownerId: "owner-1",
       })
     ).toBe(true);
+  });
+});
+
+describe("resolveUploaderMediaState", () => {
+  it("reports media still in the pipeline as processing", () => {
+    expect(resolveUploaderMediaState("unclassified", "male")).toBe("processing");
+  });
+
+  it("reports frozen media as under review", () => {
+    expect(resolveUploaderMediaState("pending_review", "female")).toBe("under_review");
+  });
+
+  it("reports approved media as published", () => {
+    expect(resolveUploaderMediaState("general", "male")).toBe("published");
+  });
+
+  it("tells a male uploader their media will be filtered for many viewers", () => {
+    expect(resolveUploaderMediaState("contains_women", "male")).toBe(
+      "filtered_for_some_viewers"
+    );
+  });
+
+  it("does not show a woman the notice — that case is still an open question", () => {
+    // master spec §4.4.2 carries an explicit ⏳: whether a parallel notice
+    // should be shown to a woman uploading content with women is deferred, so
+    // the product does not invent an answer here.
+    expect(resolveUploaderMediaState("contains_women", "female")).toBe("published");
+  });
+});
+
+describe("shouldShowWomenDetectedNotice", () => {
+  it("is shown to a male uploader when the media is classified as containing women", () => {
+    expect(shouldShowWomenDetectedNotice("contains_women", "male")).toBe(true);
+  });
+
+  it("is not shown for any other classification", () => {
+    for (const c of ["general", "unclassified", "pending_review"] as const) {
+      expect(shouldShowWomenDetectedNotice(c, "male")).toBe(false);
+    }
+  });
+
+  it("is not shown to a female uploader pending that open question", () => {
+    expect(shouldShowWomenDetectedNotice("contains_women", "female")).toBe(false);
   });
 });

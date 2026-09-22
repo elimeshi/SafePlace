@@ -52,4 +52,8 @@ export {
   CLASSIFIER_OUTPUT_SCHEMA,
 } from "./classifier-prompt";
 
-export { PENDING_REVIEW_NOTICE_HE, WOMEN_DETECTED_NOTICE_HE } from "./notice-copy";
+export {
+  PENDING_REVIEW_NOTICE_HE,
+  PROCESSING_NOTICE_HE,
+  WOMEN_DETECTED_NOTICE_HE,
+} from "./notice-copy";

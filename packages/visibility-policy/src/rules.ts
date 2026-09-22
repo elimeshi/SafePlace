@@ -154,3 +154,62 @@ export function canSendMessageRequest(
 export function resolveDefaultFilterSettings(gender: Gender): FilterSettings {
   return { ...DEFAULT_FILTER_SETTINGS[gender] };
 }
+
+/**
+ * What the UPLOADER is told about their own media. Distinct from every other
+ * rule in this file: those decide what a viewer may see, this decides what the
+ * person who uploaded it is shown about its progress through the pipeline.
+ *
+ * It lives here because the interesting case is gender-conditioned, and every
+ * gender-conditioned rule in the product belongs in one place where it can be
+ * read against the symmetry requirements (invariants #3 and #4).
+ */
+export type UploaderMediaState =
+  | "processing" // queued or in flight — not yet visible to others
+  | "under_review" // frozen for human moderation
+  | "filtered_for_some_viewers" // classified as containing women; notice applies
+  | "published";
+
+/**
+ * Note what this is NOT: it never says the upload was blocked or rejected,
+ * because it never is (master spec §3.5 — the legal core of the product). Every
+ * state here describes where the media has got to, not a judgment of it.
+ */
+export function resolveUploaderMediaState(
+  classification: MediaClassification,
+  uploaderGender: Gender
+): UploaderMediaState {
+  switch (classification) {
+    case "unclassified":
+      return "processing";
+    case "pending_review":
+      return "under_review";
+    case "general":
+      return "published";
+    case "contains_women":
+      return shouldShowWomenDetectedNotice(classification, uploaderGender)
+        ? "filtered_for_some_viewers"
+        : "published";
+  }
+}
+
+/**
+ * Whether to show the neutral "women were identified in this media" notice
+ * (master spec §3.5 / §4.4.2 — exact copy in @safeplace/shared-types).
+ *
+ * Shown to a male uploader only. That asymmetry is a deliberate gap, not a
+ * rule: §4.4.2 carries an explicit ⏳ over whether a parallel notice should be
+ * shown to a woman uploading content containing women, and an open question is
+ * not an invitation to answer it in code. If that question is decided, this is
+ * the single place that changes.
+ *
+ * Note this affects only what the uploader is TOLD. The filtering mechanism
+ * itself is identical regardless of who uploaded the media — the product
+ * classifies content, never users (invariant #1).
+ */
+export function shouldShowWomenDetectedNotice(
+  classification: MediaClassification,
+  uploaderGender: Gender
+): boolean {
+  return classification === "contains_women" && uploaderGender === "male";
+}
