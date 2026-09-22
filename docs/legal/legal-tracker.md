@@ -23,7 +23,7 @@ Status legend: 🔴 not yet reviewed · 🟡 in review · 🟢 cleared
 | 4 | Public-facing wording describing the nature of the space (how it's presented externally) | 🔴 |
 | 5 | Legal basis for collecting declared gender, retention, and permitted uses | 🔴 |
 | 6 | Whether a "prefer not to say" gender option is required, and its effect on the onboarding screen | 🔴 |
-| 7 | Legal requirements around automated content scanning (LLM) — proportionality, transparency, consent | 🔴 |
+| 7 | Legal requirements around automated content scanning (LLM) — proportionality, transparency, consent. **Phase 3 built the scanning pipeline and made specific choices counsel should see: what is retained (the model's verdict and confidence, never its free-text reasoning), for how long (90 days), and reachable by whom (service role only) — see ADR 0011. Building it needed no sign-off; switching it on for real users does.** | 🔴 |
 | 8 | Legal status of "space" (group) admins — are they officeholders, and what's their liability | 🔴 |
 | 9 | Moderation policy — the platform's responsibility for content posted on it | 🔴 |
 

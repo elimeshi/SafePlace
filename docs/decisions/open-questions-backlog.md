@@ -27,9 +27,9 @@ should not block or distract from implementation:
 - How ads would be integrated without harming experience/values, if chosen (§7.3)
 - Operating costs — servers, LLM, moderation staffing (§7.3)
 - Growth model (§7.3)
-- LLM vendor selection for content classification (§7.4) — **partially
-  superseded**: see ADR 0002 for the hosting/backend decision; the specific
-  vision-model vendor for classification is still open
+- LLM vendor selection for content classification (§7.4) — **resolved**: ADR
+  0002 for hosting, ADR 0004 (amended in Phase 3) for the vision model and the
+  swappable provider seam
 - Media storage architecture details (§7.4) — partially addressed by ADR
   0002 (Supabase Storage), but CDN/scaling specifics remain open
 - Broader security/privacy compliance program beyond what's specified
@@ -138,7 +138,20 @@ See ADR 0003. All of these are placeholder-until-locked:
 ## K. Moderation
 
 - Exact AI confidence thresholds — placeholder direction is conservative
-  toward over-flagging rather than under-flagging (`07-moderation-spec.md` §2.1)
+  toward over-flagging rather than under-flagging (`07-moderation-spec.md` §2.1).
+  **Still open, but no longer blocked on a deploy:** the values live in
+  `moderation.pipeline_config` and are retunable while the service runs, and
+  the data needed to set them is being retained (ADR 0011).
+- Video frame-sampling strategy — how many frames, chosen how, and how their
+  verdicts combine. MVP classifies images only and routes video to human
+  review (ADR 0010, raised Phase 3)
+- Scheduling the retention sweep for `moderation.classification_scores`; the
+  function exists, the schedule does not (ADR 0011, raised Phase 3)
+- Whether an illustration, statue or mannequin depicting a woman counts as a
+  depiction, and where childhood ends for classification purposes. The
+  classifier prompt answers both conservatively today; both are community
+  questions rather than engineering ones (raised Phase 3, see
+  `services/moderation-pipeline/src/classifier-prompt.ts`)
 - Whether to notify a reporter of the outcome of their report (currently: no) (§3.4)
 - Moderation SLA targets — proposed: 1h for danger/minor-safety content,
   24h standard, 72h appeals (§4.3)

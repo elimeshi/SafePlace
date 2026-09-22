@@ -5,7 +5,7 @@
   "description": "Async LLM content classification service + human moderation queue backend. See docs/architecture/moderation-pipeline.md.",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx src/dev.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run"

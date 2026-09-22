@@ -3,7 +3,7 @@
 --
 -- The pipeline has to know what it is looking at before it looks: an image
 -- classifier must not be handed a video, and the MVP classifies images only
--- (ADR 0012). Without this column the worker would have to infer the format
+-- (ADR 0010). Without this column the worker would have to infer the format
 -- from a file extension or from the bytes, and a wrong guess sends media down
 -- the wrong path — either a video scored by an image model, or an image parked
 -- in human review for no reason.

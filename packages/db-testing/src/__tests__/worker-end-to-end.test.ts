@@ -164,7 +164,7 @@ describe("upload → enqueue → classify → visibility", () => {
   });
 
   it("a video is sent to a human rather than guessed at by an image model", async () => {
-    // MVP classifies images only (ADR 0012). A video must not be scored by an
+    // MVP classifies images only (ADR 0010). A video must not be scored by an
     // image classifier, and must not sit unclassified either — that would make
     // it invisible to everyone but its uploader for good.
     const mediaId = await uploadAsAuthor("video/mp4");

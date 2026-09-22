@@ -1,6 +1,6 @@
 /**
  * The worker's entry point: a stateless HTTP endpoint fired by a scheduler
- * (ADR 0011), not a long-lived process. One request drains one batch.
+ * (ADR 0009), not a long-lived process. One request drains one batch.
  *
  * Deliberately framework-agnostic — it takes a Request and returns a Response,
  * so the same function serves a Vercel function, a Supabase Edge Function, or

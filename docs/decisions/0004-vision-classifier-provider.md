@@ -28,7 +28,22 @@ for per-upload classification, and the medium-confidence band already routes
 to a human, so a cheaper first pass does not weaken the safety floor.
 Accuracy (especially false-negative rate) is validated against real content
 at Phase 3; if it is insufficient, the config escalates to a more capable
-model (e.g. `claude-opus-4-8`) with no code change.
+model (**`claude-sonnet-5`** is the next rung) with no code change.
+
+> **Amended, Phase 3.** The original text named `claude-opus-4-8` as the
+> escalation example; that is no longer the right next step. The current
+> lineup is the Claude 5 family plus Haiku 4.5, so the first pass is
+> **`claude-haiku-4-5`** (no date suffix) and the escalation target is
+> **`claude-sonnet-5`**. Both are read from `moderation.pipeline_config`
+> (ADR 0009's config table), not from the environment and never from a
+> literal in pipeline code.
+>
+> One implementation note that changed the provider's shape: a vision model
+> cannot emit a calibrated probability, so the provider returns a **verdict
+> plus its own confidence**, and a pure projection maps that pair onto the
+> 0..1 scale the spec's thresholds are written in. The three-band mechanism
+> and the deferred thresholds are unchanged; what changed is that we stopped
+> asking the model for a number it cannot produce honestly.
 
 ## Alternatives considered
 

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { resolveClassifierFromEnv, createClassificationHandler } from "../handler";
 
 /**
- * The worker runs as a stateless endpoint fired by a scheduler (ADR 0011), so
+ * The worker runs as a stateless endpoint fired by a scheduler (ADR 0009), so
  * two things have to be right before any classification happens: the endpoint
  * must not be callable by the internet at large, and a misconfigured
  * deployment must fail loudly rather than quietly classify everything with a
