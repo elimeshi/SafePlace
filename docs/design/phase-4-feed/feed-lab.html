@@ -49,7 +49,7 @@ body.bare .phone .screen{border-radius:0}
   box-shadow:0 40px 90px -30px rgba(0,0,0,.75),0 0 0 1px #1c222d,inset 0 0 0 2px #0b0e14}
 .phone .screen{position:relative;height:100%;width:100%;border-radius:36px;overflow:hidden;background:var(--c-bg);direction:rtl;color:var(--c-ink);font-family:Assistant,sans-serif;font-size:16px;display:flex;flex-direction:column}
 body.bare .phone{width:390px;height:844px}
-.statusbar{display:flex;align-items:center;justify-content:space-between;padding:14px 26px 6px;font-size:13px;font-weight:600;color:var(--c-ink);flex:0 0 auto;z-index:6;direction:ltr}
+.statusbar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 26px 6px;font-size:13px;font-weight:600;color:var(--c-ink);flex:0 0 auto;z-index:6;direction:ltr}
 .statusbar.on-dark{color:#fff}
 .statusbar .sb-r{display:flex;gap:6px;align-items:center;opacity:.85}
 .statusbar .dot{width:16px;height:9px;border-radius:2px;background:currentColor;opacity:.6}
@@ -254,6 +254,53 @@ svg.i{width:22px;height:22px;flex:0 0 auto;display:block}
 .empty p{margin:0;font-size:15px;line-height:1.6;color:var(--c-ink-soft)}
 .cta{border:0;border-radius:var(--r);background:var(--c-primary);color:#fff;font-family:Rubik,sans-serif;font-weight:600;font-size:16px;padding:14px 26px;box-shadow:var(--shadow-cta);margin-top:8px}
 .cta.secondary{background:transparent;color:var(--c-primary);border:1.5px solid #9AA4D8;box-shadow:none}
+
+/* ---- added 2026-10-19: the nine remaining pieces ---- */
+/* report sheet */
+.radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--c-border);flex:0 0 auto;display:grid;place-items:center}
+.radio.on{border-color:var(--c-primary)}
+.radio.on::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--c-primary)}
+.tarea{margin:6px 20px 12px;min-height:70px;border-radius:var(--r);border:1.5px solid var(--c-border);background:var(--c-surface);padding:12px 14px;font-size:15px;color:var(--c-ink-mute);line-height:1.5}
+.sheet .cta{display:block;width:calc(100% - 40px);margin:4px 20px 0}
+/* quote card */
+.quote{margin:0 16px 14px;border-radius:var(--r);border:1px solid var(--c-border);background:var(--c-bg);overflow:hidden}
+.quote .qh{display:flex;align-items:center;gap:8px;padding:11px 12px 6px}
+.quote .qh b{font-family:Rubik,sans-serif;font-weight:600;font-size:13.5px}
+.quote .qh time{font-size:12px;color:var(--c-ink-mute)}
+.quote .qb{padding:0 12px 10px;font-size:14.5px;line-height:1.55;color:var(--c-ink-700);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.quote .qm{height:120px;overflow:hidden}
+.quote.gone{display:flex;align-items:center;gap:8px;padding:14px;font-size:14px;color:var(--c-ink-soft)}
+.quote.gone svg{width:18px;height:18px;color:var(--c-ink-mute)}
+.shared-by{display:flex;align-items:center;gap:6px;padding:0 16px 8px;font-size:12.5px;color:var(--c-ink-mute);font-weight:600}
+.shared-by svg{width:14px;height:14px}
+/* exposure: space list */
+.sheet .back-row{display:flex;align-items:center;gap:8px;padding:2px 12px 8px}
+.sheet .back-row h4{padding:0}
+.gico{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto}
+.gico svg{width:18px;height:18px}
+.srow .gico svg{color:inherit}
+/* reply mode */
+.cmt.hl .bub{box-shadow:0 0 0 2px var(--c-cyan100);background:#EEF8FA}
+.replybar{position:absolute;inset-inline:0;bottom:78px;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--c-bg);border-top:1px solid var(--c-line);font-size:13px;color:var(--c-ink-soft);z-index:5}
+.replybar b{color:var(--c-ink-700)}
+.cbox .field.active{border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(46,58,140,.14);color:var(--c-ink);gap:6px}
+.atchip{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:999px;background:var(--c-blue100);color:var(--c-primary);font-size:13px;font-weight:700}
+/* skeleton */
+.sk{background:linear-gradient(90deg,#E6E9F5 0%,#EFF1F9 40%,#E6E9F5 80%);background-size:200% 100%;animation:sk 1.4s linear infinite;border-radius:8px}
+@keyframes sk{from{background-position:100% 0}to{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+.skc{background:var(--c-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-soft);padding:15px 16px;display:flex;flex-direction:column;gap:10px}
+/* expanded-from-strip panel */
+.xpanel{position:absolute;inset-inline:0;top:0;z-index:5;background:var(--c-bg);border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:0 14px 30px -14px rgba(16,26,58,.35);padding-top:46px}
+.xpanel .handle{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0 12px;font-size:13px;font-weight:600;color:var(--c-ink-soft)}
+.xpanel .handle svg{width:18px;height:18px}
+/* motion demo (interactive lab only) */
+.mzones{overflow:hidden;transition:max-height 260ms cubic-bezier(.25,.1,.25,1),opacity 220ms cubic-bezier(.25,.1,.25,1);max-height:330px}
+.mstrip{transition:opacity 200ms cubic-bezier(.25,.1,.25,1),transform 200ms cubic-bezier(.25,.1,.25,1);opacity:0;transform:translateY(-8px);height:0;overflow:visible}
+.mdemo.collapsed .mzones{max-height:0;opacity:0}
+.mdemo.collapsed .mstrip{opacity:1;transform:none;height:auto}
+.mdemo.collapsed .mfeed{margin-top:0}
+@media (prefers-reduced-motion:reduce){.mzones{transition:opacity 200ms}.mstrip{transition:opacity 200ms;transform:none}}
 </style>
 </head>
 <body>
@@ -484,8 +531,8 @@ SCREENS.notice = { cap: '<b>Uploader notice, before publish</b> — classificati
   <div style="flex:1"></div>
   <div class="abar"><span class="abtn">${ic('image')}מדיה</span><span class="abtn">${ic('pin')}מיקום</span></div></div>`) };
 
-function postFull(withComments = true) {
-  const p = POSTS[0];
+function postFull(author = POSTS[0].author) {
+  const p = { ...POSTS[0], author };
   return `<article style="background:#fff">
     <div class="ph">${av(p.author, 44)}<div class="who"><div class="nm"><b>${p.author}</b><time>${p.time}</time></div>${sourceLabel(p.source)}</div><span class="more">${ic('more')}</span></div>
     <div class="body">${p.body}</div><div class="media">${scene('street')}</div>
@@ -535,7 +582,125 @@ SCREENS.error = { cap: '<b>Error state</b> — load failed (offline / server). R
   ${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>
   <div class="scroll"><div class="empty" style="padding-top:120px"><span class="ic">${ic('wifi')}</span><h3>לא הצלחנו לטעון את הפיד</h3><p>ייתכן שאין חיבור לאינטרנט כרגע. נסה שוב בעוד רגע.</p><button class="cta secondary">${'נסה שוב'}</button></div></div>${bnav()}`, feedGround()) };
 
-const ORDER = ['feed', 'scrolled', 'menu', 'why', 'compose', 'exposure', 'composeGroup', 'notice', 'post', 'share', 'own', 'empty', 'error'];
+/* ---- added 2026-10-19: the nine remaining pieces ---- */
+const fwd = (s = 18) => ic('back', { size: s }).replace('class="i"', 'class="i" style="transform:scaleX(-1)"'); // RTL "forward" chevron-arrow
+
+SCREENS.plusMenu = { cap: '<b>"+" menu</b> (§2.1.1, locked decision: one tap offers both) — Post is live; Status is greyed "בקרוב" until its own spec ships.', html: () => screen(`
+  ${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>
+  <div class="scroll">${topZones()}</div>${bnav()}
+  <div class="scrim"></div><div class="sheet"><div class="grab"></div><h4>יצירה</h4>
+    <div class="srow"><span class="gico" style="background:var(--c-blue100);color:var(--c-primary)">${ic('image')}</span><span class="tx">פוסט<em>פוסט קבוע בפרופיל שלך</em></span>${fwd()}</div>
+    <div class="srow dis"><span class="gico" style="background:var(--c-bg);color:var(--c-ink-mute)">${ic('clock')}</span><span class="tx">סטטוס<em>בקרוב</em></span></div>
+  </div>`, feedGround()) };
+
+const REPORT_CATS = ['תוכן הכולל נשים', 'הטרדה / איומים', 'תוכן מסוכן', 'ספאם / פרסומי', 'מידע שגוי', 'אחר'];
+SCREENS.report = { cap: '<b>Report sheet</b> (07-moderation §3.2–3.3) — reason from the six spec categories, optional free text, send. Always goes to a human; never removes anything.', html: () => screen(`
+  ${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>
+  <div class="scroll"><div class="feed">${card(POSTS[1])}</div></div>${bnav()}
+  <div class="scrim"></div><div class="sheet"><div class="grab"></div><h4>דיווח על הפוסט</h4>
+    <div class="sub">מה הבעיה בפוסט? הדיווח יועבר לבדיקה של צוות Safe·Place.</div>
+    ${REPORT_CATS.map((c, i) => `<div class="srow" style="padding:10px 20px"><span class="radio ${i === 1 ? 'on' : ''}"></span><span class="tx">${c}</span></div>`).join('')}
+    <div class="tarea">פירוט נוסף (לא חובה)</div>
+    <button class="cta">שליחת הדיווח</button>
+  </div>`, feedGround()) };
+
+SCREENS.reportSent = { cap: '<b>Report sent</b> (§3.4) — confirmation toast with the spec copy; no follow-up status is shown to the reporter.', html: () => screen(`
+  ${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>
+  <div class="scroll"><div class="feed">${card(POSTS[1])}${card(POSTS[3])}</div></div>${bnav()}
+  <div class="toast">${ic('check', { size: 18 })}הדיווח התקבל ויטופל בהקדם</div>`, feedGround()) };
+
+function quoteCard(gone) {
+  const inner = gone
+    ? `<div class="quote gone">${ic('lock')}הפוסט המקורי אינו זמין עבורך.</div>`
+    : `<div class="quote"><div class="qh">${av('הרב אליהו כהן', 26)}<b>הרב אליהו כהן</b><time>אתמול</time></div><div class="qb">מחשבה קצרה לפרשת השבוע: לפעמים הדבר הגדול ביותר שאפשר לתת לזולת הוא פשוט להקשיב. שבת שלום לכולם.</div></div>`;
+  return `<article class="card ${V.card}">
+    <div class="ph">${av('אבי מזרחי', 42)}<div class="who"><div class="nm"><b>אבי מזרחי</b><time>לפני 20 דק׳</time></div>${sourceLabel({ kind: 'group', ...GROUP.ramot })}</div><span class="more">${ic('more')}</span></div>
+    <div class="shared-by">${ic('share')}שיתף פוסט</div>
+    <div class="body">${gone ? 'שווה לקרוא 👇' : 'מילים כל כך נכונות, שווה לקרוא 👇'}</div>
+    ${inner}${ibar({ likes: 4, comments: 0 })}</article>`;
+}
+SCREENS.quote = { cap: '<b>Share-to-group quote post</b> (§5.5) — the original is embedded, not copied; tapping it opens the original. Media is never duplicated. If the viewer can\'t see the original, it reads "unavailable".', html: () => screen(`
+  ${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>
+  <div class="scroll"><div class="feed">${quoteCard(false)}${quoteCard(true)}</div></div>${bnav()}`, feedGround()) };
+
+SCREENS.exposureGroups = { cap: '<b>Exposure picker · choose a space</b> — second step after "specific group" / "family space". Only spaces you belong to; member count is a number only.', html: () => screen(`
+  ${statusbar()}<div style="flex:1;display:flex;flex-direction:column;background:#fff">
+  <div class="ctop"><span class="iconbtn">${ic('x')}</span><span class="ttl">פוסט חדש</span><button class="pub dim">פרסם</button></div>
+  <div class="cid">${av('אבי מזרחי', 44)}<div class="who"><b>אבי מזרחי</b><span class="expo">${ic('users')}קבוצה ספציפית${ic('down')}</span></div></div>
+  <div class="ctext ph">מה תרצה לשתף?</div></div>
+  <div class="scrim"></div><div class="sheet"><div class="grab"></div>
+    <div class="back-row"><span class="iconbtn">${ic('back', { size: 20 })}</span><h4>בחירת קבוצה</h4></div>
+    <div class="sgroup">הקבוצות שלי</div>
+    <div class="srow sel"><span class="gico" style="background:#2E3A8C;color:#fff">${ic('home')}</span><span class="tx">שכונת רמות<em>1,204 חברים</em></span>${ic('check', { color: 'var(--c-primary)' })}</div>
+    <div class="srow"><span class="gico" style="background:#5B8C5A;color:#fff">${ic('users')}</span><span class="tx">גמ״ח ספרים<em>86 חברים</em></span></div>
+    <div class="srow"><span class="gico" style="background:#A85751;color:#fff">${ic('home')}</span><span class="tx">בית הכנסת המרכזי<em>412 חברים</em></span></div>
+    <div class="sdiv"></div><div class="sgroup">מרחבים משפחתיים</div>
+    <div class="srow"><span class="gico" style="background:linear-gradient(145deg,#22C3D6,#2E3A8C 70%);color:#fff">${ic('family')}</span><span class="tx">משפחת מזרחי<em>14 חברים</em></span></div>
+  </div>`) };
+
+SCREENS.reply = { cap: '<b>Comment box · reply mode</b> (§3.1, §3.3) — tapping "הגב" highlights the comment, shows "replying to" with X, and prefixes an @ chip. Replies to replies stay at level 2 with the @.', html: () => screen(`
+  ${statusbar()}<div class="ptop"><span class="iconbtn">${ic('back')}</span><span class="ttl">פוסט</span></div>
+  <div class="scroll" style="background:#fff"><div class="comments" style="padding-top:16px">
+    <div class="cmt hl">${av('שרה גולדברג', 34)}<div><div class="bub"><b>שרה גולדברג</b><p>איזה יופי! תודה על הארגון המושלם 👏</p></div><div class="meta"><span>לפני שעה</span><span class="on">אהבתי · 6</span><span style="color:var(--c-primary)">הגב</span></div></div></div>
+    <div class="cmt l2">${av('משה רוזנברג', 28)}<div><div class="bub"><b>משה רוזנברג</b><p><span class="at">@שרה גולדברג</span> תודה רבה, בזכותכם!</p></div><div class="meta"><span>לפני 40 דק׳</span><span>אהבתי</span><span>הגב</span></div></div></div>
+    <div class="cmt">${av('יוסי ברק', 34)}<div><div class="bub"><b>יוסי ברק</b><p>מתי החלוקה הבאה?</p></div><div class="meta"><span>לפני 30 דק׳</span><span>אהבתי · 2</span><span>הגב</span></div></div></div>
+  </div></div>
+  <div class="replybar"><span>משיב ל<b>שרה גולדברג</b></span><span style="display:flex;color:var(--c-ink-mute)">${ic('x', { size: 18 })}</span></div>
+  <div class="cbox">${av('אבי מזרחי', 34)}<span class="field active"><span class="atchip">@שרה גולדברג</span>|</span><span class="iconbtn" style="width:34px;height:34px;color:var(--c-primary)">${ic('image', { size: 20 })}</span><span class="send">${ic('send')}</span></div>`) };
+
+SCREENS.ownMenu = { cap: '<b>Own-post menu</b> (03 §2.1) — save and copy link (public posts only). Edit is greyed "בקרוב" (deferred, backlog §F). No report/mute on your own post.', html: () => screen(`
+  ${statusbar()}<div class="ptop"><span class="iconbtn">${ic('back')}</span><span class="ttl">פוסט</span></div>
+  <div class="scroll" style="background:#fff">${postFull('אבי מזרחי')}</div>
+  <div class="scrim"></div><div class="sheet"><div class="grab"></div>
+    <div class="srow">${ic('bookmark')}<span class="tx">שמירת הפוסט</span></div>
+    <div class="srow">${ic('link')}<span class="tx">העתקת קישור</span></div>
+    <div class="srow dis">${ic('comment')}<span class="tx">עריכת הפוסט<em>בקרוב</em></span></div>
+  </div>`) };
+
+SCREENS.commentMenu = { cap: '<b>Comment menus</b> (03 §3.3) — someone else\'s comment: report, mute commenter. Your own comment: edit / delete greyed "בקרוב" (deferred, backlog §G).', html: () => screen(`
+  ${statusbar()}<div class="ptop"><span class="iconbtn">${ic('back')}</span><span class="ttl">פוסט</span></div>
+  <div class="scroll" style="background:#fff"><div class="comments" style="padding-top:16px">
+    <div class="cmt hl">${av('יוסי ברק', 34)}<div><div class="bub"><b>יוסי ברק</b><p>מתי החלוקה הבאה?</p></div><div class="meta"><span>לפני 30 דק׳</span><span>אהבתי · 2</span><span>הגב</span></div></div></div>
+  </div></div>
+  <div class="scrim"></div><div class="sheet"><div class="grab"></div>
+    <div class="sgroup">תגובה של יוסי ברק</div>
+    <div class="srow">${ic('flag')}<span class="tx">דיווח על התגובה</span></div>
+    <div class="srow">${ic('mute')}<span class="tx">השתקת יוסי ברק<em>התגובות והפוסטים שלו לא יוצגו לך</em></span></div>
+    <div class="sdiv"></div><div class="sgroup">התגובה שלך</div>
+    <div class="srow dis">${ic('comment')}<span class="tx">עריכת התגובה<em>בקרוב</em></span></div>
+    <div class="srow dis">${ic('trash')}<span class="tx">מחיקת התגובה<em>בקרוב</em></span></div>
+  </div>`) };
+
+SCREENS.comingSoon = { cap: '<b>"Coming soon" tab placeholder</b> — Search (Phase 7) and Profile (Phase 5) open this until they ship. Same anatomy as the empty state.', html: () => screen(`
+  ${statusbar()}<div class="appbar"><span class="disp" style="font-weight:700;font-size:22px;color:var(--c-ink)">חיפוש</span></div>
+  <div class="scroll"><div class="empty" style="padding-top:110px"><span class="ic">${ic('search')}</span><h3>החיפוש בדרך</h3><p>בקרוב תוכל לחפש כאן אנשים, קבוצות ופוסטים בקהילה.</p></div></div>
+  <nav class="bnav"><span class="tab">${ic('home')}בית</span><span class="tab on">${ic('search', { sw: 2.4 })}חיפוש</span><span class="tab">${ic('user')}פרופיל</span></nav>`, feedGround()) };
+
+SCREENS.skeleton = { cap: '<b>Loading skeleton</b> — first load of the feed. Soft shimmer (1.4s); static under reduced motion.', html: () => {
+  const skCard = (media) => `<div class="skc"><div style="display:flex;gap:11px;align-items:center"><span class="sk" style="width:42px;height:42px;border-radius:50%"></span><div style="flex:1;display:flex;flex-direction:column;gap:7px"><span class="sk" style="width:46%;height:12px"></span><span class="sk" style="width:28%;height:16px;border-radius:999px"></span></div></div><span class="sk" style="width:92%;height:12px"></span><span class="sk" style="width:70%;height:12px"></span>${media ? '<span class="sk" style="height:170px;border-radius:14px"></span>' : ''}</div>`;
+  return screen(`${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>
+  <div class="scroll"><div class="stories"><div class="story"><span class="plus-grad">${ic('plus', { size: 26 })}</span><span class="lbl">יצירה</span></div></div>
+  <div class="sec"><span class="sk" style="width:90px;height:14px"></span></div>
+  <div class="spaces">${'<span class="sk" style="width:156px;flex:0 0 156px;height:150px;border-radius:18px"></span>'.repeat(3)}</div>
+  <div class="feed">${skCard(true)}${skCard(false)}</div></div>${bnav()}`, feedGround());
+} };
+
+SCREENS.expanded = { cap: '<b>Strip tapped → zones re-expand</b> (§6.3) over the scrolled feed, without scrolling to the top; tap the handle or scroll down to collapse. Motion: collapse = zones height→0 + fade (260ms, ease 0.25,0.1,0.25,1), strip fades in from −8px (200ms); expand reverses; chevron flips. Reduced motion: opacity only, no height/slide. See the live "motion" cell in the interactive lab.', html: () => screen(`
+  ${statusbar()}
+  <div class="scroll"><div class="feed" style="padding-top:330px">${card(POSTS[2])}</div></div>${bnav()}
+  <div class="xpanel">${topZones()}<div class="handle">${ic('up')}הקש לכיווץ</div></div>`, feedGround()) };
+
+SCREENS.motion = { cap: '<b>Motion demo (live, interactive lab only)</b> — loops collapse ⇄ expand every 2.5s with the exact timings; honours prefers-reduced-motion.', html: () => screen(`
+  ${statusbar()}
+  <div class="mdemo" id="mdemo" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div class="mstrip"><div class="cstrip"><span class="avs">${av('+', 26)}</span><span class="mid">הקש להרחבה</span>${ic('down')}</div></div>
+    <div class="mzones"><div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>${topZones()}</div>
+    <div class="mfeed feed">${card(POSTS[1])}</div>
+  </div>${bnav()}`, feedGround()) };
+
+const ORDER = ['feed', 'scrolled', 'menu', 'why', 'compose', 'exposure', 'composeGroup', 'notice', 'post', 'share', 'own', 'empty', 'error',
+  'plusMenu', 'report', 'reportSent', 'quote', 'exposureGroups', 'reply', 'ownMenu', 'commentMenu', 'comingSoon', 'skeleton', 'expanded', 'motion'];
+setInterval(() => { const d = document.getElementById('mdemo'); if (d) d.classList.toggle('collapsed'); }, 2500);
 
 function renderAll() {
   document.querySelectorAll('.phone').forEach(() => {});

@@ -17,24 +17,28 @@ Branch: `phase-4-feed` (= Phase 3 tip `6a8dc34` + a tree-neutral merge of `origi
   parity, classification-lifecycle).
 - Expo patches bumped (expo 54.0.37, expo-constants 18.0.14), and `expo-doctor` passes
   18/18.
-- **Still waiting on Eli (do not work around these):**
-  1. Fast-forward `main` to `b8460a3` and push it. The safety check blocked this.
-  2. The hosted Supabase project was resumed, but the Phase 3 migrations
-     (`20260922000001`–`07`) have probably never been applied to it. Applying them, and
-     the Phase 4 ones, needs Eli's explicit OK each time, or Eli runs them.
-  3. To run the worker live, `services/moderation-pipeline/.env.local` (gitignored)
-     needs `SUPABASE_SERVICE_ROLE_KEY` and `VISION_MODEL_API_KEY`. The worker is not
-     deployed anywhere yet (ADR 0009) and must be before the pilot.
-  4. Android device runs happen on Eli's PC (WSL2 + adb, see repo memory). Cloud
-     sessions verify on Expo web plus the hermetic suites, then hand back for the device
-     pass.
+- `main` was fast-forwarded to `b8460a3` and pushed (2026-10-19).
+- **Hosted Supabase is migrated to 13/13** (Phase 1 + Phase 3), applied 2026-10-19 with
+  Eli's approval. The DB is empty (no users yet). Phase 4 migrations get applied the same
+  way once they're written (Eli approved): over the transaction-pooler URL in
+  `apps/mobile/.env.local`, each file in its own transaction, recorded in
+  `supabase_migrations.schema_migrations(version, name, statements)`.
+- Still open, not blocking implementation:
+  - To run the classification worker live, it needs the project's **service-role key**
+    (Supabase dashboard → Project Settings → API) and an **Anthropic API key** in
+    `services/moderation-pipeline/.env.local` (gitignored). Without them, uploaded
+    photos stay "processing" forever on a real device. The worker is also not deployed
+    anywhere yet (ADR 0009) and must be before the pilot.
+  - The Android device run happens on Eli's PC **after** implementation.
 
 ## 1. Design: locked, pixel-exact
 
 - **Source of truth:** `docs/design/phase-4-feed/feed-lab.html`, plus
   `docs/design/phase-4-feed/reference/*.png` (390×844, locked variants). Open the lab in
   a browser. `?bare=1&screen=<name>` renders one screen. Screen names: `feed scrolled
-  menu why compose exposure composeGroup notice post share own empty error`.
+  menu why compose exposure composeGroup notice post share own empty error plusMenu
+  report reportSent quote exposureGroups reply ownMenu commentMenu comingSoon skeleton
+  expanded` (24 PNGs; `motion` is live-only).
 - Eli: *"exactly how I want the result to look like, pixel by pixel"*. Implement in RN
   until the Expo-web render at a 390 viewport is indistinguishable from the reference
   PNG. Measurements, radii, colours, font sizes and spacing are all in the lab's CSS;
@@ -60,19 +64,20 @@ Branch: `phase-4-feed` (= Phase 3 tip `6a8dc34` + a tree-neutral merge of `origi
   clock, thumbs-down, trash, refresh, wifi-off, family, chevron-up, arrow-right) are
   Lucide paths already written into the lab's `G` table. Port them into
   `packages/ui/src/content/Icon.glyphs.ts`.
-- **Not yet designed, so design these in the lab first and get Eli's OK before building
-  them in RN:**
-  - the "+" menu sheet: `פוסט`, plus `סטטוס` greyed out with `בקרוב`
-  - the report sheet (categories from `ReportCategory`)
-  - the share-to-group quote card
-  - the group / Family Space list inside the exposure picker
-  - the comment composer in reply mode (`@name` chip)
-  - the own-post and own-comment menus
-  - the "coming soon" tab placeholder
-  - the loading skeleton
-  - the collapsed-strip expand/collapse motion
-
-  Follow the lab's existing conventions (same tokens, sheet anatomy, row style).
+- **Added 2026-10-19 (same lab, appended):** the "+" menu (`plusMenu`), the report
+  sheet and the report-sent toast (`report`, `reportSent`, copy verbatim from
+  `07-moderation` §3.2–3.4), the share-to-group quote post including the "original
+  unavailable" state (`quote`), the space list in the exposure picker
+  (`exposureGroups`), the comment box in reply mode (`reply`), the own-post menu
+  (`ownMenu`), the comment menus (`commentMenu`), the "coming soon" tab placeholder
+  (`comingSoon`), the loading skeleton (`skeleton`), and the strip expanded over the
+  feed (`expanded`). The live motion demo is the `motion` cell in the interactive lab,
+  and the timings are in the `expanded` caption: collapse = zones height→0 + fade
+  260ms; strip in from −8px 200ms; ease (0.25,0.1,0.25,1); reduced motion = opacity
+  only.
+- **Mute semantics (shown in `commentMenu`):** muting a user hides their posts from your
+  feed and their comments from you. It is silent and is not a block.
+- Anything else not in the lab: mock it there first and get Eli's OK before building it.
 
 ## 2. Product decisions (all confirmed by Eli)
 
