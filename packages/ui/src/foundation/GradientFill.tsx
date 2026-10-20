@@ -4,6 +4,9 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import type { CssGradient } from "@safeplace/design-tokens";
 import { cssGradientVector } from "./gradient";
 
+// zIndex -1: on web (CSS painting order) a positioned <svg> would otherwise paint over in-flow children.
+const backdrop = { ...StyleSheet.absoluteFillObject, zIndex: -1 } as const;
+
 export interface GradientFillProps {
   gradient: CssGradient;
   /** Known box size (skips waiting for layout); otherwise measured. */
@@ -32,7 +35,7 @@ export function GradientFill({ gradient, width, height, style, children }: Gradi
   return (
     <View onLayout={onLayout} style={[width != null && height != null ? { width, height } : null, style]}>
       {box && v ? (
-        <Svg width={box.w} height={box.h} style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width={box.w} height={box.h} style={backdrop} pointerEvents="none">
           <Defs>
             <LinearGradient id={id} gradientUnits="userSpaceOnUse" x1={v.x1} y1={v.y1} x2={v.x2} y2={v.y2}>
               {gradient.stops.map(([color, offset]) => (

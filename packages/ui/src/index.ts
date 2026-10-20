@@ -41,6 +41,7 @@ export * from "./feed/CollapsedStrip";
 export * from "./feed/CollapsibleZones";
 export * from "./feed/FollowRail";
 export * from "./feed/BottomTabs";
+export * from "./feed/ExpandedPanel";
 export { feedCopy, formatCount, type FeedCopy } from "./feed/copy";
 
 // Sheets
@@ -67,6 +68,10 @@ export { exposureCopy } from "./exposure/copy";
 export * from "./comments/CommentBubble";
 export * from "./comments/CommentBox";
 export { commentCopy } from "./comments/copy";
+
+// Compose / post chrome
+export * from "./compose/ComposeParts";
+export { composeCopy } from "./compose/copy";
 
 // Surfaces
 export * from "./surfaces/PostCard";

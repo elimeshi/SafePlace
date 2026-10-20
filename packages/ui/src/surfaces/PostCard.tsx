@@ -9,6 +9,7 @@ import { SourceLabel, type SourceLabelKind } from "../content/SourceLabel";
 import { contentCopy } from "../content/copy";
 import {
   POST_AVATAR_SIZE,
+  POST_DETAIL_AVATAR_SIZE,
   POST_MEDIA_HEIGHT,
   postCardMediaMode,
   resolveCardStyle,
@@ -50,6 +51,8 @@ export interface PostCardProps {
    * / RLS; the card never makes the visibility decision (invariant #2).
    */
   filtered?: boolean;
+  /** "detail" = the single-post article (no card chrome, 44px avatar, post-style action bar). */
+  variant?: "card" | "detail";
   /** Hebrew defaults, prop-overridable per ADR 0007. */
   filteredLabel?: string;
   filteredHint?: string;
@@ -85,6 +88,7 @@ export interface PostCardProps {
 export function PostCard({
   post,
   filtered = false,
+  variant = "card",
   filteredLabel = contentCopy.filteredLabel,
   filteredHint = contentCopy.filteredHint,
   mediaSlot,
@@ -110,11 +114,11 @@ export function PostCard({
   const mediaMode = postCardMediaMode({ hasMedia: Boolean(post.media) || mediaSlot != null, filtered });
 
   return (
-    <View style={[resolveCardStyle(), style]} testID="post-card">
+    <View style={[resolveCardStyle(variant), style]} testID="post-card">
       <Pressable onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? "button" : undefined}>
         <View style={p.header}>
           <Pressable onPress={onPressAuthor} disabled={!onPressAuthor}>
-            <Avatar src={post.author.avatar} name={post.author.name} size={POST_AVATAR_SIZE} />
+            <Avatar src={post.author.avatar} name={post.author.name} size={variant === "detail" ? POST_DETAIL_AVATAR_SIZE : POST_AVATAR_SIZE} />
           </Pressable>
           <View style={p.who}>
             <View style={p.nameRow}>
@@ -182,6 +186,7 @@ export function PostCard({
         comments={post.comments ?? 0}
         liked={post.liked}
         saved={post.saved}
+        variant={variant === "detail" ? "post" : "card"}
         onLike={onLike}
         onComment={onComment}
         onShare={onShare}

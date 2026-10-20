@@ -24,7 +24,8 @@ export function postCardMediaMode({
 }
 
 /** Lab `.card.soft`: white, radius 24, shadow only — no border (locked choice). */
-export function resolveCardStyle(): ViewStyle {
+export function resolveCardStyle(variant: "card" | "detail" = "card"): ViewStyle {
+  if (variant === "detail") return { backgroundColor: theme.colors.surface };
   return {
     backgroundColor: theme.colors.surface,
     borderRadius: 24,
@@ -35,6 +36,8 @@ export function resolveCardStyle(): ViewStyle {
 
 export const POST_MEDIA_HEIGHT = 230;
 export const POST_AVATAR_SIZE = 42;
+/** Single-post screen: lab `postFull` uses a 44px avatar. */
+export const POST_DETAIL_AVATAR_SIZE = 44;
 
 export function resolvePostCardParts(): {
   header: ViewStyle;

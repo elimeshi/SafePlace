@@ -1,0 +1,266 @@
+[
+  {
+    "name": "feed",
+    "lab": {
+      "screen": "feed",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=feed",
+      "selector": "[data-testid=lab-feed]"
+    }
+  },
+  {
+    "name": "scrolled",
+    "lab": {
+      "screen": "scrolled",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=scrolled",
+      "selector": "[data-testid=lab-scrolled]"
+    }
+  },
+  {
+    "name": "menu",
+    "lab": {
+      "screen": "menu",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=menu",
+      "selector": "[data-testid=lab-menu]"
+    }
+  },
+  {
+    "name": "why",
+    "lab": {
+      "screen": "why",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=why",
+      "selector": "[data-testid=lab-why]"
+    }
+  },
+  {
+    "name": "compose",
+    "lab": {
+      "screen": "compose",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=compose",
+      "selector": "[data-testid=lab-compose]"
+    }
+  },
+  {
+    "name": "exposure",
+    "lab": {
+      "screen": "exposure",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=exposure",
+      "selector": "[data-testid=lab-exposure]"
+    }
+  },
+  {
+    "name": "composeGroup",
+    "lab": {
+      "screen": "composeGroup",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=composeGroup",
+      "selector": "[data-testid=lab-composeGroup]"
+    }
+  },
+  {
+    "name": "notice",
+    "lab": {
+      "screen": "notice",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=notice",
+      "selector": "[data-testid=lab-notice]"
+    }
+  },
+  {
+    "name": "post",
+    "lab": {
+      "screen": "post",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=post",
+      "selector": "[data-testid=lab-post]"
+    }
+  },
+  {
+    "name": "share",
+    "lab": {
+      "screen": "share",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=share",
+      "selector": "[data-testid=lab-share]"
+    }
+  },
+  {
+    "name": "own",
+    "lab": {
+      "screen": "own",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=own",
+      "selector": "[data-testid=lab-own]"
+    }
+  },
+  {
+    "name": "empty",
+    "lab": {
+      "screen": "empty",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=empty",
+      "selector": "[data-testid=lab-empty]"
+    }
+  },
+  {
+    "name": "error",
+    "lab": {
+      "screen": "error",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=error",
+      "selector": "[data-testid=lab-error]"
+    }
+  },
+  {
+    "name": "plusMenu",
+    "lab": {
+      "screen": "plusMenu",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=plusMenu",
+      "selector": "[data-testid=lab-plusMenu]"
+    }
+  },
+  {
+    "name": "report",
+    "lab": {
+      "screen": "report",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=report",
+      "selector": "[data-testid=lab-report]"
+    }
+  },
+  {
+    "name": "reportSent",
+    "lab": {
+      "screen": "reportSent",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=reportSent",
+      "selector": "[data-testid=lab-reportSent]"
+    }
+  },
+  {
+    "name": "quote",
+    "lab": {
+      "screen": "quote",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=quote",
+      "selector": "[data-testid=lab-quote]"
+    }
+  },
+  {
+    "name": "exposureGroups",
+    "lab": {
+      "screen": "exposureGroups",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=exposureGroups",
+      "selector": "[data-testid=lab-exposureGroups]"
+    }
+  },
+  {
+    "name": "reply",
+    "lab": {
+      "screen": "reply",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=reply",
+      "selector": "[data-testid=lab-reply]"
+    }
+  },
+  {
+    "name": "ownMenu",
+    "lab": {
+      "screen": "ownMenu",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=ownMenu",
+      "selector": "[data-testid=lab-ownMenu]"
+    }
+  },
+  {
+    "name": "commentMenu",
+    "lab": {
+      "screen": "commentMenu",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=commentMenu",
+      "selector": "[data-testid=lab-commentMenu]"
+    }
+  },
+  {
+    "name": "comingSoon",
+    "lab": {
+      "screen": "comingSoon",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=comingSoon",
+      "selector": "[data-testid=lab-comingSoon]"
+    }
+  },
+  {
+    "name": "skeleton",
+    "lab": {
+      "screen": "skeleton",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=skeleton",
+      "selector": "[data-testid=lab-skeleton]"
+    }
+  },
+  {
+    "name": "expanded",
+    "lab": {
+      "screen": "expanded",
+      "selector": ".screen"
+    },
+    "app": {
+      "url": "/gallery?screen=expanded",
+      "selector": "[data-testid=lab-expanded]"
+    }
+  }
+]
