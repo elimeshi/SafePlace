@@ -7,11 +7,40 @@
  */
 import {
   canViewMedia,
+  canViewPost,
   canViewProfilePhoto,
+  viewerSatisfiesAudience,
   viewerSatisfiesExposure,
+  type ContentAudience,
+  type PostContext,
   type Viewer,
 } from "@safeplace/visibility-policy";
-import { BLOCKS, type MediaFixture, type UserFixture } from "./seed";
+import {
+  BLOCKS,
+  USERS,
+  type MediaFixture,
+  type PostFixture,
+  type UserFixture,
+} from "./seed";
+
+export function postContextOf(p: PostFixture): PostContext {
+  return {
+    authorId: p.authorId,
+    status: p.status,
+    exposure: p.exposure,
+    sourceKind: p.sourceKind,
+  };
+}
+
+/** Audiences of `p` the viewer is allowed to learn about (author: all). */
+export function expectedAudiences(u: UserFixture, p: PostFixture): ContentAudience[] {
+  const v = viewerOf(u);
+  if (!canViewPost(v, postContextOf(p))) return [];
+  if (u.id === p.authorId) return [...p.exposure];
+  return p.exposure.filter((a) => viewerSatisfiesAudience(v, a));
+}
+
+export const USER_BY_ID = new Map(USERS.map((u) => [u.id, u]));
 
 export function viewerOf(u: UserFixture): Viewer {
   return {

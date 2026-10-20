@@ -10,6 +10,7 @@
  */
 import type {
   ContentExposure,
+  GroupVisibility,
   PostSourceKind,
   PostStatus,
   FilterSettings,
@@ -26,6 +27,11 @@ export const GROUP_ID = hx("6a0");
 /** A second, PUBLIC group (GROUP_ID is private_hidden) — multi-audience cases. */
 export const GROUP2_ID = hx("6a1");
 export const FAMILY_SPACE_ID = hx("f50");
+/** Group visibility as seeded — the share rule needs it. */
+export const GROUP_VISIBILITY: ReadonlyMap<string, GroupVisibility> = new Map([
+  [hx("6a0"), "private_hidden"],
+  [hx("6a1"), "public"],
+]);
 
 export const EXPOSURES = ["public", "followers", "group", "family"] as const;
 export const CLASSES: MediaClassification[] = [
