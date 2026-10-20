@@ -134,7 +134,7 @@ export function ExposurePicker({
         hint={groupNames || undefined}
         selected={anyGroup}
         disabled={!groupsOpen}
-        trailing="forward"
+        trailing="forward-primary"
         onPress={() => setStep("groups")}
         testID="exposure-groups"
       />
@@ -145,7 +145,7 @@ export function ExposurePicker({
         hint={familyOpen ? familyNames || undefined : c.familyBlockedHint}
         selected={anyFamily}
         disabled={!familyOpen}
-        trailing="forward"
+        trailing="forward-primary"
         onPress={() => setStep("family")}
         testID="exposure-family"
       />
