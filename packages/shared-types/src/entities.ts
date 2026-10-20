@@ -8,6 +8,7 @@
  */
 
 import type {
+  ContentAudience,
   ContentExposure,
   FilterSettings,
   Gender,
@@ -22,7 +23,7 @@ export type AccountStatus =
   | "deleted";
 
 export interface PrivacySettings {
-  defaultPostExposure: ContentExposure["kind"];
+  defaultPostExposure: ContentAudience["kind"];
   whoCanFollow: "everyone" | "approval_required";
   discoverableInSearch: "everyone" | "followers_only" | "nobody";
   showReadReceipts: boolean;

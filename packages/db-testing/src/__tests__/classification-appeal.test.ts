@@ -9,7 +9,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../harness";
-import { seedFixtures, USER } from "../seed";
+import { insertPublicPost, seedFixtures, USER } from "../seed";
 
 let db: TestDb;
 const author = USER.author;
@@ -20,10 +20,7 @@ async function mediaClassifiedAs(classification: string): Promise<string> {
   seq += 1;
   const postId = `00000000-0000-0000-0000-${`ba${seq}`.padStart(12, "0")}`;
   const mediaId = `00000000-0000-0000-0000-${`bb${seq}`.padStart(12, "0")}`;
-  await db.raw.query(
-    `insert into public.posts (id, author_id, text, exposure_kind) values ($1, $2, 'a', 'public')`,
-    [postId, author.id]
-  );
+  await insertPublicPost(db.raw, postId, author.id, "a");
   await db.raw.query(
     `insert into public.media_items (id, post_id, uploader_id, storage_path, content_type, classification, classified_at)
      values ($1, $2, $3, $4, 'image/jpeg', $5::media_classification, now())`,

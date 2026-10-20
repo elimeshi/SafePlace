@@ -44,7 +44,7 @@ describe("media visibility matches visibility-policy for every viewer", () => {
       for (const m of MEDIA) {
         const exp = expectedMedia(u, m);
         const row = visible.get(m.mediaId);
-        const label = `${u.key} × ${m.exposure.kind}/${m.classification}`;
+        const label = `${u.key} × ${m.exposure[0].kind}/${m.classification}`;
 
         // (1) Row presence — can the viewer even KNOW this media exists?
         expect(row !== undefined, `${label}: rowPresent`).toBe(exp.rowPresent);
@@ -95,7 +95,7 @@ it("the base table exposes a storage_path the view withholds — but it cannot b
   // path is readable, and it is inert. If a future change makes a withheld
   // object signable, this fails.
   const cw = MEDIA.find(
-    (m) => m.classification === "contains_women" && m.exposure.kind === "public"
+    (m) => m.classification === "contains_women" && m.exposure[0].kind === "public"
   )!;
   const viewer = USERS.find((u) => u.key === "maleFiltered")!;
 

@@ -1,18 +1,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ContentExposure, MediaClassification } from "@safeplace/visibility-policy";
 
-interface ExposureColumns {
-  exposure_kind: ContentExposure["kind"];
-  exposure_group_id: string | null;
-  exposure_space_id: string | null;
+interface AudienceRow {
+  post_id: string;
+  kind: ContentExposure[number]["kind"];
+  group_id: string | null;
+  space_id: string | null;
+  position: number;
 }
 
-export function exposureToColumns(exposure: ContentExposure): ExposureColumns {
-  return {
-    exposure_kind: exposure.kind,
-    exposure_group_id: exposure.kind === "group" ? exposure.groupId : null,
-    exposure_space_id: exposure.kind === "family_space" ? exposure.spaceId : null,
-  };
+/** One post_audiences row per audience, in pick order. */
+export function exposureToAudienceRows(postId: string, exposure: ContentExposure): AudienceRow[] {
+  return exposure.map((a, position) => ({
+    post_id: postId,
+    kind: a.kind,
+    group_id: a.kind === "group" ? a.groupId : null,
+    space_id: a.kind === "family_space" ? a.spaceId : null,
+    position,
+  }));
 }
 
 /**
@@ -46,13 +51,15 @@ export async function createPost(
   supabase: SupabaseClient,
   params: CreatePostParams
 ): Promise<{ postId: string }> {
+  // A post is born a draft, gets its audience rows, then is published; the
+  // database validates the combination and membership at that last step.
   const { data: post, error } = await supabase
     .from("posts")
     .insert({
       author_id: params.authorId,
       text: params.text ?? "",
       location_tag: params.locationTag ?? null,
-      ...exposureToColumns(params.exposure),
+      status: "draft",
     })
     .select("id")
     .single();
@@ -61,6 +68,13 @@ export async function createPost(
     throw new Error(`createPost: ${error?.message ?? "insert returned no row"}`);
   }
   const postId = (post as { id: string }).id;
+
+  const { error: audienceError } = await supabase
+    .from("post_audiences")
+    .insert(exposureToAudienceRows(postId, params.exposure));
+  if (audienceError) {
+    throw new Error(`createPost: audience insert failed: ${audienceError.message}`);
+  }
 
   if (params.media && params.media.length > 0) {
     const rows = params.media.map((item) => ({
@@ -76,6 +90,14 @@ export async function createPost(
     if (mediaError) {
       throw new Error(`createPost: media insert failed: ${mediaError.message}`);
     }
+  }
+
+  const { error: publishError } = await supabase
+    .from("posts")
+    .update({ status: "published" })
+    .eq("id", postId);
+  if (publishError) {
+    throw new Error(`createPost: publish failed: ${publishError.message}`);
   }
 
   return { postId };

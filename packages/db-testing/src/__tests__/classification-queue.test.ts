@@ -9,7 +9,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../harness";
-import { seedFixtures, USER } from "../seed";
+import { insertPublicPost, seedFixtures, USER } from "../seed";
 
 let db: TestDb;
 const author = USER.author;
@@ -20,10 +20,7 @@ async function newMediaAsAuthor(): Promise<string> {
   postSeq += 1;
   const postId = `00000000-0000-0000-0000-${`e${postSeq}`.padStart(12, "0")}`;
   const mediaId = `00000000-0000-0000-0000-${`f${postSeq}`.padStart(12, "0")}`;
-  await db.raw.query(
-    `insert into public.posts (id, author_id, text, exposure_kind) values ($1, $2, 'q', 'public')`,
-    [postId, author.id]
-  );
+  await insertPublicPost(db.raw, postId, author.id, "q");
   await db.asUser(author.id, (q) =>
     q.query(
       `insert into public.media_items (id, post_id, uploader_id, storage_path, classification)
@@ -87,10 +84,7 @@ describe("every media parent surface enqueues — invariant #8 has no exceptions
     const conversationId = "00000000-0000-0000-0000-0000000005a3";
     const messageId = "00000000-0000-0000-0000-0000000005a4";
 
-    await db.raw.query(
-      `insert into public.posts (id, author_id, text, exposure_kind) values ($1, $2, 'p', 'public')`,
-      [postId, author.id]
-    );
+    await insertPublicPost(db.raw, postId, author.id, "p");
     await db.raw.query(
       `insert into public.comments (id, post_id, author_id, text) values ($1, $2, $3, 'c')`,
       [commentId, postId, author.id]

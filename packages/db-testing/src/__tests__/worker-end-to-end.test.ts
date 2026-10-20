@@ -18,7 +18,7 @@ import {
 } from "@safeplace/moderation-pipeline";
 import { createTestDb, type TestDb } from "../harness";
 import { createPgliteJobStore } from "../pglite-job-store";
-import { seedFixtures, USER } from "../seed";
+import { insertPublicPost, seedFixtures, USER } from "../seed";
 
 let db: TestDb;
 const author = USER.author;
@@ -32,10 +32,7 @@ async function uploadAsAuthor(contentType = "image/jpeg"): Promise<string> {
   seq += 1;
   const postId = `00000000-0000-0000-0000-${`ab${seq}`.padStart(12, "0")}`;
   const mediaId = `00000000-0000-0000-0000-${`ac${seq}`.padStart(12, "0")}`;
-  await db.raw.query(
-    `insert into public.posts (id, author_id, text, exposure_kind) values ($1, $2, 'e2e', 'public')`,
-    [postId, author.id]
-  );
+  await insertPublicPost(db.raw, postId, author.id, "e2e");
   await db.asUser(author.id, (q) =>
     q.query(
       `insert into public.media_items (id, post_id, uploader_id, storage_path, content_type, classification)

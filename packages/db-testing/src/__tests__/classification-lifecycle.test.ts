@@ -11,7 +11,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../harness";
-import { seedFixtures, USER } from "../seed";
+import { insertPublicPost, seedFixtures, USER } from "../seed";
 
 let db: TestDb;
 
@@ -54,10 +54,7 @@ beforeAll(async () => {
   db = await createTestDb();
   await seedFixtures(db.raw);
   // A fresh public post by the author to hang the new media on.
-  await db.raw.query(
-    `insert into public.posts (id, author_id, text, exposure_kind) values ($1, $2, 'phase3', 'public')`,
-    [POST_ID, author.id]
-  );
+  await insertPublicPost(db.raw, POST_ID, author.id, "phase3");
 });
 afterAll(async () => { await db.close(); });
 

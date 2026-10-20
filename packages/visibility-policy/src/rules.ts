@@ -1,9 +1,15 @@
 import type {
+  CommentContext,
+  ContentAudience,
   ContentExposure,
+  DiscoverableInSearch,
+  FeedPlacement,
   FilterSettings,
   Gender,
+  GroupVisibility,
   MediaClassification,
   MediaItemContext,
+  PostContext,
   Viewer,
 } from "./types";
 import { DEFAULT_FILTER_SETTINGS } from "./types";
@@ -13,23 +19,151 @@ import { DEFAULT_FILTER_SETTINGS } from "./types";
  * This has nothing to do with gender or classification — it's the same
  * "who is this addressed to" check any social network needs.
  */
-export function viewerSatisfiesExposure(
+export function viewerSatisfiesAudience(
   viewer: Viewer,
-  exposure: ContentExposure
+  audience: ContentAudience
 ): boolean {
-  switch (exposure.kind) {
+  switch (audience.kind) {
     case "public":
       return true;
     case "followers_only":
       return (
-        viewer.userId === exposure.authorId ||
-        viewer.following.has(exposure.authorId)
+        viewer.userId === audience.authorId ||
+        viewer.following.has(audience.authorId)
       );
     case "group":
-      return viewer.groupMemberships.has(exposure.groupId);
+      return viewer.groupMemberships.has(audience.groupId);
     case "family_space":
-      return viewer.familySpaceMemberships.has(exposure.spaceId);
+      return viewer.familySpaceMemberships.has(audience.spaceId);
   }
+}
+
+/** A viewer satisfies a multi-audience exposure iff they satisfy ANY audience. */
+export function viewerSatisfiesExposure(
+  viewer: Viewer,
+  exposure: ContentExposure
+): boolean {
+  return exposure.some((a) => viewerSatisfiesAudience(viewer, a));
+}
+
+/**
+ * THE audience-combination rule (SQL mirror: visibility.audience_set_valid).
+ * Nothing else in the codebase may restate it.
+ *  - at least one audience;
+ *  - public includes everyone, so it is exclusive;
+ *  - a Family Space never mixes with a non-Family-Space audience (several
+ *    Family Spaces together are fine). Pending Eli's confirmation (plan §2a).
+ */
+export function isAudienceSetValid(audiences: readonly ContentAudience[]): boolean {
+  if (audiences.length === 0) return false;
+  if (audiences.some((a) => a.kind === "public")) return audiences.length === 1;
+  const family = audiences.filter((a) => a.kind === "family_space").length;
+  return family === 0 || family === audiences.length;
+}
+
+/**
+ * Whether the viewer may see a post at all. Post TEXT is never classification-
+ * filtered; this is exposure + blocks + draft state only. A draft is the
+ * author's alone. Mute is deliberately absent: it only affects the feed
+ * (postFeedPlacement) and comment display, never reachability.
+ */
+export function canViewPost(viewer: Viewer, post: PostContext): boolean {
+  if (post.status === "draft") return viewer.userId === post.authorId;
+  if (viewer.blockedUsers.has(post.authorId)) return false;
+  return viewerSatisfiesExposure(viewer, post.exposure);
+}
+
+/** A comment inherits its post's visibility; blocked and muted authors are hidden. */
+export function canViewComment(viewer: Viewer, comment: CommentContext): boolean {
+  return (
+    canViewPost(viewer, comment.post) &&
+    !viewer.blockedUsers.has(comment.authorId) &&
+    !viewer.mutedUsers.has(comment.authorId)
+  );
+}
+
+/**
+ * Where a post may appear in the viewer's main feed. Family Space posts never
+ * do (01 §2.3.1: they surface only in the spaces rail and the single-post
+ * screen). The 1-in-5 cap on suggested posts is a ranking-seam concern, not
+ * a visibility rule.
+ */
+export function postFeedPlacement(viewer: Viewer, post: PostContext): FeedPlacement {
+  if (!canViewPost(viewer, post)) return "none";
+  if (post.status !== "published") return "none";
+  if (post.exposure.some((a) => a.kind === "family_space")) return "none";
+  if (viewer.mutedUsers.has(post.authorId)) return "none";
+
+  const followed =
+    viewer.userId === post.authorId ||
+    viewer.following.has(post.authorId) ||
+    post.exposure.some((a) => a.kind === "group" && viewer.groupMemberships.has(a.groupId));
+  if (followed) return "followed";
+
+  const isPublicPersonal =
+    post.sourceKind === "profile" && post.exposure.some((a) => a.kind === "public");
+  if (
+    isPublicPersonal &&
+    viewer.filterSettings.showSuggestedPosts &&
+    !viewer.suppressedSuggestions.has(post.authorId)
+  ) {
+    return "suggested";
+  }
+  return "none";
+}
+
+/**
+ * Share-to-group (03 §5.3). Allowed iff the viewer can see the post, belongs
+ * to the target group, the post has no Family Space audience, and either the
+ * post is public, or the target is already one of its audiences, or every
+ * audience is a public group (so nothing narrower than the target's own reach
+ * is widened). Reading "every group audience" as "every audience" is a
+ * deliberate tightening — see the Phase 4 report.
+ */
+export function canSharePostInternally(
+  viewer: Viewer,
+  post: PostContext,
+  targetGroupId: string,
+  groupVisibility: ReadonlyMap<string, GroupVisibility>
+): boolean {
+  if (post.status !== "published" || !canViewPost(viewer, post)) return false;
+  if (!viewer.groupMemberships.has(targetGroupId)) return false;
+  if (post.exposure.some((a) => a.kind === "family_space")) return false;
+  if (post.exposure.some((a) => a.kind === "public")) return true;
+  if (post.exposure.some((a) => a.kind === "group" && a.groupId === targetGroupId)) {
+    return true;
+  }
+  return post.exposure.every(
+    (a) => a.kind === "group" && groupVisibility.get(a.groupId) === "public"
+  );
+}
+
+/** External link: public posts only, and only to someone who can see them. */
+export function canCopyExternalLink(viewer: Viewer, post: PostContext): boolean {
+  return (
+    post.status === "published" &&
+    canViewPost(viewer, post) &&
+    post.exposure.length === 1 &&
+    post.exposure[0].kind === "public"
+  );
+}
+
+/**
+ * Follow suggestions. Composes the viewer's search-separation preference with
+ * the TARGET's own discoverability: a target who limits discovery to
+ * followers is, by definition, not suggestable to someone who is not one.
+ */
+export function canSuggestUserToFollow(
+  viewer: Viewer,
+  target: { userId: string; gender: Gender; discoverableInSearch: DiscoverableInSearch }
+): boolean {
+  if (target.userId === viewer.userId) return false;
+  if (viewer.following.has(target.userId)) return false;
+  if (viewer.blockedUsers.has(target.userId)) return false;
+  if (viewer.mutedUsers.has(target.userId)) return false;
+  if (viewer.suppressedSuggestions.has(target.userId)) return false;
+  if (target.discoverableInSearch !== "everyone") return false;
+  return canDiscoverUserInSearch(viewer, target.gender);
 }
 
 /**

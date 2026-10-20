@@ -21,14 +21,42 @@ export type MediaClassification =
   | "contains_women"; // high probability — subject to viewer filtering
 
 /**
- * Axis 1 (see visibility-model.md §2): who the content is addressed to.
- * Orthogonal to classification — evaluated independently.
+ * One audience a post (or any content) is addressed to. Orthogonal to
+ * classification — evaluated independently.
  */
-export type ContentExposure =
+export type ContentAudience =
   | { kind: "public" }
   | { kind: "followers_only"; authorId: string }
   | { kind: "group"; groupId: string }
   | { kind: "family_space"; spaceId: string };
+
+/**
+ * Axis 1 (see visibility-model.md §2): who the content is addressed to. A
+ * NON-EMPTY list of audiences (Phase 4 multi-select, plan §2a); content is
+ * exposed to a viewer who satisfies ANY of them. Whether a given list is a
+ * legal combination is `isAudienceSetValid`'s job, not the type's.
+ */
+export type ContentExposure = readonly [ContentAudience, ...ContentAudience[]];
+
+export type PostStatus = "draft" | "published";
+export type PostSourceKind = "profile" | "group" | "family_space";
+export type GroupVisibility = "public" | "private_visible" | "private_hidden";
+export type DiscoverableInSearch = "everyone" | "followers_only" | "nobody";
+export type FeedPlacement = "followed" | "suggested" | "none";
+
+/** What a visibility decision about a post needs to know. */
+export interface PostContext {
+  authorId: string;
+  status: PostStatus;
+  exposure: ContentExposure;
+  sourceKind: PostSourceKind;
+}
+
+/** What a visibility decision about a comment needs to know. */
+export interface CommentContext {
+  authorId: string;
+  post: PostContext;
+}
 
 /**
  * A user's personal consumption controls. One per user — see
@@ -65,6 +93,19 @@ export interface Viewer {
   familySpaceMemberships: ReadonlySet<string>;
   /** User IDs the viewer follows — needed for followers-only exposure checks. */
   following: ReadonlySet<string>;
+  /**
+   * Users with a block edge to or from the viewer (either direction: blocks
+   * are mutual invisibility). The DB is the authority; this lets the pure
+   * rules mirror it.
+   */
+  blockedUsers: ReadonlySet<string>;
+  /** Users the viewer muted. Not a block: only feed + comment display. */
+  mutedUsers: ReadonlySet<string>;
+  /**
+   * Users the viewer asked not to be suggested ("don't suggest" or "less like
+   * this" feedback). Both stop suggestions while ordering is random.
+   */
+  suppressedSuggestions: ReadonlySet<string>;
 }
 
 export interface MediaItemContext {

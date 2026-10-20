@@ -10,6 +10,8 @@
  */
 import type {
   ContentExposure,
+  PostSourceKind,
+  PostStatus,
   FilterSettings,
   Gender,
   MediaClassification,
@@ -21,6 +23,8 @@ const hx = (s: string): string =>
   `00000000-0000-0000-0000-${s.padStart(12, "0")}`;
 
 export const GROUP_ID = hx("6a0");
+/** A second, PUBLIC group (GROUP_ID is private_hidden) — multi-audience cases. */
+export const GROUP2_ID = hx("6a1");
 export const FAMILY_SPACE_ID = hx("f50");
 
 export const EXPOSURES = ["public", "followers", "group", "family"] as const;
@@ -40,7 +44,12 @@ export type UserKey =
   | "follower"
   | "groupMember"
   | "fsMember"
-  | "blocked";
+  | "blocked"
+  | "muter"
+  | "noSuggest"
+  | "suppressor"
+  | "group2Member"
+  | "bothGroups";
 
 export interface UserFixture {
   key: UserKey;
@@ -50,6 +59,10 @@ export interface UserFixture {
   follows: string[];
   groups: string[];
   familySpaces: string[];
+  /** Users this user muted. */
+  mutes?: string[];
+  /** Users this user gave dont_suggest feedback on. */
+  suppressed?: string[];
   /** classification of this user's avatar, if any (media on their profile). */
   avatar?: { id: string; classification: MediaClassification };
 }
@@ -68,6 +81,12 @@ const GROUP_MEMBER = hx("a06");
 const FS_MEMBER = hx("a07");
 const BLOCKED = hx("a08");
 
+const MUTER = hx("a09");
+const NO_SUGGEST = hx("a0a");
+const SUPPRESSOR = hx("a0b");
+const GROUP2_MEMBER = hx("a0c");
+const BOTH_GROUPS = hx("a0d");
+
 export const USERS: UserFixture[] = [
   // Author of the content grid. Deliberately male/default (content filter ON):
   // this makes them a FILTERED uploader, so the parity suite proves the
@@ -82,7 +101,7 @@ export const USERS: UserFixture[] = [
     gender: "male",
     filter: withFilter("male"),
     follows: [],
-    groups: [GROUP_ID],
+    groups: [GROUP_ID, GROUP2_ID],
     familySpaces: [FAMILY_SPACE_ID],
     avatar: { id: hx("b00"), classification: "general" },
   },
@@ -140,6 +159,12 @@ export const USERS: UserFixture[] = [
     groups: [],
     familySpaces: [],
   },
+  // Follows the author but muted them: the post stays reachable, the feed drops it.
+  { key: "muter", id: MUTER, gender: "male", filter: withFilter("male"), follows: [AUTHOR], groups: [], familySpaces: [], mutes: [AUTHOR] },
+  { key: "noSuggest", id: NO_SUGGEST, gender: "male", filter: withFilter("male", { showSuggestedPosts: false }), follows: [], groups: [], familySpaces: [] },
+  { key: "suppressor", id: SUPPRESSOR, gender: "male", filter: withFilter("male"), follows: [], groups: [], familySpaces: [], suppressed: [AUTHOR] },
+  { key: "group2Member", id: GROUP2_MEMBER, gender: "female", filter: withFilter("female"), follows: [], groups: [GROUP2_ID], familySpaces: [] },
+  { key: "bothGroups", id: BOTH_GROUPS, gender: "male", filter: withFilter("male"), follows: [], groups: [GROUP_ID, GROUP2_ID], familySpaces: [] },
 ];
 
 export const USER = Object.fromEntries(USERS.map((u) => [u.key, u])) as Record<UserKey, UserFixture>;
@@ -158,13 +183,13 @@ export interface MediaFixture {
 function exposureFor(kind: (typeof EXPOSURES)[number], authorId: string): ContentExposure {
   switch (kind) {
     case "public":
-      return { kind: "public" };
+      return [{ kind: "public" }];
     case "followers":
-      return { kind: "followers_only", authorId };
+      return [{ kind: "followers_only", authorId }];
     case "group":
-      return { kind: "group", groupId: GROUP_ID };
+      return [{ kind: "group", groupId: GROUP_ID }];
     case "family":
-      return { kind: "family_space", spaceId: FAMILY_SPACE_ID };
+      return [{ kind: "family_space", spaceId: FAMILY_SPACE_ID }];
   }
 }
 
@@ -191,13 +216,139 @@ export const BLOCKED_POST_MEDIA: MediaFixture = {
   mediaId: hx("de0"),
   uploaderId: BLOCKED,
   classification: "general",
-  exposure: { kind: "public" },
+  exposure: [{ kind: "public" }],
   familySpaceId: null,
 };
 MEDIA.push(BLOCKED_POST_MEDIA);
 
 /** Ordered (blocker, blocked) pairs — a single block establishes mutual invisibility. */
 export const BLOCKS: Array<[string, string]> = [[AUTHOR, BLOCKED]];
+
+/**
+ * Every post the feed/post-visibility parity suites reason about: the media
+ * grid's posts (all by `author`) plus the multi-audience, draft and group
+ * cases. `PostContext` is what the TS policy evaluates; the DB is seeded from
+ * the same record.
+ */
+export interface PostFixture {
+  postId: string;
+  authorId: string;
+  status: PostStatus;
+  exposure: ContentExposure;
+  sourceKind: PostSourceKind;
+  sourceGroupId: string | null;
+  sourceSpaceId: string | null;
+}
+
+const GRID_SOURCE: Record<(typeof EXPOSURES)[number], PostSourceKind> = {
+  public: "profile",
+  followers: "profile",
+  group: "group",
+  family: "family_space",
+};
+
+export const POSTS: PostFixture[] = [];
+{
+  let i = 0;
+  for (const exposure of EXPOSURES) {
+    for (let c = 0; c < CLASSES.length; c++) {
+      const m = MEDIA[i++]!;
+      POSTS.push({
+        postId: m.postId,
+        authorId: m.uploaderId,
+        status: "published",
+        exposure: m.exposure,
+        sourceKind: GRID_SOURCE[exposure],
+        sourceGroupId: exposure === "group" ? GROUP_ID : null,
+        sourceSpaceId: exposure === "family" ? FAMILY_SPACE_ID : null,
+      });
+    }
+  }
+}
+POSTS.push({
+  postId: BLOCKED_POST_MEDIA.postId,
+  authorId: BLOCKED,
+  status: "published",
+  exposure: BLOCKED_POST_MEDIA.exposure,
+  sourceKind: "profile",
+  sourceGroupId: null,
+  sourceSpaceId: null,
+});
+
+const profilePost = (key: string, exposure: ContentExposure, status: PostStatus = "published"): PostFixture => ({
+  postId: hx(key),
+  authorId: AUTHOR,
+  status,
+  exposure,
+  sourceKind: "profile",
+  sourceGroupId: null,
+  sourceSpaceId: null,
+});
+
+export const EXTRA_POSTS = {
+  /** Two groups: in G1 only / G2 only / both / neither. */
+  twoGroups: profilePost("e01", [
+    { kind: "group", groupId: GROUP_ID },
+    { kind: "group", groupId: GROUP2_ID },
+  ]),
+  /** Followers plus a group (visible to a follower OR a G2 member). */
+  followersAndGroup: profilePost("e02", [
+    { kind: "followers_only", authorId: AUTHOR },
+    { kind: "group", groupId: GROUP2_ID },
+  ]),
+  /** Author-only draft. */
+  draft: profilePost("e03", [{ kind: "public" }], "draft"),
+  /** Public, in the public group only (everyone-in-G2 reads, others do not). */
+  group2Only: profilePost("e04", [{ kind: "group", groupId: GROUP2_ID }]),
+};
+POSTS.push(...Object.values(EXTRA_POSTS));
+
+/** Ordered by pick order, which is what `position` records. */
+export async function insertPost(
+  db: PGlite,
+  p: Pick<PostFixture, "postId" | "authorId" | "exposure"> &
+    Partial<Pick<PostFixture, "status" | "sourceKind" | "sourceGroupId" | "sourceSpaceId">> & {
+      text?: string;
+      quotedPostId?: string | null;
+    }
+): Promise<void> {
+  // Same path a client takes: a draft, then its audiences, then publish (the
+  // posts_guard trigger validates the combination and the membership).
+  await db.query(
+    `insert into public.posts (id, author_id, text, status, source_kind, source_group_id, source_space_id, quoted_post_id)
+     values ($1, $2, $3, 'draft', $4, $5, $6, $7)`,
+    [
+      p.postId,
+      p.authorId,
+      p.text ?? "post",
+      p.sourceKind ?? "profile",
+      p.sourceGroupId ?? null,
+      p.sourceSpaceId ?? null,
+      p.quotedPostId ?? null,
+    ]
+  );
+  for (const [position, a] of p.exposure.entries()) {
+    await db.query(
+      `insert into public.post_audiences (post_id, kind, group_id, space_id, position)
+       values ($1, $2, $3, $4, $5)`,
+      [
+        p.postId,
+        a.kind,
+        a.kind === "group" ? a.groupId : null,
+        a.kind === "family_space" ? a.spaceId : null,
+        position,
+      ]
+    );
+  }
+  if ((p.status ?? "published") === "published") {
+    await db.query(`update public.posts set status = 'published' where id = $1`, [p.postId]);
+  }
+}
+
+/** A public published post — the shape most pipeline tests need. */
+export function insertPublicPost(db: PGlite, postId: string, authorId: string, text: string): Promise<void> {
+  return insertPost(db, { postId, authorId, text, exposure: [{ kind: "public" }] });
+}
 
 async function q(db: PGlite, sql: string, params: unknown[] = []): Promise<void> {
   await db.query(sql, params);
@@ -239,6 +390,7 @@ export async function seedFixtures(db: PGlite): Promise<void> {
 
   // 2. Group + family space, with memberships.
   await q(db, `insert into public.groups (id, name, color, icon, visibility) values ($1, 'G', '#111', 'star', 'private_hidden')`, [GROUP_ID]);
+  await q(db, `insert into public.groups (id, name, color, icon, visibility) values ($1, 'G2', '#222', 'heart', 'public')`, [GROUP2_ID]);
   await q(db, `insert into public.family_spaces (id, name, admin_user_id) values ($1, 'FS', $2)`, [FAMILY_SPACE_ID, AUTHOR]);
   for (const u of USERS) {
     for (const g of u.groups) await q(db, `insert into public.group_members (group_id, user_id) values ($1, $2)`, [g, u.id]);
@@ -253,21 +405,15 @@ export async function seedFixtures(db: PGlite): Promise<void> {
     await q(db, `insert into public.blocks (blocker_id, blocked_id) values ($1, $2)`, [blocker, blocked]);
   }
 
-  // 4. Posts + their media (classification set directly = post-pipeline state).
+  for (const u of USERS) {
+    for (const muted of u.mutes ?? []) await q(db, `insert into public.user_mutes (muter_id, muted_id) values ($1, $2)`, [u.id, muted]);
+    for (const t of u.suppressed ?? []) await q(db, `insert into public.suggestion_feedback (viewer_id, target_user_id, kind) values ($1, $2, 'dont_suggest')`, [u.id, t]);
+  }
+
+  // 4. Posts (draft -> audiences -> publish, as a client does) + their media
+  // (classification set directly = post-pipeline state).
+  for (const p of POSTS) await insertPost(db, p);
   for (const m of MEDIA) {
-    const e = m.exposure;
-    await q(
-      db,
-      `insert into public.posts (id, author_id, text, exposure_kind, exposure_group_id, exposure_space_id)
-       values ($1, $2, 'post', $3, $4, $5)`,
-      [
-        m.postId,
-        m.uploaderId,
-        e.kind,
-        e.kind === "group" ? e.groupId : null,
-        e.kind === "family_space" ? e.spaceId : null,
-      ]
-    );
     await q(
       db,
       `insert into public.media_items (id, post_id, uploader_id, storage_path, classification, classified_at)

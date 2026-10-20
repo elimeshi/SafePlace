@@ -22,6 +22,9 @@ export async function buildViewerContext(
     groupMemberships,
     familySpaceMemberships,
     following,
+    blockedUsers,
+    mutedUsers,
+    suppressedSuggestions,
   ] = await Promise.all([
     supabase.from("profiles").select("gender").eq("id", userId).single(),
     supabase
@@ -34,6 +37,11 @@ export async function buildViewerContext(
     fetchIdSet(supabase, "group_members", "group_id", userId),
     fetchIdSet(supabase, "family_space_members", "space_id", userId),
     fetchIdSet(supabase, "follows", "followed_id", userId, "follower_id"),
+    // Own edges only (RLS): blocks AGAINST the viewer are unknowable here, so
+    // the database stays the authority for those.
+    fetchIdSet(supabase, "blocks", "blocked_id", userId, "blocker_id"),
+    fetchIdSet(supabase, "user_mutes", "muted_id", userId, "muter_id"),
+    fetchIdSet(supabase, "suggestion_feedback", "target_user_id", userId, "viewer_id"),
   ]);
 
   if (profileError || !profile) {
@@ -54,6 +62,9 @@ export async function buildViewerContext(
     groupMemberships,
     familySpaceMemberships,
     following,
+    blockedUsers,
+    mutedUsers,
+    suppressedSuggestions,
   };
 }
 

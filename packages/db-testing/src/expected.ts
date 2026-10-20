@@ -21,6 +21,11 @@ export function viewerOf(u: UserFixture): Viewer {
     groupMemberships: new Set(u.groups),
     familySpaceMemberships: new Set(u.familySpaces),
     following: new Set(u.follows),
+    blockedUsers: new Set(
+      BLOCKS.flatMap(([x, y]) => (x === u.id ? [y] : y === u.id ? [x] : []))
+    ),
+    mutedUsers: new Set(u.mutes ?? []),
+    suppressedSuggestions: new Set(u.suppressed ?? []),
   };
 }
 

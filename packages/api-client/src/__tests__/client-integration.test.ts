@@ -117,7 +117,7 @@ describe.skipIf(!enabled)("api-client against a live Supabase stack", () => {
     });
     const { postId } = await createPost(uploaderClient, {
       authorId: uploader.id,
-      exposure: { kind: "public" },
+      exposure: [{ kind: "public" }],
       text: "hello",
       media: [{ storagePath, contentType: "image/png" }],
     });

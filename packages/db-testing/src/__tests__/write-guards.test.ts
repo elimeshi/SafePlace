@@ -12,7 +12,7 @@
  */
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../harness";
-import { MEDIA, USER, seedFixtures } from "../seed";
+import { MEDIA, USER, USERS, seedFixtures } from "../seed";
 
 let db: TestDb;
 beforeAll(async () => {
@@ -24,7 +24,7 @@ afterAll(async () => {
 });
 
 const publicOf = (cls: string) =>
-  MEDIA.find((m) => m.exposure.kind === "public" && m.classification === cls)!;
+  MEDIA.find((m) => m.exposure[0].kind === "public" && m.classification === cls)!;
 
 // --- invariant #1: classification is not client-writable ---------------------
 
@@ -115,7 +115,9 @@ it("exposes only the caller's own follow edges, but a public count", async () =>
   const count = await db.asUser(USER.maleFiltered.id, (q) =>
     q.query<{ c: number }>(`select public.follower_count($1) as c`, [USER.author.id])
   );
-  expect(Number(count.rows[0]?.c)).toBe(1);
+  expect(Number(count.rows[0]?.c)).toBe(
+    USERS.filter((u) => u.follows.includes(USER.author.id)).length
+  );
 });
 
 it("gives an anonymous request nothing (locked out at the grant layer)", async () => {

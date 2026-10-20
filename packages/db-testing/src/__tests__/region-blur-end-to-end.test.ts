@@ -20,7 +20,7 @@ import {
   createPgliteJobStore,
   createPglitePersistedDerivativeStore,
 } from "../pglite-job-store";
-import { seedFixtures, USER } from "../seed";
+import { insertPublicPost, seedFixtures, USER } from "../seed";
 
 let db: TestDb;
 let image: Uint8Array;
@@ -49,10 +49,7 @@ async function upload(): Promise<string> {
   seq += 1;
   const postId = `00000000-0000-0000-0000-${`da${seq}`.padStart(12, "0")}`;
   const mediaId = `00000000-0000-0000-0000-${`db${seq}`.padStart(12, "0")}`;
-  await db.raw.query(
-    `insert into public.posts (id, author_id, text, exposure_kind) values ($1, $2, 'r', 'public')`,
-    [postId, author.id]
-  );
+  await insertPublicPost(db.raw, postId, author.id, "r");
   await db.asUser(author.id, (q) =>
     q.query(
       `insert into public.media_items (id, post_id, uploader_id, storage_path, content_type, classification)

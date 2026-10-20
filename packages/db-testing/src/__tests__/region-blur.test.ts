@@ -12,7 +12,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../harness";
-import { seedFixtures, USER } from "../seed";
+import { insertPublicPost, seedFixtures, USER } from "../seed";
 
 let db: TestDb;
 const author = USER.author;
@@ -31,10 +31,7 @@ async function mediaWithDerivative(classification: string): Promise<{
   const originalPath = `media/${mediaId}`;
   const blurredPath = `media/${mediaId}.redacted`;
 
-  await db.raw.query(
-    `insert into public.posts (id, author_id, text, exposure_kind) values ($1, $2, 'b', 'public')`,
-    [postId, author.id]
-  );
+  await insertPublicPost(db.raw, postId, author.id, "b");
   await db.raw.query(
     `insert into public.media_items
        (id, post_id, uploader_id, storage_path, blurred_storage_path, content_type, classification, classified_at)
@@ -142,10 +139,7 @@ describe("with region blur enabled", () => {
     seq += 1;
     const postId = `00000000-0000-0000-0000-${`cc${seq}`.padStart(12, "0")}`;
     const mediaId = `00000000-0000-0000-0000-${`cd${seq}`.padStart(12, "0")}`;
-    await db.raw.query(
-      `insert into public.posts (id, author_id, text, exposure_kind) values ($1, $2, 'n', 'public')`,
-      [postId, author.id]
-    );
+    await insertPublicPost(db.raw, postId, author.id, "n");
     await db.raw.query(
       `insert into public.media_items
          (id, post_id, uploader_id, storage_path, content_type, classification, classified_at)

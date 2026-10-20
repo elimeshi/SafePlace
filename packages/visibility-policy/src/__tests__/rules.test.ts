@@ -10,7 +10,7 @@ import {
   viewerSatisfiesClassification,
   viewerSatisfiesExposure,
 } from "../rules";
-import type { FilterSettings, Viewer } from "../types";
+import type { ContentAudience, FilterSettings, Viewer } from "../types";
 
 function makeViewer(overrides: Partial<Viewer> = {}): Viewer {
   return {
@@ -20,13 +20,20 @@ function makeViewer(overrides: Partial<Viewer> = {}): Viewer {
     groupMemberships: new Set(),
     familySpaceMemberships: new Set(),
     following: new Set(),
+    blockedUsers: new Set(),
+    mutedUsers: new Set(),
+    suppressedSuggestions: new Set(),
     ...overrides,
   };
 }
 
+/** Single-audience shorthand for the original per-kind exposure cases. */
+const satisfies = (v: Viewer, a: ContentAudience) =>
+  viewerSatisfiesExposure(v, [a]);
+
 describe("viewerSatisfiesExposure", () => {
   it("always allows public content", () => {
-    expect(viewerSatisfiesExposure(makeViewer(), { kind: "public" })).toBe(
+    expect(satisfies(makeViewer(), { kind: "public" })).toBe(
       true
     );
   });
@@ -34,7 +41,7 @@ describe("viewerSatisfiesExposure", () => {
   it("allows the author to see their own followers-only content", () => {
     const viewer = makeViewer({ userId: "author-1" });
     expect(
-      viewerSatisfiesExposure(viewer, {
+      satisfies(viewer, {
         kind: "followers_only",
         authorId: "author-1",
       })
@@ -44,7 +51,7 @@ describe("viewerSatisfiesExposure", () => {
   it("blocks followers-only content for non-followers", () => {
     const viewer = makeViewer({ following: new Set(["someone-else"]) });
     expect(
-      viewerSatisfiesExposure(viewer, {
+      satisfies(viewer, {
         kind: "followers_only",
         authorId: "author-1",
       })
@@ -54,7 +61,7 @@ describe("viewerSatisfiesExposure", () => {
   it("allows followers-only content for followers", () => {
     const viewer = makeViewer({ following: new Set(["author-1"]) });
     expect(
-      viewerSatisfiesExposure(viewer, {
+      satisfies(viewer, {
         kind: "followers_only",
         authorId: "author-1",
       })
@@ -65,10 +72,10 @@ describe("viewerSatisfiesExposure", () => {
     const member = makeViewer({ groupMemberships: new Set(["group-1"]) });
     const nonMember = makeViewer({ groupMemberships: new Set() });
     expect(
-      viewerSatisfiesExposure(member, { kind: "group", groupId: "group-1" })
+      satisfies(member, { kind: "group", groupId: "group-1" })
     ).toBe(true);
     expect(
-      viewerSatisfiesExposure(nonMember, {
+      satisfies(nonMember, {
         kind: "group",
         groupId: "group-1",
       })
@@ -81,13 +88,13 @@ describe("viewerSatisfiesExposure", () => {
     });
     const nonMember = makeViewer({ familySpaceMemberships: new Set() });
     expect(
-      viewerSatisfiesExposure(member, {
+      satisfies(member, {
         kind: "family_space",
         spaceId: "space-1",
       })
     ).toBe(true);
     expect(
-      viewerSatisfiesExposure(nonMember, {
+      satisfies(nonMember, {
         kind: "family_space",
         spaceId: "space-1",
       })
@@ -190,7 +197,7 @@ describe("canViewMedia — both axes combined", () => {
     expect(
       canViewMedia(filteredMaleViewer, {
         classification: "contains_women",
-        exposure: { kind: "public" },
+        exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "author-1",
       })
@@ -200,7 +207,7 @@ describe("canViewMedia — both axes combined", () => {
     expect(
       canViewMedia(filteredMaleViewer, {
         classification: "general",
-        exposure: { kind: "group", groupId: "some-other-group" },
+        exposure: [{ kind: "group", groupId: "some-other-group" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "author-1",
       })
@@ -210,7 +217,7 @@ describe("canViewMedia — both axes combined", () => {
     expect(
       canViewMedia(filteredMaleViewer, {
         classification: "general",
-        exposure: { kind: "public" },
+        exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "author-1",
       })
@@ -230,7 +237,7 @@ describe("the uploader always sees their own content", () => {
     expect(
       canViewMedia(viewer, {
         classification: "contains_women",
-        exposure: { kind: "public" },
+        exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "me",
       })
@@ -242,7 +249,7 @@ describe("the uploader always sees their own content", () => {
     expect(
       canViewMedia(viewer, {
         classification: "pending_review",
-        exposure: { kind: "public" },
+        exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "me",
       })
@@ -260,7 +267,7 @@ describe("the uploader always sees their own content", () => {
     expect(
       canViewMedia(viewer, {
         classification: "contains_women",
-        exposure: { kind: "public" },
+        exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "me",
       })
@@ -271,7 +278,7 @@ describe("the uploader always sees their own content", () => {
 describe("canViewMedia — unclassified (pipeline in flight)", () => {
   const unclassifiedPost = {
     classification: "unclassified" as const,
-    exposure: { kind: "public" as const },
+    exposure: [{ kind: "public" }] as const,
     uploaderId: "author-1",
     isWithinViewersFamilySpace: false,
   };
