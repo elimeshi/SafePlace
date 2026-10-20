@@ -242,3 +242,14 @@ with tests.
 
 #7 LLM scanning (now also of draft media), #10 location tag, #12 comment media, #13 the
 external link, #16 public counts. See `docs/legal/legal-tracker.md`.
+
+## Progress log
+
+### 2026-10-20 — steps 1–5 built; verification partly done
+
+- Done: data tier, ADRs 0013–0017, api-client, UI kit and gallery, feed, compose and single-post screens. Pixel diffs vs the lab render are at or under about 0.15% on 22 of 24 scenes (`own` 0.61%, `reportSent` toast region 0.39%).
+- Verification: `pnpm turbo run typecheck lint test --force` gave 23/23 tasks successful. Tests: visibility-policy 92, db-testing 263, ui 143, mobile 71, api-client 39 (3 skipped), moderation-pipeline 83, design-tokens 11. `npx expo-doctor` in apps/mobile: 18/18.
+- Hosted DB: migrations `20261020120000`, `20261020120100`, `20261020130000`, `20261020130100` applied, each in its own transaction and recorded in `supabase_migrations.schema_migrations` (13 -> 17). pg_cron must still be enabled on the hosted project for the draft purge schedule.
+- Open for Eli: Family Space never mixes with non-family audiences (pending); share-rule reading in ADR 0017; the not-in-lab items listed in the agents' reports; copy-link base URL (legal #13); the two lab quirks (statuses "+" caption, after-publish notice card).
+- 🔴 legal items touched: #7, #12, #13, #16.
+- Next: `/visibility-audit` pass on read paths, fix the `own`/`reportSent` residuals, final summary, then the Android device run on Eli's PC.
