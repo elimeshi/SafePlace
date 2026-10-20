@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   avatarFallbackInitial,
+  avatarFontSize,
   avatarInnerSize,
   resolveAvatarStyle,
 } from "../Avatar.styles";
@@ -10,60 +11,40 @@ describe("avatarFallbackInitial", () => {
   it("returns the first Hebrew character as-is (Hebrew has no uppercase)", () => {
     expect(avatarFallbackInitial("שרה")).toBe("ש");
   });
-
   it("uppercases the first Latin character", () => {
     expect(avatarFallbackInitial("David")).toBe("D");
   });
-
-  it("returns an empty string when there is no name", () => {
+  it("returns an empty string when there is no name or only whitespace", () => {
     expect(avatarFallbackInitial("")).toBe("");
-  });
-
-  it("returns an empty string for a name that is only whitespace", () => {
     expect(avatarFallbackInitial("   ")).toBe("");
   });
-
   it("ignores leading whitespace", () => {
     expect(avatarFallbackInitial("  eli")).toBe("E");
   });
 });
 
-describe("resolveAvatarStyle", () => {
-  it("shows a visible ring border in ringColor when ring is true", () => {
-    const s = resolveAvatarStyle({ size: 44, ring: true, ringColor: theme.colors.accent });
-    expect(s.outer.borderWidth).toBeGreaterThan(0);
-    expect(s.outer.borderColor).toBe(theme.colors.accent);
+describe("resolveAvatarStyle (lab .av / .av.ring)", () => {
+  it("is a blue100 disc of exactly `size`", () => {
+    const s = resolveAvatarStyle({ size: 42, ring: false, ringColor: theme.colors.accent });
+    expect(s.outer.width).toBe(42);
+    expect(s.outer.height).toBe(42);
+    expect(s.outer.borderRadius).toBe(theme.radius.full);
+    expect(s.outer.backgroundColor).toBe(theme.colors.blue100);
+    expect(s.outer.boxShadow).toBeUndefined();
   });
 
-  it("has no visible border when ring is false", () => {
-    const s = resolveAvatarStyle({ size: 44, ring: false, ringColor: theme.colors.primary });
-    expect(s.outer.borderWidth).toBe(0);
-    expect(s.outer.borderColor).toBe("transparent");
-  });
-
-  it("always renders a fully round image, regardless of ring", () => {
-    const withRing = resolveAvatarStyle({ size: 44, ring: true, ringColor: theme.colors.primary });
-    const withoutRing = resolveAvatarStyle({ size: 44, ring: false, ringColor: theme.colors.primary });
-    expect(withRing.image.borderRadius).toBe(theme.radius.full);
-    expect(withoutRing.image.borderRadius).toBe(theme.radius.full);
-    expect(withRing.outer.borderRadius).toBe(theme.radius.full);
-  });
-
-  it("the outer circle always matches the requested size", () => {
-    const s = resolveAvatarStyle({ size: 56, ring: true, ringColor: theme.colors.primary });
+  it("paints the ring outside the disc: 2.5px surface gap then 5px ring", () => {
+    const s = resolveAvatarStyle({ size: 56, ring: true, ringColor: theme.colors.accent });
+    expect(s.outer.boxShadow).toBe(`0 0 0 2.5px ${theme.colors.surface}, 0 0 0 5px ${theme.colors.accent}`);
     expect(s.outer.width).toBe(56);
-    expect(s.outer.height).toBe(56);
+    expect(avatarInnerSize(56, true)).toBe(56);
   });
 
-  it("without a ring, the inner image fills the full size", () => {
-    const s = resolveAvatarStyle({ size: 44, ring: false, ringColor: theme.colors.primary });
-    expect(s.image.width).toBe(44);
-    expect(avatarInnerSize(44, false)).toBe(44);
-  });
-
-  it("with a ring, the inner image shrinks to leave room for the border + gap", () => {
-    const inner = avatarInnerSize(44, true);
-    expect(inner).toBeLessThan(44);
-    expect(inner).toBeGreaterThan(0);
+  it("initial is Rubik 600 at 0.42x the diameter in primary", () => {
+    const s = resolveAvatarStyle({ size: 42, ring: false, ringColor: theme.colors.accent });
+    expect(avatarFontSize(42)).toBe(18);
+    expect(s.initial.fontSize).toBe(18);
+    expect(s.initial.fontFamily).toBe(theme.fontFamily.displaySemibold);
+    expect(s.initial.color).toBe(theme.colors.primary);
   });
 });

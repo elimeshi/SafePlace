@@ -1,5 +1,7 @@
-import type { ViewStyle } from "react-native";
+import type { TextStyle, ViewStyle } from "react-native";
+import { feedColors, shadows } from "@safeplace/design-tokens";
 import { theme } from "../theme";
+import { assistant, lh, rubik } from "../foundation/style";
 
 /**
  * Which media state a post card should render. The `filtered` case is the UI
@@ -21,14 +23,53 @@ export function postCardMediaMode({
   return filtered ? "filtered" : "image";
 }
 
-/** The "Facebook-lite" card shell: white surface, subtle frame, soft corners, restrained shadow. */
+/** Lab `.card.soft`: white, radius 24, shadow only — no border (locked choice). */
 export function resolveCardStyle(): ViewStyle {
   return {
-    backgroundColor: theme.colors.white,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 24,
     overflow: "hidden",
-    ...theme.elevation.card,
+    boxShadow: shadows.soft,
+  };
+}
+
+export const POST_MEDIA_HEIGHT = 230;
+export const POST_AVATAR_SIZE = 42;
+
+export function resolvePostCardParts(): {
+  header: ViewStyle;
+  who: ViewStyle;
+  nameRow: ViewStyle;
+  name: TextStyle;
+  time: TextStyle;
+  more: ViewStyle;
+  body: TextStyle;
+  readMore: TextStyle;
+  location: ViewStyle;
+  locationText: TextStyle;
+  mediaGround: ViewStyle;
+  sharedBy: ViewStyle;
+  sharedByText: TextStyle;
+} {
+  return {
+    header: { flexDirection: "row", alignItems: "flex-start", gap: 11, paddingTop: 15, paddingHorizontal: 16, paddingBottom: 10 },
+    who: { flex: 1, minWidth: 0, flexDirection: "column", gap: 5 },
+    nameRow: { flexDirection: "row", alignItems: "baseline", gap: 7, flexWrap: "wrap" },
+    name: { ...rubik(15), color: theme.colors.ink900 },
+    time: { ...assistant(13), color: theme.colors.ink400 },
+    more: { marginTop: -4 },
+    body: {
+      ...assistant(16),
+      lineHeight: lh(16, 1.62),
+      color: theme.colors.ink900,
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+    },
+    readMore: { ...assistant(16, 600), color: theme.colors.primary },
+    location: { flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-start", paddingHorizontal: 16, paddingBottom: 10 },
+    locationText: { ...assistant(13), color: theme.colors.ink500 },
+    mediaGround: { backgroundColor: feedColors.mediaGround, overflow: "hidden" },
+    sharedBy: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingBottom: 8 },
+    sharedByText: { ...assistant(12.5, 600), color: theme.colors.ink400 },
   };
 }

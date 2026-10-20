@@ -1,13 +1,15 @@
 import type { TextStyle, ViewStyle } from "react-native";
 import { theme } from "../theme";
+import { assistant, rubik } from "../foundation/style";
 
 /**
- * Pure styling for InteractionBar — kept separate from the view so it can be
- * unit-tested with vitest (no RN renderer). Ported from
- * design-reference/components/content/InteractionBar.jsx. Deliberately
- * restrained: like, comment, share, save — no social-pressure UI beyond a
- * quiet count (CLAUDE.md §8).
+ * Pure styling for InteractionBar (feed lab `.ibar` for the card, `.pbar` for
+ * the single-post screen). Deliberately restrained (CLAUDE.md §8): like,
+ * comment, share, save, with a quiet number. The like count is a number only
+ * — never a list, never a separate tap target (invariant #5, plan §2 Likes).
  */
+
+export type InteractionBarVariant = "card" | "post";
 
 export interface InteractionIconStateArgs {
   liked?: boolean;
@@ -15,50 +17,73 @@ export interface InteractionIconStateArgs {
 }
 
 export interface InteractionIconState {
+  /** Lab `--like`: an active like is indigo #2E3A8C (locked choice). */
   heartColor: string;
+  heartFilled: boolean;
+  /** The lab fills a saved bookmark but keeps the neutral ink. */
   bookmarkColor: string;
+  bookmarkFilled: boolean;
   iconNeutral: string;
 }
 
-/**
- * Resolves the heart/bookmark tint. `liked` tints the heart with `danger`;
- * `saved` tints the bookmark with `primary`. Otherwise both fall back to the
- * same neutral ink so the row reads as calm/unopinionated by default.
- */
 export function interactionIconState({
   liked,
   saved,
 }: InteractionIconStateArgs): InteractionIconState {
   const iconNeutral = theme.colors.ink500;
   return {
-    heartColor: liked ? theme.colors.danger : iconNeutral,
-    bookmarkColor: saved ? theme.colors.primary : iconNeutral,
+    heartColor: liked ? theme.colors.primary : iconNeutral,
+    heartFilled: Boolean(liked),
+    bookmarkColor: iconNeutral,
+    bookmarkFilled: Boolean(saved),
     iconNeutral,
   };
 }
 
-export const rowStyle: ViewStyle = {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: theme.spacing.xs,
-};
+export function resolveBarStyle(variant: InteractionBarVariant): ViewStyle {
+  if (variant === "post") {
+    return {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-around",
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderTopColor: theme.colors.ink100,
+      borderBottomColor: theme.colors.ink100,
+    };
+  }
+  return {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingTop: 6,
+    paddingBottom: 8,
+    paddingHorizontal: 10,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.ink100,
+  };
+}
+
+export function resolveActionStyle(variant: InteractionBarVariant): ViewStyle {
+  return variant === "post"
+    ? { flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 11, paddingHorizontal: 14 }
+    : {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
+        borderRadius: 12,
+      };
+}
+
+export function resolveCountStyle(variant: InteractionBarVariant): TextStyle {
+  return variant === "post"
+    ? { ...rubik(15), fontVariant: ["tabular-nums"] }
+    : { ...assistant(14, 600), fontVariant: ["tabular-nums"] };
+}
 
 /** Pushes `save` to the far end (start of the row stays like/comment/share). */
-export const spacerStyle: ViewStyle = {
-  flex: 1,
-};
-
-export const actionStyle: ViewStyle = {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 7,
-  paddingVertical: 8,
-  paddingHorizontal: 10,
-  minHeight: 40,
-  borderRadius: theme.radius.md,
-};
-
-export const countStyle: TextStyle = {
-  ...theme.typeRole.meta,
-  fontFamily: theme.fontFamily.numeric,
-};
+export const spacerStyle: ViewStyle = { flex: 1 };

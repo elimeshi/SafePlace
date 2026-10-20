@@ -10,6 +10,8 @@ export interface IconProps {
   name: IconName;
   size?: number;
   strokeWidth?: number;
+  /** Solid fill (active like / saved bookmark). */
+  filled?: boolean;
   /** RN has no color inheritance — pass a color explicitly (defaults to a neutral ink). */
   color?: string;
   style?: StyleProp<ViewStyle>;
@@ -26,12 +28,13 @@ export function Icon({
   name,
   size = 22,
   strokeWidth = 2,
+  filled = false,
   color = theme.colors.ink700,
   style,
 }: IconProps) {
   return (
     <SvgXml
-      xml={buildIconSvg(name, { size, strokeWidth })}
+      xml={buildIconSvg(name, { size, strokeWidth, filled })}
       width={size}
       height={size}
       color={color}

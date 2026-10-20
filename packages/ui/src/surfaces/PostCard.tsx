@@ -1,11 +1,19 @@
-import type { ViewStyle } from "react-native";
-import { Image, Text, View } from "react-native";
+import type { ReactNode } from "react";
+import { Image, Pressable, Text, View, type ViewStyle } from "react-native";
 import { theme } from "../theme";
 import { Avatar } from "../content/Avatar";
+import { FilteredMedia } from "../content/FilteredMedia";
 import { Icon, type IconName } from "../content/Icon";
 import { InteractionBar } from "../content/InteractionBar";
-import { SourceLabel } from "../content/SourceLabel";
-import { postCardMediaMode, resolveCardStyle } from "./PostCard.styles";
+import { SourceLabel, type SourceLabelKind } from "../content/SourceLabel";
+import { contentCopy } from "../content/copy";
+import {
+  POST_AVATAR_SIZE,
+  POST_MEDIA_HEIGHT,
+  postCardMediaMode,
+  resolveCardStyle,
+  resolvePostCardParts,
+} from "./PostCard.styles";
 
 export interface PostCardAuthor {
   name: string;
@@ -13,7 +21,7 @@ export interface PostCardAuthor {
 }
 
 export interface PostCardSource {
-  kind: "group" | "public" | "suggested";
+  kind: SourceLabelKind;
   name?: string;
   color?: string;
   icon?: IconName;
@@ -24,7 +32,9 @@ export interface PostCardData {
   time: string;
   source?: PostCardSource;
   body?: string;
-  /** Image URI. */
+  /** Place name only — never coordinates (02 §3.5). */
+  location?: string;
+  /** Image URI (already signed; never present for filtered media). */
   media?: string;
   likes?: number;
   comments?: number;
@@ -43,111 +53,140 @@ export interface PostCardProps {
   /** Hebrew defaults, prop-overridable per ADR 0007. */
   filteredLabel?: string;
   filteredHint?: string;
+  /** Replaces the <Image> (e.g. a local stand-in); still treated as "has media". */
+  mediaSlot?: ReactNode;
+  mediaHeight?: number;
+  /** Strip under the media: <StateStrip> / <UploaderNotice mode="afterPublish">. */
+  stateStrip?: ReactNode;
+  /** Quote post: shows the "shared a post" row and embeds the original (<QuoteCard>). */
+  quote?: ReactNode;
+  sharedByLabel?: string;
+  /** Long bodies fold to this many lines with `readMoreLabel` (no default copy in the lab — pass both). */
+  bodyLines?: number;
+  readMoreLabel?: string;
+  onReadMore?: () => void;
+  onPress?: () => void;
+  onPressAuthor?: () => void;
+  onPressSource?: () => void;
+  onMore?: () => void;
+  onLike?: () => void;
+  onComment?: () => void;
+  onShare?: () => void;
+  onSave?: () => void;
+  moreLabel?: string;
   style?: ViewStyle;
 }
 
 /**
- * PostCard — the core feed unit (master §5.2, feed-spec §4). Composes Avatar,
- * SourceLabel, and InteractionBar. Text is never filtered — only media becomes
- * the placeholder — so a filtered post still shows author, time, source, and
- * body.
+ * PostCard — the core feed unit (feed-spec §4, lab `.card.soft`). Text is
+ * never filtered — only media becomes the placeholder — so a filtered post
+ * still shows author, time, source, and body. Likes are a number only.
  */
 export function PostCard({
   post,
   filtered = false,
-  filteredLabel = "מדיה מסוננת לפי ההעדפות שלך",
-  filteredHint = "ניתן לשנות את העדפות הצריכה באזור האישי בכל עת.",
+  filteredLabel = contentCopy.filteredLabel,
+  filteredHint = contentCopy.filteredHint,
+  mediaSlot,
+  mediaHeight = POST_MEDIA_HEIGHT,
+  stateStrip,
+  quote,
+  sharedByLabel = contentCopy.sharedBy,
+  bodyLines,
+  readMoreLabel,
+  onReadMore,
+  onPress,
+  onPressAuthor,
+  onPressSource,
+  onMore,
+  onLike,
+  onComment,
+  onShare,
+  onSave,
+  moreLabel = contentCopy.moreA11y,
   style,
 }: PostCardProps) {
-  const mediaMode = postCardMediaMode({ hasMedia: Boolean(post.media), filtered });
+  const p = resolvePostCardParts();
+  const mediaMode = postCardMediaMode({ hasMedia: Boolean(post.media) || mediaSlot != null, filtered });
 
   return (
-    <View style={[resolveCardStyle(), style]}>
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "flex-start",
-          gap: theme.spacing.md,
-          padding: theme.spacing.lg,
-          paddingBottom: theme.spacing.md,
-        }}
-      >
-        <Avatar src={post.author.avatar} name={post.author.name} size={44} />
-        <View style={{ flex: 1, gap: theme.spacing.xs }}>
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: theme.spacing.sm }}>
-            <Text style={{ ...theme.typeRole.bodyStrong, color: theme.colors.textPrimary }}>
-              {post.author.name}
-            </Text>
-            <Text style={{ ...theme.typeRole.meta, color: theme.colors.ink400 }}>· {post.time}</Text>
+    <View style={[resolveCardStyle(), style]} testID="post-card">
+      <Pressable onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? "button" : undefined}>
+        <View style={p.header}>
+          <Pressable onPress={onPressAuthor} disabled={!onPressAuthor}>
+            <Avatar src={post.author.avatar} name={post.author.name} size={POST_AVATAR_SIZE} />
+          </Pressable>
+          <View style={p.who}>
+            <View style={p.nameRow}>
+              <Pressable onPress={onPressAuthor} disabled={!onPressAuthor}>
+                <Text style={p.name}>{post.author.name}</Text>
+              </Pressable>
+              <Text style={p.time}>{post.time}</Text>
+            </View>
+            {post.source ? (
+              <Pressable onPress={onPressSource} disabled={!onPressSource} style={{ alignSelf: "flex-start" }}>
+                <SourceLabel {...post.source} />
+              </Pressable>
+            ) : null}
           </View>
-          {post.source ? <SourceLabel {...post.source} /> : null}
+          <Pressable accessibilityRole="button" accessibilityLabel={moreLabel} onPress={onMore} style={p.more} testID="post-more">
+            <Icon name="more-horizontal" size={22} color={theme.colors.ink400} />
+          </Pressable>
         </View>
-        <Icon name="more-horizontal" size={20} color={theme.colors.ink400} />
-      </View>
 
-      {/* Body */}
-      {post.body ? (
-        <Text
-          style={{
-            ...theme.typeRole.body,
-            color: theme.colors.textPrimary,
-            paddingHorizontal: theme.spacing.lg,
-            paddingBottom: theme.spacing.md,
-          }}
-        >
-          {post.body}
-        </Text>
-      ) : null}
+        {quote ? (
+          <View style={p.sharedBy}>
+            <Icon name="share" size={14} color={theme.colors.ink400} />
+            <Text style={p.sharedByText}>{sharedByLabel}</Text>
+          </View>
+        ) : null}
 
-      {/* Media */}
-      {mediaMode === "image" && post.media ? (
-        <Image source={{ uri: post.media }} style={{ width: "100%", height: 240 }} resizeMode="cover" />
+        {post.body ? (
+          <View>
+            <Text style={p.body} numberOfLines={bodyLines}>
+              {post.body}
+            </Text>
+            {bodyLines && readMoreLabel ? (
+              <Pressable onPress={onReadMore}>
+                <Text style={[p.body, p.readMore, { marginTop: -8 }]}>{readMoreLabel}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
+        {post.location ? (
+          <View style={p.location}>
+            <Icon name="map-pin" size={15} color={theme.colors.ink500} />
+            <Text style={p.locationText}>{post.location}</Text>
+          </View>
+        ) : null}
+      </Pressable>
+
+      {quote}
+
+      {mediaMode === "image" ? (
+        <View style={[p.mediaGround, { height: mediaHeight }]} testID="post-media">
+          {mediaSlot ?? (
+            <Image source={{ uri: post.media }} style={{ width: "100%", height: mediaHeight }} resizeMode="cover" />
+          )}
+        </View>
       ) : null}
       {mediaMode === "filtered" ? (
-        <View
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            gap: theme.spacing.sm,
-            paddingVertical: theme.spacing["3xl"],
-            paddingHorizontal: theme.spacing.lg,
-            backgroundColor: theme.colors.blue050,
-          }}
-        >
-          <Icon name="eye" size={26} color={theme.colors.blue400} />
-          <Text style={{ ...theme.typeRole.bodyStrong, color: theme.colors.textPrimary, textAlign: "center" }}>
-            {filteredLabel}
-          </Text>
-          <Text
-            style={{
-              ...theme.typeRole.meta,
-              color: theme.colors.textSecondary,
-              textAlign: "center",
-              maxWidth: 320,
-            }}
-          >
-            {filteredHint}
-          </Text>
-        </View>
+        <FilteredMedia label={filteredLabel} hint={filteredHint} />
       ) : null}
 
-      {/* Interactions */}
-      <View
-        style={{
-          borderTopWidth: 1,
-          borderTopColor: theme.colors.ink100,
-          paddingVertical: theme.spacing.sm,
-          paddingHorizontal: theme.spacing.md,
-        }}
-      >
-        <InteractionBar
-          likes={post.likes ?? 0}
-          comments={post.comments ?? 0}
-          liked={post.liked}
-          saved={post.saved}
-        />
-      </View>
+      {stateStrip}
+
+      <InteractionBar
+        likes={post.likes ?? 0}
+        comments={post.comments ?? 0}
+        liked={post.liked}
+        saved={post.saved}
+        onLike={onLike}
+        onComment={onComment}
+        onShare={onShare}
+        onSave={onSave}
+      />
     </View>
   );
 }

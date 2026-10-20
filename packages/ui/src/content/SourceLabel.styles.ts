@@ -1,34 +1,24 @@
 import type { TextStyle, ViewStyle } from "react-native";
+import { feedColors } from "@safeplace/design-tokens";
 import { theme } from "../theme";
+import { assistant, tintOnWhite } from "../foundation/style";
 
 /**
- * Pure styling for SourceLabel — kept separate from the view so it can be
- * unit-tested with vitest (no RN renderer). Ported from
- * design-reference/components/content/SourceLabel.jsx. The small colored
- * feed-source pill shown on every post (feed-spec §2.3.4–2.3.5, §4.2):
- *   - group      → the group's own color, soft-tinted, with its icon
- *   - public     → neutral slate-blue-grey, no icon
- *   - suggested  → warm amber, no icon
- * Background is always a SOFT ~16% tint of the foreground color — never full
- * saturation (see invariant on restrained, non-shouty visual codes).
+ * Pure styling for SourceLabel (feed lab `.lbl`, 01-feed-spec §4.2): a 22px
+ * pill, 12px/600 text, 5px gap to a 13px icon. Colours:
+ *   - group / family_space → the space's own colour, tinted 14% over white
+ *   - public / followers   → neutral slate (#5B6B85 on #EEF1F6)
+ *   - suggested            → warm amber (#A8650A on #FEF3DC)
  */
 
-export type SourceLabelKind = "group" | "public" | "suggested";
+export type SourceLabelKind = "group" | "family_space" | "public" | "followers" | "suggested";
 
-/**
- * ~16% opacity tint, expressed as an 8-digit-hex alpha suffix appended to a
- * 6-digit hex color (RN has no `color-mix()`; all theme colors are 6-digit
- * hex, so this is a safe string append).
- */
-const TINT_ALPHA_16 = "29";
-
-function softTint(hexColor: string): string {
-  return `${hexColor}${TINT_ALPHA_16}`;
-}
+/** Lab `tint(color, .14)`. */
+export const GROUP_TINT_ALPHA = 0.14;
 
 export interface ResolveSourceLabelStyleArgs {
   kind: SourceLabelKind;
-  /** Group color from the group palette (kind="group" only). */
+  /** Space colour from the palette (kind="group" | "family_space"). */
   color?: string;
 }
 
@@ -36,36 +26,39 @@ export interface SourceLabelStyle {
   container: ViewStyle;
   label: TextStyle;
   iconColor: string;
+  iconSize: number;
 }
 
 export function resolveSourceLabelStyle({
   kind,
   color,
 }: ResolveSourceLabelStyleArgs): SourceLabelStyle {
-  const fg =
-    kind === "group"
-      ? (color ?? theme.colors.primary)
-      : kind === "suggested"
-        ? theme.colors.suggestedLabel
-        : theme.colors.neutralLabel;
+  let fg: string;
+  let bg: string;
+  if (kind === "group" || kind === "family_space") {
+    fg = color ?? theme.colors.primary;
+    bg = tintOnWhite(fg, GROUP_TINT_ALPHA);
+  } else if (kind === "suggested") {
+    fg = feedColors.suggestedLabelFg;
+    bg = feedColors.suggestedLabelBg;
+  } else {
+    fg = feedColors.neutralLabelFg;
+    bg = feedColors.neutralLabelBg;
+  }
 
   return {
     container: {
       flexDirection: "row",
       alignItems: "center",
       alignSelf: "flex-start",
-      gap: theme.spacing.xs,
-      minHeight: 22,
-      paddingStart: theme.spacing.sm,
-      paddingEnd: theme.spacing.sm,
-      borderRadius: theme.radius.md,
-      backgroundColor: softTint(fg),
+      gap: 5,
+      height: 22,
+      paddingHorizontal: 9,
+      borderRadius: 999,
+      backgroundColor: bg,
     },
-    label: {
-      ...theme.typeRole.label,
-      color: fg,
-      letterSpacing: theme.tracking.label,
-    },
+    label: { ...assistant(12, 600), color: fg },
     iconColor: fg,
+    iconSize: 13,
   };
 }

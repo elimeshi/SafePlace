@@ -1,40 +1,33 @@
 import { Image, Text, View } from "react-native";
 import { theme } from "../theme";
-import {
-  avatarFallbackInitial,
-  avatarInnerSize,
-  resolveAvatarStyle,
-} from "./Avatar.styles";
+import { avatarFallbackInitial, resolveAvatarStyle } from "./Avatar.styles";
 
 export interface AvatarProps {
   src?: string;
   name?: string;
   size?: number;
-  /** Colored ring = unseen status in the stories rail (feed-spec §2.1.2). */
+  /** Accent ring = unseen status in the stories rail (feed-spec §2.1.2). */
   ring?: boolean;
   ringColor?: string;
+  testID?: string;
 }
 
 /**
- * Safe-Place Avatar. Round profile image; falls back to the first initial
- * of `name` on a soft blue tint when no `src` is given. The optional `ring`
- * marks an unseen story in the stories rail — a colored border with a small
- * white gap between the ring and the avatar itself. Ported from
- * design-reference/components/content/Avatar.jsx.
+ * Safe-Place Avatar (feed lab `.av`). Round profile image; falls back to the
+ * first initial of `name` on a soft blue tint when no `src` is given. The
+ * optional `ring` is painted outside the disc, so the disc keeps `size`.
  */
 export function Avatar({
   src,
   name = "",
   size = 44,
   ring = false,
-  ringColor = theme.colors.primary,
+  ringColor = theme.colors.accent,
+  testID,
 }: AvatarProps) {
-  const { outer, image } = resolveAvatarStyle({ size, ring, ringColor });
-  const initial = avatarFallbackInitial(name);
-  const fontSize = Math.round(avatarInnerSize(size, ring) * 0.42);
-
+  const { outer, image, initial } = resolveAvatarStyle({ size, ring, ringColor });
   return (
-    <View style={outer}>
+    <View style={outer} testID={testID}>
       {src ? (
         <Image
           accessibilityLabel={name || undefined}
@@ -43,17 +36,7 @@ export function Avatar({
           style={image}
         />
       ) : (
-        <View style={image}>
-          <Text
-            style={{
-              color: theme.colors.primary,
-              fontFamily: theme.fontFamily.semibold,
-              fontSize,
-            }}
-          >
-            {initial}
-          </Text>
-        </View>
+        <Text style={initial}>{avatarFallbackInitial(name)}</Text>
       )}
     </View>
   );

@@ -21,4 +21,19 @@ describe("Icon glyphs", () => {
     expect(svg).toContain('width="20"');
     expect(svg).toContain('stroke-width="2.5"');
   });
+
+  it("ports every extra feed-lab glyph", () => {
+    for (const n of [
+      "link", "send", "mute", "flag", "user-x", "help", "globe", "clock",
+      "thumbs-down", "trash", "refresh", "wifi-off", "family", "chevron-up", "arrow-right",
+    ] as const) {
+      expect(ICON_NAMES).toContain(n);
+      expect(buildIconSvg(n, { size: 24, strokeWidth: 2 })).toContain("<");
+    }
+  });
+
+  it("fills with currentColor only when asked", () => {
+    expect(buildIconSvg("heart", { size: 20, strokeWidth: 2 })).toContain('fill="none"');
+    expect(buildIconSvg("heart", { size: 20, strokeWidth: 2, filled: true })).toContain('fill="currentColor"');
+  });
 });
