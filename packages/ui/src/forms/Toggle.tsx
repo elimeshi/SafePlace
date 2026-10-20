@@ -20,6 +20,8 @@ export interface ToggleProps {
   readOnly?: boolean;
   /** Render for the full-bleed onboarding glass card. */
   onGlass?: boolean;
+  /** Render for a bottom sheet row (feed lab `.tg`). */
+  sheet?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -37,9 +39,10 @@ export function Toggle({
   disabled = false,
   readOnly = false,
   onGlass = false,
+  sheet = false,
 }: ToggleProps) {
   const reducedMotion = useReducedMotion();
-  const { track, knob } = resolveToggleStyle({ on: value, disabled, onGlass });
+  const { track, knob } = resolveToggleStyle({ on: value, disabled, onGlass, sheet });
   const knobStart = useSharedValue(
     value ? TOGGLE_KNOB_START.on : TOGGLE_KNOB_START.off
   );

@@ -1,4 +1,5 @@
 import type { ViewStyle } from "react-native";
+import { shadows } from "@safeplace/design-tokens";
 import { theme } from "../theme";
 
 /**
@@ -32,12 +33,15 @@ export interface ResolveToggleStyleArgs {
   disabled: boolean;
   /** Render for the full-bleed onboarding glass card. */
   onGlass?: boolean;
+  /** Feed-lab `.tg` (bottom sheets): quieter `border` track when off, soft knob shadow. */
+  sheet?: boolean;
 }
 
 export function resolveToggleStyle({
   on,
   disabled,
   onGlass = false,
+  sheet = false,
 }: ResolveToggleStyleArgs): { track: ViewStyle; knob: ViewStyle } {
   const trackBg = onGlass
     ? on
@@ -45,7 +49,9 @@ export function resolveToggleStyle({
       : "rgba(255,255,255,0.3)"
     : on
       ? theme.colors.primary
-      : theme.colors.ink300;
+      : sheet
+        ? theme.colors.border
+        : theme.colors.ink300;
   const knobBg = onGlass ? (on ? theme.colors.primary : "#FFFFFF") : theme.colors.white;
   return {
     track: {
@@ -63,7 +69,7 @@ export function resolveToggleStyle({
       height: KNOB_SIZE,
       borderRadius: theme.radius.full,
       backgroundColor: knobBg,
-      ...theme.elevation.sm,
+      ...(sheet ? { boxShadow: shadows.knob } : theme.elevation.sm),
     },
   };
 }

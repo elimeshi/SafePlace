@@ -219,6 +219,9 @@ importers:
       '@safeplace/design-tokens':
         specifier: workspace:*
         version: link:../design-tokens
+      '@safeplace/visibility-policy':
+        specifier: workspace:*
+        version: link:../visibility-policy
     devDependencies:
       '@types/react':
         specifier: ~19.1.0
