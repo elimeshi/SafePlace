@@ -33,7 +33,7 @@ export function resolveCommentStyle(args: { level: CommentLevel; highlighted: bo
   const { level, highlighted, hasMedia } = args;
   return {
     row: { flexDirection: "row", alignItems: "flex-start", gap: 9, ...(level === 2 ? { marginStart: 42 } : null) },
-    column: { flexShrink: 1, alignItems: "flex-start", ...(hasMedia ? { flex: 1, alignSelf: "stretch" } : null) },
+    column: { flexShrink: 1, alignItems: "stretch", ...(hasMedia ? { flex: 1, alignSelf: "stretch" } : null) },
     bubble: {
       backgroundColor: highlighted ? feedColors.replyHighlightBg : theme.colors.background,
       borderRadius: 16,

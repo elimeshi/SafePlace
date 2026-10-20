@@ -172,4 +172,37 @@ describe("interactions and comments", () => {
     expect(threads[0]!.replies.map((r) => r.text)).toEqual(["r1", "r2"]);
     expect(threads[0]!.replies[1]!.replyToUserId).toBe(USER.author.id);
   });
+
+  it("comment media: withheld from a filtered viewer at every state, visible to the uploader, text always shown", async () => {
+    const { postId } = await composePublic("comment media", "general");
+    await publishDraft(author(), postId);
+    const commenter = pgliteClient(db, USER.maleUnfiltered.id);
+    const path = `${USER.maleUnfiltered.id}/pic`;
+    const { commentId, mediaIds } = await addComment(commenter, {
+      authorId: USER.maleUnfiltered.id,
+      postId,
+      text: "a picture",
+      media: [{ storagePath: path, contentType: "image/png" }],
+    });
+    const read = async (viewer: ReturnType<typeof author>) =>
+      (await fetchComments(viewer, postId)).threads.find((t) => t.comment.id === commentId)!.comment;
+
+    // In flight (unclassified): the uploader sees it, a filtered viewer does not (fail closed).
+    expect((await read(commenter)).media[0]).toMatchObject({ classification: "unclassified", filtered: false, storagePath: path });
+    const waiting = await read(follower());
+    expect(waiting.text).toBe("a picture");
+    expect(waiting.media[0]).toMatchObject({ filtered: true, storagePath: null });
+
+    // Classified as containing women: still withheld from the filtered viewer, served to the unfiltered one.
+    await db.raw.query(`update public.media_items set classification = 'contains_women' where id = $1`, [mediaIds[0]]);
+    const hidden = await read(follower());
+    expect(hidden.media[0]).toMatchObject({ classification: "contains_women", filtered: true, storagePath: null });
+    expect(JSON.stringify(hidden)).not.toContain(path);
+    expect((await read(commenter)).media[0]).toMatchObject({ filtered: false, storagePath: path });
+
+    // Frozen for review: nothing at all reaches anyone but the uploader.
+    await db.raw.query(`update public.media_items set classification = 'pending_review' where id = $1`, [mediaIds[0]]);
+    expect((await read(follower())).media).toEqual([]); // not even a row: the view hides frozen media from others
+    expect((await read(commenter)).media[0]).toMatchObject({ filtered: false, storagePath: path });
+  });
 });

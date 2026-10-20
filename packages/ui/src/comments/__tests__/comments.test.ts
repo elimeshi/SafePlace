@@ -22,6 +22,12 @@ describe("CommentBubble (lab .cmt)", () => {
     const m = resolveCommentStyle({ level: 1, highlighted: false, hasMedia: true }).media;
     expect(m).toMatchObject({ height: COMMENT_MEDIA_HEIGHT, borderRadius: 12, marginTop: 6 });
   });
+  it("the bubble stretches to the widest line of its column (lab: a short comment is as wide as its meta row)", () => {
+    expect(resolveCommentStyle({ level: 1, highlighted: false, hasMedia: false }).column.alignItems).toBe("stretch");
+  });
+  it("the reply bar overlaps the box hairline by 1px (lab bottom:78 over a 79px box)", () => {
+    expect(resolveCommentBoxStyle(true).replyBar).toMatchObject({ marginBottom: -1, zIndex: 1 });
+  });
   it("meta row: 14px gap, 12.5px/600", () => {
     const s = resolveCommentStyle({ level: 1, highlighted: false, hasMedia: false });
     expect(s.meta).toMatchObject({ gap: 14, paddingTop: 4, paddingHorizontal: 12 });

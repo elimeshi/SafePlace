@@ -1,0 +1,7 @@
+[
+  { "name": "post", "lab": { "screen": "post", "selector": ".screen" }, "app": { "url": "/dev-post?fixtures=post", "selector": "[data-testid=post-fixture]" } },
+  { "name": "share", "lab": { "screen": "share", "selector": ".screen" }, "app": { "url": "/dev-post?fixtures=share", "selector": "[data-testid=post-fixture]" } },
+  { "name": "ownMenu", "lab": { "screen": "ownMenu", "selector": ".screen" }, "app": { "url": "/dev-post?fixtures=ownMenu", "selector": "[data-testid=post-fixture]" } },
+  { "name": "reply", "lab": { "screen": "reply", "selector": ".screen" }, "app": { "url": "/dev-post?fixtures=reply", "selector": "[data-testid=post-fixture]" } },
+  { "name": "commentMenu", "lab": { "screen": "commentMenu", "selector": ".screen" }, "app": { "url": "/dev-post?fixtures=commentMenu", "selector": "[data-testid=post-fixture]" } }
+]

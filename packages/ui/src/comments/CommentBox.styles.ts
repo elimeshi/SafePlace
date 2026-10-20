@@ -60,6 +60,9 @@ export function resolveCommentBoxStyle(active: boolean): {
       backgroundColor: theme.colors.background,
       borderTopWidth: 1,
       borderTopColor: theme.colors.ink100,
+      // Lab: the bar sits over the box's top hairline (bottom:78 vs a 79px box), so it overlaps it by 1px.
+      marginBottom: -1,
+      zIndex: 1,
     },
     replyText: { ...assistant(13), color: theme.colors.ink500 },
     replyName: { ...assistant(13, 700), color: theme.colors.ink700 },
