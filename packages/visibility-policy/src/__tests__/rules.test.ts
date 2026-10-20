@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canDiscoverUserInSearch,
+  canViewFamilySpaceMemberCount,
   canSendMessageRequest,
   canViewMedia,
   canViewProfilePhoto,
@@ -483,5 +484,14 @@ describe("shouldShowWomenDetectedNotice", () => {
 
   it("is not shown to a female uploader pending that open question", () => {
     expect(shouldShowWomenDetectedNotice("contains_women", "female")).toBe(false);
+  });
+});
+
+describe("canViewFamilySpaceMemberCount", () => {
+  it("allows only members of that space", () => {
+    const member = makeViewer({ familySpaceMemberships: new Set(["s1"]) });
+    expect(canViewFamilySpaceMemberCount(member, "s1")).toBe(true);
+    expect(canViewFamilySpaceMemberCount(member, "s2")).toBe(false);
+    expect(canViewFamilySpaceMemberCount(makeViewer(), "s1")).toBe(false);
   });
 });

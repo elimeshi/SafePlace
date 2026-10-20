@@ -152,7 +152,15 @@ migrations are authoritative):
   stays single-valued.
 - **`posts.status` (`draft | published`), `published_at`, `quoted_post_id`**
   (`on delete set null`). Drafts are author-only (ADR 0015);
-  `purge_abandoned_drafts(interval)` is service-role only and unscheduled.
+  `purge_abandoned_drafts(interval)` is service-role only and is scheduled
+  hourly with pg_cron when the extension is available (migration
+  `20261020130100`; skipped on PGlite/CI). Deleting any `media_items` row
+  queues its `storage_path` / `blurred_storage_path` in
+  `moderation.orphaned_objects`; the moderation worker removes those bucket
+  objects and acknowledges them on each scheduled pass (ADR 0015).
+- **`family_space_member_count(uuid)`** (SECURITY DEFINER, count only): a number
+  for members of that Family Space, NULL for everyone else. Mirror:
+  `canViewFamilySpaceMemberCount`.
   Published posts lock audience/source/quote against client roles
   (`posts_guard`).
 - **New private tables:** `post_likes`, `comment_likes`, `post_saves`,

@@ -141,14 +141,11 @@ export function deriveView(s: ComposeState): ComposeView {
 }
 
 /**
- * Pressing Publish while the notice is unanswered does nothing: the notice is
- * a confirm/go-back choice made BEFORE the action is finalized (moderation-
- * pipeline §3), and silently confirming it on the author's behalf would defeat it.
+ * Publish with the women-detected notice still showing counts as Confirm (Eli):
+ * the media stays, no appeal is sent, and Publish is never a no-op. The notice
+ * has already been shown inline, which is what moderation-pipeline §3 requires.
  */
-export function mayPublishNow(s: ComposeState): boolean {
-  const v = deriveView(s);
-  return v.canPublish && !v.showNotice;
-}
+export const mayPublishNow = (s: ComposeState): boolean => deriveView(s).canPublish;
 
 /** `profiles.default_post_exposure` seeds the picker (02 §4.1); anything unseedable falls back to public. */
 export function seedAudiences(defaultKind: string | null | undefined, authorId: string): ContentAudience[] {

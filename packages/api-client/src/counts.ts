@@ -24,3 +24,13 @@ export const getFollowingCount = (supabase: SupabaseClient, userId: string) =>
 
 export const getGroupMemberCount = (supabase: SupabaseClient, groupId: string) =>
   count(supabase, "group_member_count", groupId);
+
+/** Members of a Family Space, or null when the caller is not a member (the database withholds even the number). */
+export async function getFamilySpaceMemberCount(
+  supabase: SupabaseClient,
+  spaceId: string
+): Promise<number | null> {
+  const { data, error } = await supabase.rpc("family_space_member_count", { target: spaceId });
+  if (error) throw new Error(`family_space_member_count: ${error.message}`);
+  return data == null ? null : Number(data);
+}

@@ -2,6 +2,7 @@ import {
   buildViewerContext,
   type SupabaseClient,
   fetchGroupSummaries,
+  getFamilySpaceMemberCount,
   getGroupMemberCount,
   type DraftSource,
 } from "@safeplace/api-client";
@@ -75,12 +76,11 @@ export async function loadComposeContext(
     const g = summaries.get(id);
     return g ? [{ id, name: g.name, color: g.color ?? undefined, icon: (g.icon ?? undefined) as IconName | undefined, members: counts[i] ?? 0 }] : [];
   });
-  // No Family Space member-count function exists yet (visibility-model "number without list"); 0 until one does.
-  const familySpaces: SpaceOption[] = ((spaces.data ?? []) as Array<{ id: string; name: string }>).map((f) => ({
-    id: f.id,
-    name: f.name,
-    members: 0,
-  }));
+  const familyRows = (spaces.data ?? []) as Array<{ id: string; name: string }>;
+  const familyCounts = await Promise.all(
+    familyRows.map((f) => getFamilySpaceMemberCount(supabase, f.id).catch(() => null))
+  );
+  const familySpaces: SpaceOption[] = familyRows.map((f, i) => ({ id: f.id, name: f.name, members: familyCounts[i] ?? 0 }));
 
   let initialAudiences: ContentAudience[];
   let locked: ComposeContext["locked"] = null;

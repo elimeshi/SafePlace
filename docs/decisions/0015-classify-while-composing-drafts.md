@@ -41,8 +41,25 @@ audience, source and quote are locked against client roles.
 
 **Purge:** `public.purge_abandoned_drafts(p_older_than interval default 24h)`
 deletes stale drafts (media rows cascade; the storage objects are the caller's
-to sweep). It is `service_role` only and **unscheduled**, like the score sweep
-(ADR 0011): something must call it.
+to sweep). It is `service_role` only.
+
+**Cleanup (added 2026-10-20, Eli):**
+- *Scheduling.* Migration `20261020130100_draft_cleanup.sql` schedules the purge
+  hourly (`pg_cron`, job `purge-abandoned-drafts`, 24h threshold). It is guarded:
+  if the extension is not available (PGlite, CI) or cannot be created, the
+  migration emits a notice and carries on, and the purge must be called by hand.
+  On hosted Supabase enable `pg_cron` first.
+- *Orphaned storage objects.* An `after delete` trigger on `media_items` queues
+  the row's `storage_path` and `blurred_storage_path` in
+  `moderation.orphaned_objects` (service-role only), so it covers the purge,
+  a client "remove media", a discarded draft and any other cascade. SQL cannot
+  delete bucket objects, so the classification worker (ADR 0009, the one
+  runtime with the service role) runs `sweepOrphans` after each drain: read a
+  batch, remove the objects through the Storage API, then acknowledge. A failed
+  removal leaves the paths queued; removing a missing object is a no-op, so no
+  claim lock is needed. Covered by the PGlite suite
+  (`db-testing/draft-cleanup.test.ts`).
+- *Client.* Compose also discards its own draft when the user leaves.
 
 ## Alternatives considered
 
@@ -57,8 +74,12 @@ to sweep). It is `service_role` only and **unscheduled**, like the score sweep
 
 ## Consequences
 
-- Abandoned drafts accumulate until the purge is scheduled; scheduling it and
-  sweeping orphaned storage objects is follow-up work before production.
+- Abandoned drafts and their storage objects are cleaned automatically (see
+  Cleanup above); production needs `pg_cron` enabled and the worker deployed
+  (ADR 0009) for the object sweep.
+- Compose uploader notice (Eli, 2026-10-20): Confirm keeps the media; Back
+  removes it; Appeal keeps it and files the appeal; Publish with the notice
+  unanswered is treated as Confirm.
 - Media is scanned from the moment it is attached, including media never
   published. **Legal tracker #7 stays 🔴**; a note records that counsel should
   also consider scanning of unpublished draft media.

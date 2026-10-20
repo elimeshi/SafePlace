@@ -11,6 +11,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { MEDIA_BUCKET } from "@safeplace/api-client";
 import type { ClassificationThresholds } from "./classification";
+import type { ObjectRemover, OrphanStore } from "./sweep";
 import type {
   ClaimedJob,
   CompletedClassification,
@@ -207,6 +208,36 @@ export function createSupabaseMediaFetcher(supabase: SupabaseClient): MediaFetch
         throw new Error(`download ${storagePath}: ${error?.message ?? "no data"}`);
       }
       return new Uint8Array(await data.arrayBuffer());
+    },
+  };
+}
+
+/** The orphaned-object queue (ADR 0015) and the bucket the objects live in. */
+export function createSupabaseOrphanSweeper(supabase: SupabaseClient): {
+  store: OrphanStore;
+  objects: ObjectRemover;
+} {
+  return {
+    store: {
+      async claim(limit: number): Promise<string[]> {
+        const { data, error } = await supabase
+          .schema(MODERATION_SCHEMA)
+          .rpc("claim_orphaned_objects", { p_limit: limit });
+        if (error) throw new Error(`claim orphans: ${error.message}`);
+        return (data ?? []) as string[];
+      },
+      async ack(paths: string[]): Promise<void> {
+        const { error } = await supabase
+          .schema(MODERATION_SCHEMA)
+          .rpc("ack_orphaned_objects", { p_paths: paths });
+        if (error) throw new Error(`ack orphans: ${error.message}`);
+      },
+    },
+    objects: {
+      async remove(paths: string[]): Promise<void> {
+        const { error } = await supabase.storage.from(MEDIA_BUCKET).remove(paths);
+        if (error) throw new Error(`remove orphans: ${error.message}`);
+      },
     },
   };
 }

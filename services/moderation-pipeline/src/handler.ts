@@ -13,12 +13,14 @@ import {
   createSupabaseDerivativeStore,
   createSupabaseJobStore,
   createSupabaseMediaFetcher,
+  createSupabaseOrphanSweeper,
   loadPipelineConfig,
 } from "./supabase-store";
 import { createAnthropicLocalizerFromConfig } from "./providers/anthropic-localizer";
 import { createStubLocalizer } from "./regions";
 import { createSharpRedactor } from "./redactor";
 import { drainOnce, type DrainSummary, type Logger, type RedactionDeps } from "./worker";
+import { sweepOrphans, type SweepSummary } from "./sweep";
 
 export interface PipelineEnv {
   SUPABASE_URL?: string;
@@ -72,7 +74,7 @@ const consoleLogger: Logger = {
 export async function runClassificationPass(
   env: PipelineEnv,
   logger: Logger = consoleLogger
-): Promise<DrainSummary> {
+): Promise<DrainSummary & SweepSummary> {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
       "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required to run the pipeline"
@@ -113,7 +115,7 @@ export async function runClassificationPass(
     };
   }
 
-  return drainOnce(
+  const summary = await drainOnce(
     {
       store: createSupabaseJobStore(supabase),
       media: createSupabaseMediaFetcher(supabase),
@@ -126,6 +128,15 @@ export async function runClassificationPass(
     },
     config.batchSize
   );
+  // Storage objects of deleted media (abandoned drafts, removed attachments).
+  // A failed sweep must not fail the classification pass that already ran.
+  let swept = 0;
+  try {
+    swept = (await sweepOrphans(createSupabaseOrphanSweeper(supabase))).swept;
+  } catch (error) {
+    console.error("[moderation-pipeline] orphan sweep failed:", error);
+  }
+  return { ...summary, swept };
 }
 
 export interface ClassificationHandlerOptions {

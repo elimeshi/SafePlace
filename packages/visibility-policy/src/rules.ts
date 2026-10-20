@@ -347,3 +347,12 @@ export function shouldShowWomenDetectedNotice(
 ): boolean {
   return classification === "contains_women" && uploaderGender === "male";
 }
+
+/**
+ * Whether the viewer may be told how many members a Family Space has. A Family
+ * Space is private to its members, so even its size is theirs only (a number,
+ * never a list: invariant #5). SQL mirror: `public.family_space_member_count`.
+ */
+export function canViewFamilySpaceMemberCount(viewer: Viewer, spaceId: string): boolean {
+  return viewer.familySpaceMemberships.has(spaceId);
+}

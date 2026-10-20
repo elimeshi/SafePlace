@@ -68,6 +68,13 @@ export {
 } from "./worker";
 
 export {
+  sweepOrphans,
+  type ObjectRemover,
+  type OrphanStore,
+  type SweepSummary,
+} from "./sweep";
+
+export {
   CLASSIFIER_SYSTEM_PROMPT,
   CLASSIFIER_OUTPUT_SCHEMA,
 } from "./classifier-prompt";

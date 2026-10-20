@@ -66,9 +66,10 @@ describe("deriveView", () => {
 describe("women-detected notice", () => {
   const flagged = run([{ type: "text", text: "x" }, ...attached, { type: "uploaderState", state: "filtered_for_some_viewers" }]);
 
-  it("shows before publish and holds Publish until answered", () => {
+  it("shows before publish, and Publish while unanswered is allowed (treated as Confirm)", () => {
     expect(deriveView(flagged).showNotice).toBe(true);
-    expect(mayPublishNow(flagged)).toBe(false);
+    expect(mayPublishNow(flagged)).toBe(true);
+    expect(flagged.media?.noticeResolved).toBe(false);
   });
 
   it("Confirm (or appeal) hides it and lets Publish through", () => {
