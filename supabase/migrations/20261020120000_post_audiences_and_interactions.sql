@@ -414,7 +414,7 @@ create policy posts_insert_own on posts for insert to authenticated
     and status = 'draft'
     and (source_group_id is null or visibility.viewer_in_group(source_group_id))
     and (source_space_id is null or visibility.viewer_in_family_space(source_space_id))
-    and (quoted_post_id is null or exists (select 1 from posts q where q.id = quoted_post_id))
+    and (quoted_post_id is null or exists (select 1 from posts q where q.id = posts.quoted_post_id))
   );
 
 create policy posts_update_own on posts for update to authenticated
@@ -423,7 +423,7 @@ create policy posts_update_own on posts for update to authenticated
     author_id = auth.uid()
     and (source_group_id is null or visibility.viewer_in_group(source_group_id))
     and (source_space_id is null or visibility.viewer_in_family_space(source_space_id))
-    and (quoted_post_id is null or exists (select 1 from posts q where q.id = quoted_post_id))
+    and (quoted_post_id is null or exists (select 1 from posts q where q.id = posts.quoted_post_id))
   );
 
 -- --- post_audiences policies -----------------------------------------------
