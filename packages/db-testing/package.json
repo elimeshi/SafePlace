@@ -14,14 +14,16 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.2.0",
+    "@safeplace/api-client": "workspace:*",
+    "@safeplace/moderation-pipeline": "workspace:*",
     "@safeplace/shared-types": "workspace:*",
-    "@safeplace/visibility-policy": "workspace:*",
-    "@safeplace/moderation-pipeline": "workspace:*"
+    "@safeplace/visibility-policy": "workspace:*"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.45.0",
     "@types/node": "^22.0.0",
+    "sharp": "^0.34.0",
     "typescript": "^5.5.0",
-    "vitest": "^2.0.0",
-    "sharp": "^0.34.0"
+    "vitest": "^2.0.0"
   }
 }
