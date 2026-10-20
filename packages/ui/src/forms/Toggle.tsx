@@ -3,12 +3,12 @@ import { Pressable } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { resolveToggleStyle, TOGGLE_KNOB_START } from "./Toggle.styles";
 import { theme } from "../theme";
+import { useReducedMotion } from "../motion/reduced-motion";
 
 export interface ToggleProps {
   value: boolean;

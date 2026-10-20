@@ -1,4 +1,21 @@
-// Re-export reanimated's reduced-motion hook so components have one stable
-// import path within this package. It reads the OS "reduce motion" setting
-// and updates on change (invariant: all custom motion gates on this).
-export { useReducedMotion } from "react-native-reanimated";
+import { createContext, useContext } from "react";
+import { useReducedMotion as useSystemReducedMotion } from "react-native-reanimated";
+
+/**
+ * The single reduced-motion hook for this package (invariant: all custom motion
+ * gates on it). It is the OS "reduce motion" setting (read once at app start, per
+ * Reanimated), OR an explicit app-level override from <MotionPreferenceProvider> —
+ * which is how the gallery's "motion off" toggle, and a future in-app setting, reach
+ * every component.
+ */
+export type MotionPreference = "system" | "reduce";
+
+const MotionPreferenceContext = createContext<MotionPreference>("system");
+
+export const MotionPreferenceProvider = MotionPreferenceContext.Provider;
+
+export function useReducedMotion(): boolean {
+  const preference = useContext(MotionPreferenceContext);
+  const system = useSystemReducedMotion();
+  return preference === "reduce" || system;
+}

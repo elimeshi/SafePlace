@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { FlowTextInput } from "../foundation/FlowTextInput";
 import { Avatar } from "../content/Avatar";
 import { Icon } from "../content/Icon";
 import { theme } from "../theme";
@@ -64,7 +65,7 @@ export function CommentBox({
               <Text style={s.chipText}>{`@${replyingTo}`}</Text>
             </View>
           ) : null}
-          <TextInput
+          <FlowTextInput
             value={value}
             onChangeText={onChangeText}
             onFocus={() => setFocused(true)}

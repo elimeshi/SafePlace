@@ -29,7 +29,7 @@ export function rubik(size: number, weight: 600 | 700 = 600, extra: TextStyle = 
 }
 
 /** CSS `line-height: <ratio>` as RN pixels. */
-export const lh = (size: number, ratio: number): number => Math.round(size * ratio * 100) / 100;
+export const lh = (size: number, ratio: number): number => size * ratio;
 
 /**
  * The lab's `tint(hex, a)`: a 6-digit hex mixed over white, as an opaque

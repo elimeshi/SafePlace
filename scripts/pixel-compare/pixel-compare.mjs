@@ -4,10 +4,10 @@
 //   shot    --url U --out a.png [--selector S] [--wait-for S] [--scale 1]
 //   diff    --a a.png --b b.png [--diff d.png] [--threshold-pct 0.5]
 //   compare --url U --ref ref.png [--selector S] [--out o.png] [--diff d.png] [--threshold-pct 0.5]
-//   suite   --cases cases.json --base http://localhost:PORT --out-dir DIR [--threshold-pct 1]
+//   suite   --cases cases.json --base http://localhost:PORT --out-dir DIR [--threshold-pct 1] [--only a,b] [--ref-dir reference/]
 //
 // Exit code 1 when any mismatch percentage exceeds the threshold.
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { diffImages, launch, shoot } from "./lib.mjs";
@@ -63,7 +63,14 @@ async function main() {
         const ok = r.percent <= limit;
         failed ||= !ok;
         rows.push({ name: c.name, percent: Number(r.percent.toFixed(3)), size: `${r.sizeA.join("x")}|${r.sizeB.join("x")}`, ok });
-        console.log(`${ok ? "PASS" : "FAIL"} ${c.name.padEnd(18)} ${fmt(r)}`);
+        let refNote = "";
+        const refPng = flags["ref-dir"] ? join(resolve(flags["ref-dir"]), `${c.lab.screen}.png`) : null;
+        if (refPng && existsSync(refPng)) {
+          const rl = await diffImages(context, { a: refPng, b: labPng, threshold: num(flags.threshold, 0.1) });
+          const ra = await diffImages(context, { a: refPng, b: appPng, diffOut: join(outDir, `${c.name}.ref.diff.png`), threshold: num(flags.threshold, 0.1) });
+          refNote = `  | vs reference PNG: lab ${rl.percent.toFixed(3)}%, app ${ra.percent.toFixed(3)}%`;
+        }
+        console.log(`${ok ? "PASS" : "FAIL"} ${c.name.padEnd(18)} ${fmt(r)}${refNote}`);
       }
       writeFileSync(join(outDir, "report.json"), JSON.stringify(rows, null, 2));
     }

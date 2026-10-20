@@ -37,6 +37,7 @@ describe("StateStrip (lab .state-strip)", () => {
     expect(s.container.flexDirection).toBe("column");
     expect(s.container.alignItems).toBe("flex-start");
     expect(s.container.backgroundColor).toBe("#E5E8F7");
+    expect(s.container).toMatchObject({ marginHorizontal: 18, marginTop: 6, marginBottom: 12, borderRadius: 18, borderWidth: 1, borderColor: "#C4CBEC" });
   });
 });
 

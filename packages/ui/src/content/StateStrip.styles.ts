@@ -1,5 +1,5 @@
 import type { TextStyle, ViewStyle } from "react-native";
-import { feedColors } from "@safeplace/design-tokens";
+import { feedColors, shadows } from "@safeplace/design-tokens";
 import { theme } from "../theme";
 import type { IconName } from "./Icon.glyphs";
 import { assistant, lh } from "../foundation/style";
@@ -41,6 +41,22 @@ export function resolveStateStripStyle(kind: StateStripKind): {
       paddingVertical: 10,
       paddingHorizontal: 14,
       backgroundColor: t.bg,
+      // Lab quirk, kept because it is what Eli approved (reference own.png): the notice strip
+      // also matches the lab's inline `.notice` card rule, so it is a bordered, shadowed,
+      // inset 18px card (14/14/12 padding) rather than a flush band.
+      ...(stacked
+        ? {
+            marginTop: 6,
+            marginBottom: 12,
+            marginHorizontal: 18,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: theme.colors.blue200,
+            paddingTop: 14,
+            paddingBottom: 12,
+            boxShadow: shadows.soft,
+          }
+        : null),
     },
     text: { ...assistant(13.5), lineHeight: lh(13.5, 1.45), color: t.fg, flexShrink: 1 },
     iconColor: t.fg,

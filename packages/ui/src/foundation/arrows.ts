@@ -10,7 +10,3 @@ export function arrowNames(direction: Direction): {
     : { back: "arrow-left", forward: "arrow-right" };
 }
 
-/** Chevron that points toward the end of a row (disclosure) / the "expand" down glyph is direction-neutral. */
-export function chevronEndName(direction: Direction): "arrow-right" | "arrow-left" {
-  return arrowNames(direction).forward;
-}

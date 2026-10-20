@@ -1,4 +1,4 @@
-import { TextInput } from "react-native";
+import { FlowTextInput } from "../foundation/FlowTextInput";
 import { ActionButton } from "../primitives/ActionButton";
 import { theme } from "../theme";
 import { assistant, lh } from "../foundation/style";
@@ -44,8 +44,9 @@ export function ReportSheet({
       {categories.map((c, i) => (
         <SheetRow key={c} dense label={c} control={{ type: "radio", checked: value === i }} onPress={() => onChange?.(i)} />
       ))}
-      <TextInput
+      <FlowTextInput
         multiline
+        numberOfLines={1}
         value={details}
         onChangeText={onDetailsChange}
         placeholder={detailsPlaceholder}
@@ -68,7 +69,7 @@ export function ReportSheet({
         }}
         testID="report-details"
       />
-      <ActionButton label={submitLabel} onPress={onSubmit} disabled={value == null} style={{ marginTop: 4, marginHorizontal: 20 }} testID="report-submit" />
+      <ActionButton label={submitLabel} onPress={onSubmit} disabled={value == null} style={{ marginHorizontal: 20 }} testID="report-submit" />
     </BottomSheet>
   );
 }

@@ -2,12 +2,13 @@ import { type ReactNode, useEffect, useState } from "react";
 import { type LayoutChangeEvent, View } from "react-native";
 import Animated, {
   Easing,
+  ReduceMotion,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { COLLAPSE_EASING, collapseTimings } from "../motion/collapse";
+import { useReducedMotion } from "../motion/reduced-motion";
 
 export interface CollapsibleZonesProps {
   /** true → zones height→0 + fade, strip fades in from −8px. */
@@ -31,19 +32,26 @@ export function CollapsibleZones({ collapsed, strip, children }: CollapsibleZone
   const height = useSharedValue(0);
   const zonesOpacity = useSharedValue(collapsed ? 0 : 1);
   const stripProgress = useSharedValue(collapsed ? 1 : 0);
+  // A shared value (not a closed-over constant): reduced motion can flip after first render.
+  const stripOffset = useSharedValue(t.stripOffsetY);
+  useEffect(() => {
+    stripOffset.value = t.stripOffsetY;
+  }, [t.stripOffsetY, stripOffset]);
 
   useEffect(() => {
     if (natural == null) return;
     const to = collapsed ? 0 : natural;
     height.value = t.animateHeight ? withTiming(to, { duration: t.heightMs, easing: ease }) : to;
-    zonesOpacity.value = withTiming(collapsed ? 0 : 1, { duration: t.zonesFadeMs, easing: ease });
-    stripProgress.value = withTiming(collapsed ? 1 : 0, { duration: t.stripMs, easing: ease });
+    // Reduced motion = opacity only: the fades still run (reduceMotion Never) while the height jumps
+    // and the strip does not slide (collapseTimings).
+    zonesOpacity.value = withTiming(collapsed ? 0 : 1, { duration: t.zonesFadeMs, easing: ease, reduceMotion: ReduceMotion.Never });
+    stripProgress.value = withTiming(collapsed ? 1 : 0, { duration: t.stripMs, easing: ease, reduceMotion: ReduceMotion.Never });
   }, [collapsed, natural, t.animateHeight, t.heightMs, t.zonesFadeMs, t.stripMs, height, zonesOpacity, stripProgress]);
 
   const zonesStyle = useAnimatedStyle(() => (natural == null ? { opacity: zonesOpacity.value } : { height: height.value, opacity: zonesOpacity.value }));
   const stripStyle = useAnimatedStyle(() => ({
     opacity: stripProgress.value,
-    transform: [{ translateY: (1 - stripProgress.value) * t.stripOffsetY }],
+    transform: [{ translateY: (1 - stripProgress.value) * stripOffset.value }],
     height: stripProgress.value === 0 ? 0 : undefined,
   }));
 
@@ -58,11 +66,11 @@ export function CollapsibleZones({ collapsed, strip, children }: CollapsibleZone
   return (
     <View>
       {strip ? (
-        <Animated.View style={[{ overflow: "visible" }, stripStyle]} pointerEvents={collapsed ? "auto" : "none"}>
+        <Animated.View style={[{ overflow: "visible" }, stripStyle]} pointerEvents={collapsed ? "auto" : "none"} testID="collapse-strip">
           {strip}
         </Animated.View>
       ) : null}
-      <Animated.View style={[{ overflow: "hidden" }, zonesStyle]} pointerEvents={collapsed ? "none" : "auto"}>
+      <Animated.View style={[{ overflow: "hidden" }, zonesStyle]} pointerEvents={collapsed ? "none" : "auto"} testID="collapse-zones">
         <View onLayout={onLayout} style={{ flexShrink: 0 }}>
           {children}
         </View>

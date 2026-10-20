@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { FlowTextInput } from "../foundation/FlowTextInput";
 import { Avatar } from "../content/Avatar";
 import { Icon, type IconName } from "../content/Icon";
 import { arrowNames, useDirection } from "../foundation/direction";
@@ -71,7 +72,7 @@ export function ComposeTextField({
 }) {
   const s = resolveComposeStyle();
   return (
-    <TextInput
+    <FlowTextInput
       multiline
       value={value}
       onChangeText={onChangeText}

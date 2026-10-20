@@ -2,13 +2,13 @@ import { useEffect } from "react";
 import {
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withDelay,
   withTiming,
 } from "react-native-reanimated";
 import { motion } from "@safeplace/design-tokens";
 import { staggerDelayForIndex } from "./stagger";
+import { useReducedMotion } from "./reduced-motion";
 
 const [C0, C1, C2, C3] = motion.easing.standard;
 

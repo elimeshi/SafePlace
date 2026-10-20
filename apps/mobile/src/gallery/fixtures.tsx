@@ -34,10 +34,11 @@ export type SceneKey = keyof typeof SCENES;
  */
 export const DirView = View as unknown as ComponentType<ViewProps & { dir?: "ltr" | "rtl" }>;
 
-export function SceneArt({ k }: { k: SceneKey }) {
+/** `top`: the lab draws the svg at its natural aspect, top-aligned (compose preview, rail cards); post media centre-crops. */
+export function SceneArt({ k, top = false }: { k: SceneKey; top?: boolean }) {
   const s = SCENES[k];
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 390 230" preserveAspectRatio="xMidYMid slice">
+    <Svg width="100%" height="100%" viewBox="0 0 390 230" preserveAspectRatio={top ? "xMidYMin slice" : "xMidYMid slice"}>
       <Rect width={390} height={230} fill={s[0]} />
       <Circle cx={300} cy={60} r={26} fill={s[3]} opacity={0.9} />
       <Path d="M0 170 Q90 110 180 150 T390 130 V230 H0Z" fill={s[1]} />
@@ -224,7 +225,7 @@ export function TopZones() {
         <SpaceCard
           kind="group"
           {...GROUP.ramot}
-          media={<SceneArt k="street" />}
+          media={<SceneArt k="street" top />}
           lastAuthor="משה רוזנברג"
           time="לפני שעתיים"
         />

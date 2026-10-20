@@ -53,7 +53,10 @@ function pickChromium(chromium) {
 /** Launch Chromium with the reference-matching mobile emulation and forced reduced motion. */
 export async function launch({ scale = 1, reducedMotion = "reduce" } = {}) {
   const { chromium } = loadPlaywright();
-  const browser = await chromium.launch({ executablePath: pickChromium(chromium) });
+  // --disable-lcd-text: the lab (plain DOM, opaque background) gets sub-pixel LCD text while
+  // react-native-web's composited layers get grayscale; forcing grayscale on both removes
+  // that rasteriser difference so the diff measures layout and colour only.
+  const browser = await chromium.launch({ executablePath: pickChromium(chromium), args: ["--disable-lcd-text"] });
   const context = await browser.newContext({
     viewport: VIEWPORT,
     deviceScaleFactor: scale,

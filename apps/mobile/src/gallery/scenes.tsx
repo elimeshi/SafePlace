@@ -173,7 +173,7 @@ export const SCENES: Record<string, () => ReactElement> = {
       </ComposeIdentity>
       <ComposeTextField value="בוקר טוב מהטיול המשפחתי 🙏" onChangeText={noop} />
       <ComposeMediaPreview checking>
-        <SceneArt k="hills" />
+        <SceneArt k="hills" top />
       </ComposeMediaPreview>
       <LocationChip name="נחל שורק" />
       <View style={{ flex: 1 }} />
@@ -214,7 +214,7 @@ export const SCENES: Record<string, () => ReactElement> = {
       </ComposeIdentity>
       <ComposeTextField value="שמחת בר המצווה של יוסי 🎉" onChangeText={noop} />
       <ComposeMediaPreview height={150}>
-        <SceneArt k="table" />
+        <SceneArt k="table" top />
       </ComposeMediaPreview>
       <UploaderNotice mode="beforePublish" />
       <View style={{ flex: 1 }} />

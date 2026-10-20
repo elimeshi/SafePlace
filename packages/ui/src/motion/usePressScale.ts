@@ -1,10 +1,10 @@
 import {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { motion } from "@safeplace/design-tokens";
+import { useReducedMotion } from "./reduced-motion";
 
 /**
  * Press feedback — a subtle inward scale(0.97) and back (§6.3.2). Spread the

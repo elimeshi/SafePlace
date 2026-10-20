@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
-import Animated, { ReduceMotion, ReducedMotionConfig } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import type { ContentAudience } from "@safeplace/visibility-policy";
 import {
   ActionButton,
@@ -25,6 +25,7 @@ import {
   ICON_NAMES,
   Icon,
   InteractionBar,
+  MotionPreferenceProvider,
   MiniButton,
   OwnPostMenuSheet,
   PlusMenuSheet,
@@ -161,17 +162,17 @@ export default function Gallery() {
   }, [rtl]);
 
   const direction = rtl ? "rtl" : "ltr";
-  const motionConfig = <ReducedMotionConfig mode={motionOff ? ReduceMotion.Always : ReduceMotion.System} />;
 
   // Bare single-screen mode for pixel comparison.
   if (params.screen && SCENES[params.screen]) {
     const Scene = SCENES[params.screen]!;
     return (
       <DirectionProvider value={direction}>
-        {motionConfig}
-        <DirView dir={direction} style={{ width: 390, backgroundColor: "#FFFFFF" }}>
-          <Scene />
-        </DirView>
+        <MotionPreferenceProvider value={motionOff ? "reduce" : "system"}>
+          <DirView dir={direction} style={{ width: 390, backgroundColor: "#FFFFFF" }}>
+            <Scene />
+          </DirView>
+        </MotionPreferenceProvider>
       </DirectionProvider>
     );
   }
@@ -180,7 +181,7 @@ export default function Gallery() {
 
   return (
     <DirectionProvider value={direction}>
-      {motionConfig}
+      <MotionPreferenceProvider value={motionOff ? "reduce" : "system"}>
       <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.backgroundMuted }} edges={["top"]}>
         <ScrollView contentContainerStyle={{ padding: theme.spacing.lg }}>
           <DirView dir={direction}>
@@ -351,7 +352,7 @@ export default function Gallery() {
           </Section>
 
           <Section index={9} title="גיליונות תחתונים ושורות">
-            <Frame height={360}>
+            <Frame height={420}>
               <BottomSheet title="כותרת" subtitle="תת־כותרת קצרה" testID="gallery-sheet-rows">
                 <SheetRow icon="bookmark" label="שורה רגילה" />
                 <SheetRow icon="link" label="עם רמז" hint="רמז קטן" />
@@ -363,28 +364,28 @@ export default function Gallery() {
             <Frame height={260}>
               <PlusMenuSheet />
             </Frame>
-            <Frame height={340}>
+            <Frame height={400}>
               <PostMenuSheet variant="suggested" authorName="יעקב פרידמן" />
             </Frame>
-            <Frame height={260}>
+            <Frame height={300}>
               <PostMenuSheet variant="standard" authorName="יעקב פרידמן" />
             </Frame>
-            <Frame height={220}>
+            <Frame height={240}>
               <OwnPostMenuSheet />
             </Frame>
-            <Frame height={300}>
+            <Frame height={400}>
               <ShareSheet canShareToGroup groupName="שכונת רמות" canCopyLink={false} />
             </Frame>
-            <Frame height={300}>
+            <Frame height={400}>
               <ShareSheet canShareToGroup canCopyLink groupName="שכונת רמות" />
             </Frame>
-            <Frame height={280}>
+            <Frame height={300}>
               <WhySheet authorName="יעקב פרידמן" followedOnly={followedOnly} onFollowedOnlyChange={setFollowedOnly} />
             </Frame>
-            <Frame height={220}>
+            <Frame height={240}>
               <CommentMenuSheet own={false} authorName="יוסי ברק" />
             </Frame>
-            <Frame height={220}>
+            <Frame height={240}>
               <CommentMenuSheet own authorName="יוסי ברק" />
             </Frame>
           </Section>
@@ -454,6 +455,7 @@ export default function Gallery() {
           </DirView>
         </ScrollView>
       </SafeAreaView>
+      </MotionPreferenceProvider>
     </DirectionProvider>
   );
 }

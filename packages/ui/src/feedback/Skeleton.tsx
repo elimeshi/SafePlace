@@ -4,7 +4,6 @@ import Animated, {
   Easing,
   cancelAnimation,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -12,6 +11,7 @@ import Animated, {
 import { GradientFill } from "../foundation/GradientFill";
 import { feedColors } from "@safeplace/design-tokens";
 import { SHIMMER_GRADIENT, SHIMMER_MS, shimmerTranslate, skeletonCardStyle } from "./Skeleton.styles";
+import { useReducedMotion } from "../motion/reduced-motion";
 
 export interface SkeletonProps {
   width?: DimensionValue;

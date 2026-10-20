@@ -3,12 +3,12 @@ import {
   cancelAnimation,
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
 import { colors, motion } from "@safeplace/design-tokens";
+import { useReducedMotion } from "./reduced-motion";
 
 /**
  * The very slow "breathing" halo on a primary CTA (§6.3.2, ~3.5s cycle) — a

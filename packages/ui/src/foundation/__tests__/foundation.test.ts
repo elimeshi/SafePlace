@@ -30,7 +30,7 @@ describe("style helpers", () => {
     expect(rubik(25, 700).fontFamily).toBe("Rubik_700Bold");
     expect(assistant(12, 600).fontWeight).toBeUndefined();
   });
-  it("lh converts a unitless ratio", () => expect(lh(16, 1.62)).toBe(25.92));
+  it("lh converts a unitless ratio", () => expect(lh(16, 1.62)).toBeCloseTo(25.92, 5));
 });
 
 describe("arrowNames", () => {
