@@ -84,6 +84,12 @@ See ADR 0003. All of these are placeholder-until-locked:
   labeling rules as organic content (§2.3.1)
 - Bottom follow-suggestion rail: persistent sticky vs. dismissible (§2.4.3, §6.4)
 - Full transparency/"why am I seeing this" mechanism detail (§3.4)
+- Whether to record **time-on-post** as a ranking signal (raised Phase 4,
+  ADR 0014). Currently NOT recorded: only explicit actions are signals. Needs
+  a product, privacy and likely legal decision before any passive signal is
+  collected.
+- Note (Phase 4): until the ranking session, order is random (ADR 0013); the
+  weights item above is still open.
 
 ## F. Post creation
 
@@ -91,6 +97,11 @@ See ADR 0003. All of these are placeholder-until-locked:
   spec needed (`02-post-creation-spec.md` §1.3)
 - Whether to add a quick-create entry point on the main feed itself for
   personal posts (currently: no, deferred pending user feedback) (§2.1)
+- **Clarification needed on `02-post-creation-spec.md` §4.2 (raised Phase 4,
+  ADR 0017):** Eli made the exposure picker multi-select (2026-10-20); the
+  spec still describes a single choice. `docs/product` was not edited. Add a
+  clarification note to §4.2 once Eli confirms the open rule: a Family Space
+  never mixes with a non-Family-Space audience (and the share-rule reading).
 - Maximum post length and feed-view truncation behavior (§3.2)
 - Poll mechanics — max options, duration, result visibility before voting (§3.4)
 - Full tagging flow — pre-approval, notification, decline handling (§3.6)
@@ -98,7 +109,9 @@ See ADR 0003. All of these are placeholder-until-locked:
 ## G. Single post / comments
 
 - Initial comment count shown + "load more" pagination threshold (proposed: 20) (`03-single-post-spec.md` §3.2)
-- Whether like-lists are always public or user-configurable (currently: public, to be revisited) (§4.1)
+- Whether like-lists are always public or user-configurable (§4.1). **Still
+  open, but Phase 4 builds likes as a number only, never a list** (invariant
+  #5 wins over §4.1; ADR 0016).
 - Comment edit/delete UX and "edited" labeling (§7)
 - Internal share quote-card exact visual treatment (§5.5)
 - Optional next/previous post navigation within the single-post screen (§6.3)

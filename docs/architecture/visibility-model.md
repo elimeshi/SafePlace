@@ -142,6 +142,31 @@ Two notes on the surfaces above:
   `media_items` rows like everything else; do not give it its own storage path.
 
 
+### 4a. Post surfaces (Phase 4)
+
+Exposure is now a **set** of audiences (ADR 0017): `post_audiences`, visible if
+the viewer satisfies ANY audience and there is no block. Rules live in
+`visibility-policy` (`canViewPost`, `canViewComment`, `postFeedPlacement`,
+`canSharePostInternally`, `canCopyExternalLink`, `canSuggestUserToFollow`,
+`isAudienceSetValid`) with SQL mirrors in the `visibility` schema; the parity
+suite asserts they agree. `visibility.post_visible` is the one SQL predicate
+that RLS, `post_stats` and every read path call. Post TEXT is never
+classification-filtered; only media is.
+
+| Surface | How it is enforced |
+|---|---|
+| Main feed (`feed_page`) | SECURITY INVOKER, so `posts` RLS decides existence; eligibility from `visibility.feed_placement` (`followed` / `suggested` / `none`); media via `media_items_visible` (filtered viewer gets `storage_path` null, `is_filtered` true). Family Space posts and muted authors are never in it. Order is random and is the ranking seam (ADR 0013). |
+| Spaces rail (`spaces_rail`) | One card per group/Family Space the caller belongs to, latest-post preview (not from muted authors). The Family Space carve-out applies to the preview media. This and the single post are the only places Family Space posts surface. |
+| Single post | Same `posts` RLS; drafts author-only (ADR 0015). |
+| Comments | `comments` RLS via `visibility.comment_visible`: post visible, author neither blocked nor muted. Comment media is `media_items` like any other. Replies are two levels, normalized by trigger. |
+| Likes, saves, mutes, suggestion feedback | Private to their owner (SELECT own rows only). Nobody sees a list of likers (ADR 0016). Mute hides a user's posts from your feed and their comments from you; it is silent and not a block. |
+| Counts (`post_stats`, `comment_stats`) | SECURITY DEFINER, ids filtered through `post_visible` / `comment_visible` first; return numbers and the caller's own `viewer_liked` / `viewer_saved`. Comment counts exclude blocked and muted authors. |
+| Follow suggestions | Respects the target's `discoverable_in_search` and the viewer's `genderSeparationInSearch`; never drawn from the follow graph or co-membership. |
+
+The Family Space carve-out over audiences is safe only because a Family Space
+never mixes with another audience kind (`isAudienceSetValid`, pending Eli's
+confirmation, ADR 0017).
+
 ## 5. Defaults vs. rules — why the distinction is load-bearing
 
 From the master spec's legal framing (§3.6): a default is legally and

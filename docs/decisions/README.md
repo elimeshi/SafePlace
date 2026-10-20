@@ -13,6 +13,11 @@
 - `0010-images-only-classification.md` — MVP classifies images; video goes to human review.
 - `0011-raw-score-retention.md` — keep verdict + confidence 90 days, service-role only, never the reasoning.
 - `0012-region-blur.md` — redact regions instead of withholding the whole image; built, switched off.
+- `0013-random-feed-ordering-and-ranking-seam.md` — seeded-keyset random feed; `feed_page` is the ranking seam.
+- `0014-explicit-only-interaction-signals.md` — like/comment/save/share/mute/feedback only; no time-on-post.
+- `0015-classify-while-composing-drafts.md` — author-only drafts so classification runs while typing; purge.
+- `0016-likes-are-number-only.md` — invariant #5 wins over `03` §4.1; counts via `post_stats`.
+- `0017-multi-audience-exposure.md` — `post_audiences`, OR visibility, Family Space never mixes (pending Eli).
 - `open-questions-backlog.md` — every item the product specs explicitly
   deferred (97 items), organized by area. Check here before assuming
   something was overlooked.

@@ -143,3 +143,29 @@ migrations are authoritative):
   underlying follow/membership rows are SELECT-visible only to their owner.
 - Every rule above is proven to agree with `packages/visibility-policy` by the
   parity suite in `packages/db-testing` (ADR 0006).
+
+## Phase 4 implementation notes (migrations `20261020120000`, `20261020120100`)
+
+- **`Post.exposure` is now `post_audiences`** (`post_id, kind, group_id,
+  space_id, position`), one or more rows per post (ADR 0017); the
+  `exposure_*` columns on `posts` are gone. `profiles.default_post_exposure`
+  stays single-valued.
+- **`posts.status` (`draft | published`), `published_at`, `quoted_post_id`**
+  (`on delete set null`). Drafts are author-only (ADR 0015);
+  `purge_abandoned_drafts(interval)` is service-role only and unscheduled.
+  Published posts lock audience/source/quote against client roles
+  (`posts_guard`).
+- **New private tables:** `post_likes`, `comment_likes`, `post_saves`,
+  `user_mutes(muter_id, muted_id)`, `suggestion_feedback(viewer_id,
+  target_user_id, kind: less_like_this | dont_suggest)`. Each row is visible
+  only to its owner (ADR 0014, 0016).
+- **`comments.reply_to_user_id`**, always derived by the `comments_normalize_reply`
+  trigger (two levels; a reply to a reply is re-parented onto the level-1
+  root).
+- **Read functions:** `post_stats`, `comment_stats` (counts without lists),
+  `post_media_json`, `feed_page` (the ranking seam, ADR 0013), `spaces_rail`,
+  `follow_suggestions`. Visibility SQL mirrors: `post_visible`,
+  `comment_visible`, `audience_satisfied`, `audience_set_valid`,
+  `can_share_internally`, `can_copy_external_link`, `feed_placement`,
+  `can_suggest_user`, `post_publish_problem`.
+- Statuses, polls and tagging have no tables yet (out of Phase 4).
