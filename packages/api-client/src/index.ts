@@ -6,3 +6,7 @@ export * from "./media";
 export * from "./moderation";
 export * from "./posts";
 export * from "./counts";
+export * from "./feed";
+export * from "./interactions";
+export * from "./comments";
+export * from "./compose";
