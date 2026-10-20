@@ -111,7 +111,8 @@ export function PostCard({
   style,
 }: PostCardProps) {
   const p = resolvePostCardParts();
-  const mediaMode = postCardMediaMode({ hasMedia: Boolean(post.media) || mediaSlot != null, filtered });
+  // A filtered item never carries a url or slot (invariant #2), so `filtered` itself says "there is media, withheld".
+  const mediaMode = postCardMediaMode({ hasMedia: Boolean(post.media) || mediaSlot != null || filtered, filtered });
 
   return (
     <View style={[resolveCardStyle(variant), style]} testID="post-card">
