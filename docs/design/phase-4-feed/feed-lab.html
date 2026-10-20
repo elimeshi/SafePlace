@@ -301,6 +301,10 @@ svg.i{width:22px;height:22px;flex:0 0 auto;display:block}
 .mdemo.collapsed .mstrip{opacity:1;transform:none;height:auto}
 .mdemo.collapsed .mfeed{margin-top:0}
 @media (prefers-reduced-motion:reduce){.mzones{transition:opacity 200ms}.mstrip{transition:opacity 200ms;transform:none}}
+.ck{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--c-border);background:#fff;flex:0 0 auto;display:grid;place-items:center;color:#fff}
+.ck.on{background:var(--c-primary);border-color:var(--c-primary)}
+.ck svg{width:14px;height:14px}
+.srow .ck svg{color:#fff}
 </style>
 </head>
 <body>
@@ -502,16 +506,18 @@ SCREENS.compose = { cap: '<b>Compose · from the feed "+"</b> — exposure defau
     : screen(`${statusbar()}<div style="flex:1;display:flex;flex-direction:column;background:#fff">${inner}</div>`, '');
 } };
 
-SCREENS.exposure = { cap: '<b>Exposure picker</b> — "who will see this?" (§4.2). Group and Family Space open a list of your spaces.', html: () => screen(`
+SCREENS.exposure = { cap: '<b>Exposure picker · multi-select</b> (Eli 2026-10-20) — tick any mix of followers, groups and family spaces. "Public" already includes everyone, so ticking it clears the rest. A family space never mixes with non-family audiences (its filter carve-out and "never leaves the space" rule) — pending Eli\'s confirmation.', html: () => screen(`
   ${statusbar()}<div style="flex:1;display:flex;flex-direction:column;background:#fff">
   <div class="ctop"><span class="iconbtn">${ic('x')}</span><span class="ttl">פוסט חדש</span><button class="pub dim">פרסם</button></div>
-  <div class="cid">${av('אבי מזרחי', 44)}<div class="who"><b>אבי מזרחי</b><span class="expo">${ic('globe')}ציבורי${ic('down')}</span></div></div>
+  <div class="cid">${av('אבי מזרחי', 44)}<div class="who"><b>אבי מזרחי</b><span class="expo">${ic('users')}עוקבים + 2 קבוצות${ic('down')}</span></div></div>
   <div class="ctext ph">מה תרצה לשתף?</div></div>
   <div class="scrim"></div><div class="sheet"><div class="grab"></div><h4>מי יראה את זה?</h4>
-    <div class="srow sel">${ic('globe')}<span class="tx">ציבורי<em>גלוי בפיד, ויכול להיות מוצע גם למי שאינו עוקב</em></span>${ic('check', { color: 'var(--c-primary)' })}</div>
-    <div class="srow">${ic('user')}<span class="tx">עוקבים בלבד<em>רק מי שעוקב אחריך</em></span></div>
-    <div class="srow">${ic('users')}<span class="tx">קבוצה ספציפית<em>רק חברי הקבוצה שתבחר</em></span><span style="color:var(--c-ink-mute);display:flex">${ic('back', { size: 18 }).replace('class="i"', 'class="i" style="transform:scaleX(-1)"')}</span></div>
-    <div class="srow">${ic('family')}<span class="tx">מרחב משפחתי<em>רק חברי המרחב</em></span><span style="color:var(--c-ink-mute);display:flex">${ic('back', { size: 18 }).replace('class="i"', 'class="i" style="transform:scaleX(-1)"')}</span></div>
+    <div class="sub">אפשר לבחור יותר מקהל אחד.</div>
+    <div class="srow"><span class="ck"></span>${ic('globe')}<span class="tx">ציבורי<em>כולם — גלוי בפיד, ויכול להיות מוצע גם למי שאינו עוקב</em></span></div>
+    <div class="srow sel"><span class="ck on">${ic('check', { sw: 3 })}</span>${ic('user')}<span class="tx">העוקבים שלי<em>רק מי שעוקב אחריך</em></span></div>
+    <div class="srow sel"><span class="ck on">${ic('check', { sw: 3 })}</span>${ic('users')}<span class="tx">קבוצות<em>שכונת רמות, גמ״ח ספרים</em></span><span style="color:var(--c-ink-mute);display:flex">${fwd()}</span></div>
+    <div class="srow dis"><span class="ck"></span>${ic('family')}<span class="tx">מרחב משפחתי<em>לא ניתן לשלב עם קהלים מחוץ למשפחה</em></span><span style="color:var(--c-ink-mute);display:flex">${fwd()}</span></div>
+    <button class="cta">אישור</button>
   </div>`) };
 
 SCREENS.composeGroup = { cap: '<b>Compose · from a group</b> — exposure locked to the group (§2.2, §4.3). Wired live from group pages in Phase 5.', html: () => screen(`
@@ -623,19 +629,19 @@ SCREENS.quote = { cap: '<b>Share-to-group quote post</b> (§5.5) — the origina
   ${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>
   <div class="scroll"><div class="feed">${quoteCard(false)}${quoteCard(true)}</div></div>${bnav()}`, feedGround()) };
 
-SCREENS.exposureGroups = { cap: '<b>Exposure picker · choose a space</b> — second step after "specific group" / "family space". Only spaces you belong to; member count is a number only.', html: () => screen(`
+SCREENS.exposureGroups = { cap: '<b>Exposure picker · choose groups (multi)</b> — second step under "groups". Only spaces you belong to; member count is a number only. Family spaces have their own list under "family space" (several may be ticked together).', html: () => screen(`
   ${statusbar()}<div style="flex:1;display:flex;flex-direction:column;background:#fff">
   <div class="ctop"><span class="iconbtn">${ic('x')}</span><span class="ttl">פוסט חדש</span><button class="pub dim">פרסם</button></div>
-  <div class="cid">${av('אבי מזרחי', 44)}<div class="who"><b>אבי מזרחי</b><span class="expo">${ic('users')}קבוצה ספציפית${ic('down')}</span></div></div>
+  <div class="cid">${av('אבי מזרחי', 44)}<div class="who"><b>אבי מזרחי</b><span class="expo">${ic('users')}עוקבים + 2 קבוצות${ic('down')}</span></div></div>
   <div class="ctext ph">מה תרצה לשתף?</div></div>
   <div class="scrim"></div><div class="sheet"><div class="grab"></div>
-    <div class="back-row"><span class="iconbtn">${ic('back', { size: 20 })}</span><h4>בחירת קבוצה</h4></div>
+    <div class="back-row"><span class="iconbtn">${ic('back', { size: 20 })}</span><h4>בחירת קבוצות</h4></div>
     <div class="sgroup">הקבוצות שלי</div>
-    <div class="srow sel"><span class="gico" style="background:#2E3A8C;color:#fff">${ic('home')}</span><span class="tx">שכונת רמות<em>1,204 חברים</em></span>${ic('check', { color: 'var(--c-primary)' })}</div>
-    <div class="srow"><span class="gico" style="background:#5B8C5A;color:#fff">${ic('users')}</span><span class="tx">גמ״ח ספרים<em>86 חברים</em></span></div>
-    <div class="srow"><span class="gico" style="background:#A85751;color:#fff">${ic('home')}</span><span class="tx">בית הכנסת המרכזי<em>412 חברים</em></span></div>
-    <div class="sdiv"></div><div class="sgroup">מרחבים משפחתיים</div>
-    <div class="srow"><span class="gico" style="background:linear-gradient(145deg,#22C3D6,#2E3A8C 70%);color:#fff">${ic('family')}</span><span class="tx">משפחת מזרחי<em>14 חברים</em></span></div>
+    <div class="srow sel"><span class="ck on">${ic('check', { sw: 3 })}</span><span class="gico" style="background:#2E3A8C;color:#fff">${ic('home')}</span><span class="tx">שכונת רמות<em>1,204 חברים</em></span></div>
+    <div class="srow sel"><span class="ck on">${ic('check', { sw: 3 })}</span><span class="gico" style="background:#5B8C5A;color:#fff">${ic('users')}</span><span class="tx">גמ״ח ספרים<em>86 חברים</em></span></div>
+    <div class="srow"><span class="ck"></span><span class="gico" style="background:#A85751;color:#fff">${ic('home')}</span><span class="tx">בית הכנסת המרכזי<em>412 חברים</em></span></div>
+    <div class="srow"><span class="ck"></span><span class="gico" style="background:#4A7C7C;color:#fff">${ic('users')}</span><span class="tx">חסדי הקהילה<em>238 חברים</em></span></div>
+    <button class="cta">אישור · 2 נבחרו</button>
   </div>`) };
 
 SCREENS.reply = { cap: '<b>Comment box · reply mode</b> (§3.1, §3.3) — tapping "הגב" highlights the comment, shows "replying to" with X, and prefixes an @ chip. Replies to replies stay at level 2 with the @.', html: () => screen(`

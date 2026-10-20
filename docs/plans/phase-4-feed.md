@@ -100,6 +100,53 @@ Branch: `phase-4-feed` (= Phase 3 tip `6a8dc34` + a tree-neutral merge of `origi
 | Defaults | 20 top-level comments, then "load more" (replies of loaded comments come in full). No post length cap; long posts fold behind "read more" in the feed. Your own posts appear in your feed, and a just-published post is pinned to the top locally for that session. Group-card, source-label and author taps go to placeholder routes until Phase 5. |
 | Deferred | Post edit, comment edit/delete (backlog §F/§G), saved-posts screen (Phase 5), group-card long-press, next/previous post. |
 
+## 2a. Multi-audience exposure (Eli, 2026-10-20)
+
+The exposure picker is **multi-select** (lab screens `exposure`, `exposureGroups`).
+This is a product change by Eli. `02-post-creation` §4.2 describes a single choice and
+has not been edited, so record this in an ADR and flag the spec for a clarification
+note.
+
+- **Audiences:** public, my followers, any number of my groups, any number of my Family
+  Spaces.
+- **Rules:**
+  - Public includes everyone, so ticking it clears the rest.
+  - **A Family Space never mixes with a non-Family-Space audience.** Several Family
+    Spaces together are fine. This is *pending Eli's confirmation*; it is what the lab
+    shows.
+  - From a group or Family Space entry point the audience stays **locked to that one
+    space** (`02` §4.3). Multi-select applies only from the profile/feed entry.
+  - The account default (`profiles.default_post_exposure`) stays single-valued; it seeds
+    the picker.
+- **Data:**
+  - Replace `posts.exposure_kind / exposure_group_id / exposure_space_id` with
+    `post_audiences(post_id, kind, group_id, space_id)`, at least one row per post.
+  - Enforce the rules above with a trigger or constraint function: public is exclusive;
+    a Family Space only mixes with other Family Spaces; you must be a member of every
+    group or space you target.
+  - Migrate existing rows. The hosted DB has none, but the PGlite seed does.
+  - `source_*` stays as it is.
+- **Visibility:**
+  - A post is visible if the viewer satisfies **any** of its audiences (OR), and there
+    is no block.
+  - In `visibility-policy`, `ContentExposure` becomes a non-empty list and
+    `viewerSatisfiesExposure` takes the list. Mirror this in
+    `visibility.post_visible(...)` and in the parity suite. Add test cases for
+    multi-group posts where the viewer is in one group, in none, or in all.
+  - The Family Space carve-out applies when the viewer belongs to one of the post's
+    Family Space audiences. That's safe only because Family Spaces don't mix.
+- **Source label in the feed:**
+  - From a group or Family Space entry → that space (unchanged).
+  - Profile posts → if public, `פוסט ציבורי`. Otherwise, the first of the post's group
+    audiences the viewer belongs to (group colour and icon); else `לעוקבים`.
+  - The author sees the first audience they picked.
+- **Sharing (`03` §5.3) with sets:**
+  - Share to group G is allowed iff the post is public, or G is one of its audiences, or
+    every group audience is a public group.
+  - Never for a post with a Family Space audience.
+  - Copy link only for public posts.
+- `exposureToColumns` / `createPost` in `api-client` change to write audience rows.
+
 ## 3. Data tier (one or two migrations, `20261019xxxxxx_*`)
 
 Every table gets RLS in the same migration, indexes on its read-path columns, a PGlite
