@@ -36,6 +36,6 @@ describe("resolvePostCardParts", () => {
   it("body is 16px at line-height 1.62", () => {
     const p = resolvePostCardParts();
     expect(p.body.fontSize).toBe(16);
-    expect(p.body.lineHeight).toBeCloseTo(25.92);
+    expect(p.body.lineHeight).toBe(25.90625);
   });
 });

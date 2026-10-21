@@ -28,8 +28,11 @@ export function rubik(size: number, weight: 600 | 700 = 600, extra: TextStyle = 
   };
 }
 
-/** CSS `line-height: <ratio>` as RN pixels. */
-export const lh = (size: number, ratio: number): number => size * ratio;
+/**
+ * CSS `line-height: <ratio>` as RN pixels. Chromium truncates a unitless line-height to 1/64px but
+ * rounds a px one, so floor to 1/64 here or react-native-web lands 0.016px taller than the lab.
+ */
+export const lh = (size: number, ratio: number): number => Math.floor(size * ratio * 64 + 1e-6) / 64;
 
 /**
  * The lab's `tint(hex, a)`: a 6-digit hex mixed over white, as an opaque

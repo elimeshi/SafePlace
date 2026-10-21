@@ -22,7 +22,7 @@ describe("StatusesRail (lab .stories)", () => {
   it("empty hint is 13px, 1.4 line-height, max 220 wide", () => {
     expect(s.empty.maxWidth).toBe(220);
     expect(s.emptyText.fontSize).toBe(13);
-    expect(s.emptyText.lineHeight).toBeCloseTo(18.2);
+    expect(s.emptyText.lineHeight).toBe(18.1875);
   });
 });
 
