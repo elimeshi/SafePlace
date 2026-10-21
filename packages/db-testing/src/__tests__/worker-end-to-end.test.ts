@@ -37,12 +37,12 @@ async function uploadAsAuthor(contentType = "image/jpeg"): Promise<string> {
     q.query(
       `insert into public.media_items (id, post_id, uploader_id, storage_path, content_type, classification)
        values ($1, $2, $3, $4, $5, 'unclassified')`,
-      [mediaId, postId, author.id, `media/${mediaId}`, contentType]
+      [mediaId, postId, author.id, `${author.id}/${mediaId}`, contentType]
     )
   );
   await db.raw.query(
     `insert into storage.objects (bucket_id, name, owner) values ('media', $1, $2)`,
-    [`media/${mediaId}`, author.id]
+    [`${author.id}/${mediaId}`, author.id]
   );
   return mediaId;
 }
@@ -87,7 +87,7 @@ describe("upload → enqueue → classify → visibility", () => {
     );
     expect(summary.classified).toBeGreaterThanOrEqual(1);
 
-    expect(await servedUrlTo(filteredViewer.id, mediaId)).toBe(`media/${mediaId}`);
+    expect(await servedUrlTo(filteredViewer.id, mediaId)).toBe(`${author.id}/${mediaId}`);
   });
 
   it("a confident positive stays withheld from a filtered viewer and reaches an unfiltered one", async () => {
@@ -98,9 +98,9 @@ describe("upload → enqueue → classify → visibility", () => {
     );
 
     expect(await servedUrlTo(filteredViewer.id, mediaId)).toBeNull();
-    expect(await servedUrlTo(unfilteredViewer.id, mediaId)).toBe(`media/${mediaId}`);
+    expect(await servedUrlTo(unfilteredViewer.id, mediaId)).toBe(`${author.id}/${mediaId}`);
     // The uploader always sees their own, whatever the verdict.
-    expect(await servedUrlTo(author.id, mediaId)).toBe(`media/${mediaId}`);
+    expect(await servedUrlTo(author.id, mediaId)).toBe(`${author.id}/${mediaId}`);
   });
 
   it("an uncertain verdict freezes the item and files it for a human", async () => {
@@ -109,7 +109,7 @@ describe("upload → enqueue → classify → visibility", () => {
 
     // Frozen: nobody but the uploader can even see the row.
     expect(await servedUrlTo(unfilteredViewer.id, mediaId)).toBeNull();
-    expect(await servedUrlTo(author.id, mediaId)).toBe(`media/${mediaId}`);
+    expect(await servedUrlTo(author.id, mediaId)).toBe(`${author.id}/${mediaId}`);
 
     const { rows } = await db.asService((q) =>
       q.query<{ reason: string }>(

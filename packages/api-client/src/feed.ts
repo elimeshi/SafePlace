@@ -197,6 +197,33 @@ export interface FetchFeedPageParams {
   limit?: number;
 }
 
+async function toFeedItems(supabase: SupabaseClient, data: unknown): Promise<FeedItem[]> {
+  const rows = (data ?? []) as Array<PostRow & { placement: string; sort_key: string }>;
+  const stats = await fetchPostStats(supabase, rows.map((r) => r.id));
+  return rows.map<FeedItem>((r) => ({
+    ...toPostItem(r, stats.get(r.id)),
+    placement: r.placement === "suggested" ? "suggested" : "followed",
+    sortKey: r.sort_key,
+  }));
+}
+
+/**
+ * The caller's own recent published posts that are feed-eligible (the "just
+ * published" pin). SQL decides eligibility via feed_placement, so a Family
+ * Space post is never returned.
+ */
+export async function fetchOwnRecentPosts(
+  supabase: SupabaseClient,
+  params: { since: string; limit?: number }
+): Promise<FeedItem[]> {
+  const { data, error } = await supabase.rpc("own_recent_posts", {
+    p_since: params.since,
+    p_limit: params.limit ?? 5,
+  });
+  if (error) throw new Error(`fetchOwnRecentPosts: ${error.message}`);
+  return toFeedItems(supabase, data);
+}
+
 /** One page of the main feed: seeded keyset pagination + merged post_stats. */
 export async function fetchFeedPage(
   supabase: SupabaseClient,
@@ -210,13 +237,7 @@ export async function fetchFeedPage(
     p_after_id: params.cursor?.id ?? null,
   });
   if (error) throw new Error(`fetchFeedPage: ${error.message}`);
-  const rows = (data ?? []) as Array<PostRow & { placement: string; sort_key: string }>;
-  const stats = await fetchPostStats(supabase, rows.map((r) => r.id));
-  const items = rows.map<FeedItem>((r) => ({
-    ...toPostItem(r, stats.get(r.id)),
-    placement: r.placement === "suggested" ? "suggested" : "followed",
-    sortKey: r.sort_key,
-  }));
+  const items = await toFeedItems(supabase, data);
   const last = items[items.length - 1];
   return {
     items,

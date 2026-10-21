@@ -17,7 +17,7 @@ let db: TestDb;
 
 const POST_ID = "00000000-0000-0000-0000-0000000009a1";
 const MEDIA_ID = "00000000-0000-0000-0000-0000000009b1";
-const PATH = `media/${MEDIA_ID}`;
+const PATH = `${USER.author.id}/${MEDIA_ID}`;
 const author = USER.author;
 const filteredViewer = USER.maleFiltered;      // hideContentWithWomen = true
 const unfilteredViewer = USER.maleUnfiltered;  // hideContentWithWomen = false
@@ -79,8 +79,8 @@ describe("1. a client can insert media, and only as 'unclassified'", () => {
       db.asUser(author.id, (q) =>
         q.query(
           `insert into public.media_items (id, post_id, uploader_id, storage_path, classification)
-           values ('00000000-0000-0000-0000-0000000009b2', $1, $2, 'media/x', 'general')`,
-          [POST_ID, author.id]
+           values ('00000000-0000-0000-0000-0000000009b2', $1, $2, $3, 'general')`,
+          [POST_ID, author.id, `${author.id}/x`]
         )
       )
     ).rejects.toThrow(/row-level security/i);

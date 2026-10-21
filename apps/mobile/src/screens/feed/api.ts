@@ -4,6 +4,7 @@ import {
   fetchFeedPage,
   fetchFollowSuggestions,
   fetchGroupSummaries,
+  fetchOwnRecentPosts,
   fetchPost,
   fetchQuotedPost,
   fetchSpacesRail,
@@ -178,17 +179,7 @@ export async function createFeedApi(supabase: SupabaseClient, userId: string, li
       return (await fetchFollowSuggestions(supabase, { seed })).map((s) => ({ userId: s.userId, name: s.displayName }));
     },
     async loadPinned(sinceIso) {
-      const { data, error } = await supabase
-        .from("posts")
-        .select("id")
-        .eq("author_id", userId)
-        .eq("status", "published")
-        .gte("published_at", sinceIso)
-        .order("published_at", { ascending: false })
-        .limit(5);
-      if (error) throw new Error(`loadPinned: ${error.message}`);
-      const posts = await Promise.all(((data ?? []) as Array<{ id: string }>).map((r) => fetchPost(supabase, r.id)));
-      const items = posts.flatMap((p) => (p ? [{ ...p, placement: "followed" as const, sortKey: "" }] : []));
+      const items = await fetchOwnRecentPosts(supabase, { since: sinceIso, limit: 5 });
       return hydrateEntries(supabase, viewer, items);
     },
     setLiked: (postId, liked) => (liked ? likePost(supabase, userId, postId) : unlikePost(supabase, userId, postId)),

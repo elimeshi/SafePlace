@@ -54,12 +54,12 @@ async function upload(): Promise<string> {
     q.query(
       `insert into public.media_items (id, post_id, uploader_id, storage_path, content_type, classification)
        values ($1, $2, $3, $4, 'image/png', 'unclassified')`,
-      [mediaId, postId, author.id, `media/${mediaId}`]
+      [mediaId, postId, author.id, `${author.id}/${mediaId}`]
     )
   );
   await db.raw.query(
     `insert into storage.objects (bucket_id, name, owner) values ('media', $1, $2)`,
-    [`media/${mediaId}`, author.id]
+    [`${author.id}/${mediaId}`, author.id]
   );
   return mediaId;
 }
@@ -120,17 +120,17 @@ describe("flagged media with a verified derivative", () => {
 
     const view = await served(filtered.id, mediaId);
     expect(view).toMatchObject({
-      storage_path: `media/${mediaId}.redacted.png`,
+      storage_path: `${author.id}/${mediaId}.redacted.png`,
       is_filtered: true,
       is_redacted: true,
     });
 
     expect(await served(unfiltered.id, mediaId)).toMatchObject({
-      storage_path: `media/${mediaId}`,
+      storage_path: `${author.id}/${mediaId}`,
       is_redacted: false,
     });
     expect(await served(author.id, mediaId)).toMatchObject({
-      storage_path: `media/${mediaId}`,
+      storage_path: `${author.id}/${mediaId}`,
     });
   });
 
@@ -151,8 +151,8 @@ describe("flagged media with a verified derivative", () => {
       return rows[0]?.n === 1;
     };
 
-    expect(await canSign(`media/${mediaId}.redacted.png`)).toBe(true);
-    expect(await canSign(`media/${mediaId}`)).toBe(false);
+    expect(await canSign(`${author.id}/${mediaId}.redacted.png`)).toBe(true);
+    expect(await canSign(`${author.id}/${mediaId}`)).toBe(false);
   });
 
   it("records what was done", async () => {

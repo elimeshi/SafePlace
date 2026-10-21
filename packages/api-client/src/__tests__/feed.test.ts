@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   fetchFeedPage,
+  fetchOwnRecentPosts,
   fetchFollowSuggestions,
   fetchPost,
   fetchQuotedPost,
@@ -36,6 +37,15 @@ const row = (id: string, extra: Record<string, unknown> = {}) => ({
 });
 
 describe("feed", () => {
+  it("fetchOwnRecentPosts calls the SQL function (no client-side placement logic) and merges stats", async () => {
+    const { client, calls } = mockClient((c) =>
+      c.target === "rpc:own_recent_posts" ? { data: [row("p1", { sort_key: "" })] } : { data: [] }
+    );
+    const items = await fetchOwnRecentPosts(client, { since: "2026-01-01T00:00:00Z" });
+    expect(items.map((i) => i.id)).toEqual(["p1"]);
+    expect(rpcArgs(calls[0])).toEqual({ p_since: "2026-01-01T00:00:00Z", p_limit: 5 });
+  });
+
   it("newFeedSeed differs per call", () => {
     expect(newFeedSeed()).not.toBe(newFeedSeed());
   });

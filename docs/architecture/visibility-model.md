@@ -164,6 +164,23 @@ classification-filtered; only media is.
 | Counts (`post_stats`, `comment_stats`) | SECURITY DEFINER, ids filtered through `post_visible` / `comment_visible` first; return numbers and the caller's own `viewer_liked` / `viewer_saved`. Comment counts exclude blocked and muted authors. |
 | Follow suggestions | Respects the target's `discoverable_in_search` and the viewer's `genderSeparationInSearch`; never drawn from the follow graph or co-membership. |
 
+Audit fixes (migration `20261021100000_audit_fixes`):
+
+- **Media paths are owned.** A client may insert a `media_items` row only with
+  `storage_path` (and `blurred_storage_path`) under its own `uploader_id/`
+  prefix (RLS `with check`), and `storage_path` is unique. The orphan-queue
+  trigger never queues an object another row still references, so a forged
+  row can neither mint a signed URL for, nor get the worker to delete, someone
+  else's object.
+- **The "just published" pin is a SQL read path** (`own_recent_posts`, SECURITY
+  INVOKER, placement from `visibility.feed_placement`), not a client query: a
+  Family Space post never enters the main feed, even the author's own.
+- **No default PUBLIC execute.** Every Phase 4 function is revoked from
+  `public, anon` and granted to `authenticated` (and `service_role`); a test
+  asserts anon can execute none. New functions must do the same.
+- **`published_at` is server-set** (`now()`) at the draft-to-published
+  transition; a client-supplied value is ignored.
+
 The Family Space carve-out over audiences is safe only because a Family Space
 never mixes with another audience kind (`isAudienceSetValid`, pending Eli's
 confirmation, ADR 0017).

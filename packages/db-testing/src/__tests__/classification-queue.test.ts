@@ -25,7 +25,7 @@ async function newMediaAsAuthor(): Promise<string> {
     q.query(
       `insert into public.media_items (id, post_id, uploader_id, storage_path, classification)
        values ($1, $2, $3, $4, 'unclassified')`,
-      [mediaId, postId, author.id, `media/${mediaId}`]
+      [mediaId, postId, author.id, `${author.id}/${mediaId}`]
     )
   );
   return mediaId;
@@ -62,7 +62,7 @@ describe("every media insert enqueues a classification job", () => {
       q.query(
         `insert into public.media_items (id, profile_id, uploader_id, storage_path, classification)
          values ($1, $2, $2, $3, 'unclassified')`,
-        [mediaId, author.id, `media/${mediaId}`]
+        [mediaId, author.id, `${author.id}/${mediaId}`]
       )
     );
     const { rows } = await db.asService((q) =>
@@ -109,7 +109,7 @@ describe("every media parent surface enqueues — invariant #8 has no exceptions
       await db.raw.query(
         `insert into public.media_items (id, ${column}, uploader_id, storage_path, content_type)
          values ($1, $2, $3, $4, 'image/jpeg')`,
-        [mediaId, parentId, author.id, `media/${mediaId}`]
+        [mediaId, parentId, author.id, `${author.id}/${mediaId}`]
       );
       const { rows } = await db.asService((q) =>
         q.query(`select 1 from moderation.classification_jobs where media_item_id = $1`, [
