@@ -220,9 +220,9 @@ export async function fetchFeedPage(
   const last = items[items.length - 1];
   return {
     items,
-    // shortcut: the suggested-inclusion filter can make a page short while more
-    // rows exist; a short page therefore ends the feed. Revisit with ranking.
-    nextCursor: last && items.length >= limit ? { key: last.sortKey, id: last.id } : null,
+    // feed_page applies the suggested-inclusion filter before its LIMIT (capped
+    // at 50 server-side), so a page shorter than that limit is the end of the feed.
+    nextCursor: last && items.length >= Math.min(limit, 50) ? { key: last.sortKey, id: last.id } : null,
   };
 }
 

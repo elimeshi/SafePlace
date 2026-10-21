@@ -65,9 +65,7 @@ export function useFeed(makeApi: () => Promise<FeedApi>) {
 
   const loadMore = useCallback(() => {
     const s = stateRef.current;
-    // A null cursor means the feed is exhausted. Known issue: api-client's
-    // fetchFeedPage also returns null on a short page that was shortened by the
-    // suggested-inclusion filter, which ends the feed early. TODO(ranking session).
+    // A null cursor means the feed is exhausted (feed_page filters before its LIMIT).
     if (!api || s.phase !== "ready" || s.end || s.loadingMore || !s.cursor) return;
     const seed = s.seed;
     dispatch({ type: "moreStart" });
