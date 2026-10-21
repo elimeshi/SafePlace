@@ -253,3 +253,32 @@ external link, #16 public counts. See `docs/legal/legal-tracker.md`.
 - Open for Eli: Family Space never mixes with non-family audiences (pending); share-rule reading in ADR 0017; the not-in-lab items listed in the agents' reports; copy-link base URL (legal #13); the two lab quirks (statuses "+" caption, after-publish notice card).
 - 🔴 legal items touched: #7, #12, #13, #16.
 - Next: `/visibility-audit` pass on read paths, fix the `own`/`reportSent` residuals, final summary, then the Android device run on Eli's PC.
+
+### 2026-10-21 — audit, fixes, pixel residuals; FINAL SUMMARY
+
+**Verification (forced, uncached):** `pnpm turbo run typecheck lint test --force` -> `Tasks: 23 successful, 23 total`. Tests: visibility-policy 92, db-testing 270, ui 144, mobile 71, api-client 40 (3 live skipped), moderation-pipeline 83, design-tokens 11. `npx expo-doctor` (apps/mobile): 18/18.
+
+**Pixel:** all 24 scenes vs the lab render on Expo web 390x844 are at or under 0.142% (`own` 0.086%, `reportSent` 0.140%). Cause of the old residuals: unitless line-heights are truncated to 1/64px by Chromium; `lh()` in packages/ui now floors the same way. The lab itself differs from the reference PNGs by 0.3-3.2% (anti-aliasing), so the lab render is the baseline. Compare tool: `scripts/pixel-compare` (README's "known residuals" note is now stale).
+
+**Built:** data tier (post_audiences multi-audience, drafts, likes/saves/mutes/suggestion feedback, feed_page / spaces_rail / follow_suggestions / post_stats / comment_stats / family_space_member_count, draft purge via pg_cron + orphaned-object sweep), 9 new visibility-policy rules with SQL mirrors and PGlite parity, ADRs 0013-0017, api-client, UI kit + gallery, and the feed, compose and single-post screens.
+
+**Visibility audit** (all five checklist points per path): passed, with 4 confirmed issues fixed in `20261021100000_audit_fixes.sql`: media storage_path ownership + unique index + orphan-queue guard (a user could get another user's object deleted), own Family Space post pinned in the main feed (now `own_recent_posts`), anon execute on SECURITY DEFINER functions, client-set `published_at`. Left open: comment submit is two-step (comment can exist without its media if the media insert fails; not a leak).
+
+**Open questions for Eli:**
+1. Family Space never mixes with non-family audiences (pending; one function `isAudienceSetValid`, one SQL function).
+2. Share rule: code requires every audience to be a public group and at least one; plan text says "every group audience is a public group" (ADR 0017).
+3. Mute also hides the muted user's comments and drops them from comment counts (plan said blocked only).
+4. Suggested-post "1 in 5" is a random inclusion rate, not an exact cap.
+5. Lab quirks replicated on purpose: statuses "+" caption sizing; after-publish notice rendered as a card. Confirm intended.
+6. Not in the lab (built minimally, copy in copy.ts, need a lab mock + OK): read-more label, filtered space card, standard post menu, exposure picker empty/Family Space copy and disabled-row hints, Profile tab and group/author placeholder copy, comment-menu trigger (long-press), toasts (copy link, shared, appeal sent), share target picker, comment-image preview strip, compose place-name row, loading/error states for compose and post, closing compose with typed text discards without confirm, one image per post, first media only shown.
+7. `like_count` includes likes from blocked users (comment counts exclude blocked/muted). Product call.
+8. Follow rail has no bio/follower count; avatars show initials (avatar resolution is a separate surface).
+9. Real web base URL for copy-link (`EXPO_PUBLIC_WEB_BASE_URL`; post screen falls back to a placeholder).
+
+**Resolved by Eli 2026-10-20:** unanswered notice + Publish = Confirm (keep media, no appeal); notice has Cancel (remove media) / Confirm (keep) / Appeal (keep + appeal); family_space_member_count added; abandoned drafts cleaned automatically.
+
+**🔴 legal items touched:** #7 (LLM scanning incl. draft media), #12 (comment media), #13 (external link), #16 (public counts). Not cleared for production.
+
+**Migrations:** applied to hosted (Eli-approved) and recorded in schema_migrations: 20261020120000, 20261020120100, 20261020130000, 20261020130100, 20261021100000 (hosted count 13 -> 18). Pending: none. Still to do on hosted: enable pg_cron (the schedule block is guarded and only notices if absent), deploy the classification worker (ADR 0009; needs service-role + Anthropic keys). Not run live: pg_cron schedule, Storage removal, comment/compose classification against the real worker (stub provider returns "uncertain" locally -> pending_review).
+
+**Ready for Android device run on Eli's PC.**
