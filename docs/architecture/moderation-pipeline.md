@@ -160,3 +160,10 @@ require sign-off from a senior moderation staff member (§6.4).
 - Confidence thresholds are configuration, not constants baked into model
   code — they will be tuned post-MVP based on real false-positive /
   false-negative data (`07-moderation-spec.md` §2.1).
+
+## 9. Multi-group classification (ADR 0018)
+
+The women axis above is now the `sex` group of four. Every statement in §2
+about bands and queues holds per group; see `content-categories.md` for the
+ladders, the prohibited level, the dedupe step (ADR 0019) and the escalation
+tier. The lifecycle enum is unchanged; levels sit beside it.

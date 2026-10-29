@@ -29,7 +29,8 @@ should not block or distract from implementation:
 - Growth model (§7.3)
 - LLM vendor selection for content classification (§7.4) — **resolved**: ADR
   0002 for hosting, ADR 0004 (amended in Phase 3) for the vision model and the
-  swappable provider seam
+  swappable provider seam, ADR 0018 for the current models (Claude Haiku 5.5,
+  Claude Sonnet 5.5 escalation; both are config)
 - Media storage architecture details (§7.4) — partially addressed by ADR
   0002 (Supabase Storage), but CDN/scaling specifics remain open
 - Broader security/privacy compliance program beyond what's specified
@@ -149,6 +150,20 @@ See ADR 0003. All of these are placeholder-until-locked:
   the column is stored but unenforced. Raised during Phase 1 (data layer).
 
 ## K. Moderation
+
+- **Female default for the `sex` level** — ADR 0018 carries today's
+  `hideContentWithWomen: false` forward as `max_sex_level = 1` (modest women
+  visible, immodest not). Eli to confirm 1 vs 2 before onboarding copy is
+  final.
+- **Hebrew copy for multi-group classification** — the general uploader
+  notice card, its "what was found" details, the three new onboarding rows
+  and the settings rows (`content-categories.md` §6). Drafts live in
+  `docs/plans/classifier-cascade.md`; product copy is Eli's.
+- **Product-spec entries for violence / religion / addictions** — the master
+  spec covers women only; ADR 0018 is the authority until Eli writes the spec
+  text (`docs/product/`).
+- **Dedupe and moderator overrides** — a moderator re-levelling a source
+  image does not propagate to hash-identical copies (ADR 0019).
 
 - Exact AI confidence thresholds — placeholder direction is conservative
   toward over-flagging rather than under-flagging (`07-moderation-spec.md` §2.1).

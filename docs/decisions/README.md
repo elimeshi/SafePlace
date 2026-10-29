@@ -18,6 +18,8 @@
 - `0015-classify-while-composing-drafts.md` — author-only drafts so classification runs while typing; purge.
 - `0016-likes-are-number-only.md` — invariant #5 wins over `03` §4.1; counts via `post_stats`.
 - `0017-multi-audience-exposure.md` — `post_audiences`, OR visibility, Family Space never mixes (pending Eli).
+- `0018-multi-group-content-classification.md` — four ordinal ladders (sex/violence/religion/addictions), level 3 prohibited, Haiku 5.5 + Sonnet escalation.
+- `0019-hash-dedupe-verdict-reuse.md` — exact SHA-256/dHash match copies a resolved verdict; no near-dup search.
 - `open-questions-backlog.md` — every item the product specs explicitly
   deferred (97 items), organized by area. Check here before assuming
   something was overlooked.

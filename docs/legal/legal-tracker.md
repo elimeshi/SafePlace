@@ -9,7 +9,7 @@
 
 Source: every "⚖ טעון אישור משפטי" marker across `docs/product/*.md`
 (16 feature-specific items), plus the master spec's own consolidated list
-in §3.7 (9 items). **25 items total.**
+in §3.7 (9 items), plus 3 engineering-raised items (ADR 0018). **28 items total.**
 
 Status legend: 🔴 not yet reviewed · 🟡 in review · 🟢 cleared
 
@@ -48,6 +48,14 @@ Status legend: 🔴 not yet reviewed · 🟡 in review · 🟢 cleared
 | 24 | Private messaging overall mechanism and wording — communication freedom framed as non-discrimination, not "encouragement" of cross-gender contact | `09-messages-spec.md` §1.2 | 🔴 |
 | 25 | Gender separation toggle in messages, as a "dangerous setting" requiring double-confirmation — exact warning copy | `09-messages-spec.md` §5.2.1 | 🔴 |
 
+## Engineering-raised (ADR 0018, 2026-10-30)
+
+| # | Item | Source | Status |
+|---|---|---|---|
+| 26 | Automated classification of media into violence / religion / addictions levels — in particular classifying *non-Jewish religious imagery* as filterable content; whether the viewer-side framing (§3.6) extends to these groups | `docs/decisions/0018-multi-group-content-classification.md`, `docs/architecture/content-categories.md` §1–§3 | 🔴 |
+| 27 | Level-3 "prohibited content" (nudity, gore, self-harm, idolatry/missionary) is removed by moderation rather than filtered — needs a Terms-of-Service basis and the enforcement-ladder wording | `content-categories.md` §2, `07-moderation-spec.md` §5 | 🔴 |
+| 28 | User images are sent to a third-party model API (Anthropic) for classification — privacy-policy disclosure, DPA, retention (Anthropic states uploads are not used for training and are not stored beyond the request) | ADR 0004, ADR 0018, Anthropic vision docs FAQ | 🔴 |
+
 ## Process
 
 - This tracker is a development-time aid, not a substitute for actually
@@ -56,8 +64,8 @@ Status legend: 🔴 not yet reviewed · 🟡 in review · 🟢 cleared
   characterization.
 - **Before shipping any of the following to production, confirm its
   tracker item is 🟢, not just built and working:** gender-change flow,
-  account deletion, cross-gender messaging, automated LLM content scanning,
-  group admin terms, location tagging, cross-gender tagging.
+  account deletion, cross-gender messaging, automated LLM content scanning
+  (now four groups — items 7 and 26–28), group admin terms, location tagging, cross-gender tagging.
 - Engineering should build all of the above per spec — being legally
   unreviewed doesn't block development — but flag explicitly before any
   production launch involving these flows.

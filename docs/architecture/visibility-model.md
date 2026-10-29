@@ -258,3 +258,10 @@ any other content reference: a viewer only sees a tag if they'd otherwise be
 permitted to see the tagged person, per their own filter settings
 (`02-post-creation-spec.md` §3.6). Treat a tag exactly like an embedded
 content reference, not as a separate visibility surface.
+
+## 9. Per-group levels (ADR 0018)
+
+Axis 2 now reads four `media_items.*_level` columns against the viewer's
+`filter_settings.max_*_level`, after the lifecycle check in §3. The Family
+Space lift in §8 applies to `sex` only. Rules and SQL mirror are listed in
+`content-categories.md` §5.
