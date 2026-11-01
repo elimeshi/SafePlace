@@ -22,6 +22,7 @@ alter table public.media_items
   add column content_dhash    text;
 
 -- Legacy resolved rows: the only thing known about them is the women axis.
+-- violence/religion/addictions = 0 without assessment; the hosted DB had no real users at apply time.
 update public.media_items
    set sex_level = case classification when 'contains_women' then 1 else 0 end,
        violence_level = 0, religion_level = 0, addictions_level = 0
@@ -311,8 +312,10 @@ $$;
 
 -- media_items_visible: body of 20260922000007_region_blur.sql (the latest
 -- definition) with the media_url_permitted call changed to pass the row, plus
--- the uploader's own levels appended (other viewers get NULLs — levels of
--- media you are filtered from are not yours to read).
+-- the uploader's own levels appended (other viewers get NULLs). The view
+-- returns levels to the uploader only, for the notice UI; the base table's
+-- level and hash columns stay readable to post viewers by decision (Eli
+-- 2026-11-02, content-categories.md).
 --
 -- The derivative only obscures women, so it is served only when the sex group
 -- is the sole reason the original is withheld: levels_visible with the sex

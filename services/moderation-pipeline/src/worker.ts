@@ -50,7 +50,8 @@ export interface CompletedClassification {
   /** Sex-axis projection, kept for ADR 0011 continuity. */
   womanProbability: number;
   levels: ContentLevels | null;
-  reviewReason: ReviewReason | null;
+  /** classification_failed: a media type the model cannot judge (ADR 0010). */
+  reviewReason: ReviewReason | "classification_failed" | null;
   /** The model's raw per-group levels (never its free text), for the review queue. */
   aiLevels: Record<ContentGroup, number | "uncertain"> | null;
   contentSha256: string | null;
@@ -156,7 +157,7 @@ async function processJob(
       confidence: 0,
       womanProbability: 0.5,
       levels: null,
-      reviewReason: null,
+      reviewReason: "classification_failed",
       aiLevels: null,
       contentSha256: null,
       contentDhash: null,

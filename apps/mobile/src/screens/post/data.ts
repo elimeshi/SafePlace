@@ -7,6 +7,7 @@ import {
   fetchPost,
   fetchQuotedPost,
   getCopyLink,
+  LEVEL_COLUMNS,
   likeComment,
   likePost,
   muteUser,
@@ -230,7 +231,7 @@ export function createSupabaseBackend(supabase: SupabaseClient, userId: string):
       if (commentIds.length === 0) return out;
       const { data, error } = await supabase
         .from("media_items_visible")
-        .select("id, comment_id, classification, storage_path, is_filtered, is_redacted")
+        .select(`id, comment_id, classification, ${LEVEL_COLUMNS}, storage_path, is_filtered, is_redacted`)
         .in("comment_id", commentIds);
       if (error) throw new Error(`refreshCommentMedia: ${error.message}`);
       const rows = (data ?? []) as Array<Parameters<typeof toMediaView>[0] & { comment_id: string }>;

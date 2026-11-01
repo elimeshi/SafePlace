@@ -223,7 +223,7 @@ describe("drainOnce", () => {
       classification: "pending_review",
       verdict: "unsupported_media",
       levels: null,
-      reviewReason: null,
+      reviewReason: "classification_failed",
       aiLevels: null,
       contentSha256: null,
       contentDhash: null,

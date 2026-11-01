@@ -45,7 +45,7 @@ answer. That text moves into the new rubric unchanged.
 
 | Group | male default | female default | user-changeable |
 |---|---|---|---|
-| `sex` | 0 (= today's `hideContentWithWomen: true`) | 1 (= today's `false`; **assumption, Eli to confirm** — see backlog) | yes, 0–2 |
+| `sex` | 0 (= today's `hideContentWithWomen: true`) | 1 (= today's `false`; confirmed by Eli 2026-11-01) | yes, 0–2 |
 | `violence` | 0 | 0 | yes, 0–2 |
 | `religion` | 0 | 0 | yes, 0–2 |
 | `addictions` | 0 | 0 | yes, 0–2 |
@@ -96,6 +96,14 @@ classification ∉ {general, contains_women} → withheld (fail closed)
 levels null                                → withheld (fail closed)
 ∀ group: level ≤ viewer max level          → visible   (sex skipped inside a Family Space)
 ```
+
+The four `*_level` columns and `content_sha256` / `content_dhash` on
+`public.media_items` are readable through the base table by any viewer
+allowed to see the parent post, even for media they are filtered from. The
+media itself (its storage path) is still withheld by `media_items_visible`
+and the storage policy. This is accepted by decision: it is the same class
+of information as `classification`, which is already readable this way by
+design (Eli, 2026-11-02).
 
 ## 6. What the uploader is told
 

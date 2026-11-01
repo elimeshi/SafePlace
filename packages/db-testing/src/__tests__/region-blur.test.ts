@@ -11,7 +11,7 @@
  * it has product sign-off — see ADR 0012.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { MediaClassification } from "@safeplace/visibility-policy";
+import type { ContentLevels, MediaClassification } from "@safeplace/visibility-policy";
 import { createTestDb, type TestDb } from "../harness";
 import { insertPublicPost, levelColumns, seedFixtures, USER } from "../seed";
 
@@ -21,7 +21,10 @@ const filtered = USER.maleFiltered;
 const unfiltered = USER.maleUnfiltered;
 
 let seq = 0;
-async function mediaWithDerivative(classification: MediaClassification): Promise<{
+async function mediaWithDerivative(
+  classification: MediaClassification,
+  levels?: ContentLevels
+): Promise<{
   mediaId: string;
   originalPath: string;
   blurredPath: string;
@@ -38,7 +41,7 @@ async function mediaWithDerivative(classification: MediaClassification): Promise
        (id, post_id, uploader_id, storage_path, blurred_storage_path, content_type, classification, classified_at,
         sex_level, violence_level, religion_level, addictions_level)
      values ($1, $2, $3, $4, $5, 'image/jpeg', $6::media_classification, now(), $7, $8, $9, $10)`,
-    [mediaId, postId, author.id, originalPath, blurredPath, classification, ...levelColumns(classification)]
+    [mediaId, postId, author.id, originalPath, blurredPath, classification, ...levelColumns(classification, levels)]
   );
   for (const name of [originalPath, blurredPath]) {
     await db.raw.query(
@@ -134,6 +137,22 @@ describe("with region blur enabled", () => {
     expect(await served(filtered.id, mediaId)).toMatchObject({
       storage_path: null,
       is_redacted: false,
+    });
+  });
+
+  it("serves no derivative when another group also withholds it — the blur only covers women", async () => {
+    const { mediaId, blurredPath } = await mediaWithDerivative("contains_women", {
+      sex: 1,
+      violence: 1,
+      religion: 0,
+      addictions: 0,
+    });
+    // sex 0, violence 0: violence alone withholds the image, so no blurred copy.
+    expect(await served(filtered.id, mediaId)).toMatchObject({ storage_path: null, is_redacted: false });
+    // sex 0, violence 1: sex is the sole reason, so the blurred copy is served.
+    expect(await served(USER.maleSexOnlyLifted.id, mediaId)).toMatchObject({
+      storage_path: blurredPath,
+      is_redacted: true,
     });
   });
 

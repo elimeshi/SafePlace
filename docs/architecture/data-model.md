@@ -19,7 +19,11 @@
 - `accountStatus`: `'active' | 'suspended' | 'frozen' | 'pending_deletion' | 'deleted'`
 
 ### FilterSettings (one-to-one with User)
-- `hideContentWithWomen: boolean` (default: `true` for male, `false` for female)
+- `contentLevels: { sex, violence, religion, addictions }` — max accepted level
+  per group, 0–2 (DB `max_<group>_level`; default sex 0 male / 1 female, others 0;
+  see `content-categories.md`)
+- `hideContentWithWomen: boolean` — DERIVED (`contentLevels.sex === 0`); in the DB
+  `hide_content_with_women` is a generated column, never written
 - `hideWomenAccounts: boolean`
 - `showSuggestedPosts: boolean` (default `true`, per `01-feed-spec.md` §7.1)
 - `genderSeparationInMessages: boolean` (default `false`, per `09-messages-spec.md` §5.2.1)

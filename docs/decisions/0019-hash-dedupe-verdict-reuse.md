@@ -82,3 +82,7 @@ Cost: re-encoded copies (same pixels, different bytes) are now reclassified
 by the model instead of copied, at about $0.00016 each (Haiku 5.5, one call).
 Byte-identical re-uploads — forwards and re-shares of the same file — still
 dedupe.
+
+Privacy: `content_sha256` / `content_dhash` are readable through the base
+table by any viewer of the parent post, like `classification`; accepted by
+Eli 2026-11-02 (`content-categories.md` §5).

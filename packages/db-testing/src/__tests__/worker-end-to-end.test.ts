@@ -285,6 +285,6 @@ describe("upload → enqueue → classify → visibility", () => {
         [mediaId]
       )
     );
-    expect(queued[0]?.reason).toBe("ai_medium_confidence");
+    expect(queued[0]?.reason).toBe("classification_failed");
   });
 });

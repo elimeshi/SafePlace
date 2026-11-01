@@ -76,13 +76,18 @@ own filter settings. The same principle applies to a user's own profile photo
 (`canViewProfilePhoto`). Otherwise:
 
 ```
-viewerSatisfiesClassification(viewer, classification) =
-     isFamilySpaceContext(viewer, mediaItem)   // family space lifts standard filtering
-  OR classification == 'general'
-  OR (classification == 'contains_women' AND !viewer.filterSettings.hideContentWithWomen)
-  // 'unclassified' and 'pending_review' are false for everyone here — the
-  // uploader's own access comes from canViewMedia's short-circuit above.
+viewerSatisfiesClassification(viewer, mediaItem, liftSex) =
+     classification IN ('general', 'contains_women')   // unresolved: withheld everywhere
+  AND levels IS NOT NULL
+  AND ∀ group: (group == 'sex' AND liftSex)
+               OR mediaItem.levels[group] <= viewer.filterSettings.contentLevels[group]
+  // liftSex: a Family Space context, or the avatar opt-out on profile photos.
+  // Either lifts the sex group only; violence/religion/addictions still apply.
+  // 'unclassified' and 'pending_review' are false for everyone here, even in
+  // a Family Space — the uploader's own access comes from canViewMedia above.
 ```
+
+Per-group ladders and defaults: `content-categories.md`.
 
 **`unclassified` fails closed.** Classification is asynchronous, so every
 upload has a window between the INSERT and the worker's write during which
@@ -244,9 +249,9 @@ product owner's sign-off.
 ## 8. Family Spaces — the deliberate exception
 
 Inside a confirmed (mutual-consent, invite-accepted) Family Space, the
-admin of that space controls content rules directly, and standard
-classification-based filtering for members is lifted (master spec §4.1.3,
-§4.2). This is **scoped to that space only** — a post created inside a
+admin of that space controls content rules directly, and the `sex`-group
+filter for members is lifted (master spec §4.1.3, §4.2); violence, religion
+and addictions still apply (`content-categories.md` §4). This is **scoped to that space only** — a post created inside a
 Family Space is never visible outside it (see exposure axis above), and a
 user's filter settings still apply everywhere else they go. Do not let a
 Family Space membership leak into global filter state.

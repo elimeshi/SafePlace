@@ -25,7 +25,7 @@ describe("createAnthropicLocalizer", () => {
       },
       stop_reason: "end_turn",
     });
-    const localizer = createAnthropicLocalizer({ client, modelId: "claude-haiku-4-5" });
+    const localizer = createAnthropicLocalizer({ client, modelId: "claude-haiku-5-5" });
 
     await expect(localizer.locate(input)).resolves.toEqual({
       regions: [{ x: 0.1, y: 0.2, width: 0.3, height: 0.4 }],
@@ -57,7 +57,7 @@ describe("createAnthropicLocalizer", () => {
     ]) {
       const localizer = createAnthropicLocalizer({
         client: fakeClient(result),
-        modelId: "claude-haiku-4-5",
+        modelId: "claude-haiku-5-5",
       });
       await expect(localizer.locate(input)).resolves.toEqual({
         regions: [],
@@ -75,7 +75,7 @@ describe("createAnthropicLocalizer", () => {
       },
     } as unknown as MessagesParseClient;
     await expect(
-      createAnthropicLocalizer({ client, modelId: "claude-haiku-4-5" }).locate(input)
+      createAnthropicLocalizer({ client, modelId: "claude-haiku-5-5" }).locate(input)
     ).rejects.toThrow(/503/);
   });
 });
