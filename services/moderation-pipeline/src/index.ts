@@ -44,6 +44,11 @@ export {
 } from "./providers/anthropic";
 
 export {
+  createEscalatingClassifier,
+  type EscalatingClassifierOptions,
+} from "./providers/escalating";
+
+export {
   clampRegion,
   coverageFraction,
   createStubLocalizer,
