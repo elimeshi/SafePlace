@@ -90,6 +90,7 @@ const UNDECIDED = 0.5;
  */
 export function groupProbabilityFrom(v: GroupVerdict): number {
   if (v.level === "uncertain") return UNDECIDED;
+  if (!Number.isInteger(v.level) || v.level < 0 || v.level > 3) return UNDECIDED;
   if (!Number.isFinite(v.confidence) || v.confidence < 0 || v.confidence > 1) return UNDECIDED;
   return v.level === 0 ? UNDECIDED - v.confidence / 2 : UNDECIDED + v.confidence / 2;
 }
@@ -117,8 +118,10 @@ export function resolveMediaOutcome(
   const undecided: ContentGroup[] = [];
   for (const g of CONTENT_GROUPS) {
     const v = output.groups[g];
-    const offLadder = v.level !== "uncertain" && v.level > MAX_LEVEL_BY_GROUP[g];
-    const band = offLadder ? "medium" : resolveConfidenceBand(groupProbabilityFrom(v), thresholds);
+    const validLevel =
+      v.level === "uncertain" ||
+      (Number.isInteger(v.level) && v.level >= 0 && v.level <= MAX_LEVEL_BY_GROUP[g]);
+    const band = !validLevel ? "medium" : resolveConfidenceBand(groupProbabilityFrom(v), thresholds);
     if (v.level === "uncertain" || band === "medium") {
       undecided.push(g);
     } else {

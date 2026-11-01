@@ -76,6 +76,10 @@ describe("groupProbabilityFrom", () => {
     expect(groupProbabilityFrom({ level: 2, confidence: 0.9 })).toBeCloseTo(0.95);
     expect(groupProbabilityFrom({ level: "uncertain", confidence: 1 })).toBe(0.5);
   });
+
+  it("a malformed level is the midpoint, never a confident answer", () => {
+    expect(groupProbabilityFrom({ level: 1.5 as never, confidence: 0.9 })).toBe(0.5);
+  });
 });
 
 describe("resolveMediaOutcome", () => {
@@ -118,6 +122,15 @@ describe("resolveMediaOutcome", () => {
   it("a level above the group's ladder is treated as uncertain", () => {
     const o = resolveMediaOutcome(verdicts({ addictions: { level: 3, confidence: 0.99 } }), DEFAULT_THRESHOLDS);
     expect(o.undecided).toEqual(["addictions"]);
+  });
+
+  it("a malformed level routes to review instead of resolving", () => {
+    const o = resolveMediaOutcome(
+      verdicts({ violence: { level: "banana" as never, confidence: 0.99 } }),
+      DEFAULT_THRESHOLDS
+    );
+    expect(o.classification).toBe("pending_review");
+    expect(o.undecided).toContain("violence");
   });
 
   it("refusal → pending_review with ai_refusal", () => {
