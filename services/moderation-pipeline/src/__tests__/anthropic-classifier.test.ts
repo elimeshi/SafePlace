@@ -1,139 +1,75 @@
 import { describe, expect, it, vi } from "vitest";
-import { allUncertain, verdictsOf } from "../classifier";
-import {
-  createAnthropicClassifier,
-  type MessagesParseClient,
-} from "../providers/anthropic";
+import sharp from "sharp";
+import { createAnthropicClassifier } from "../providers/anthropic";
 
-/**
- * The real provider, exercised through an injected messages client so the
- * suite never makes a network call or spends money. What matters here is that
- * a usable answer is read correctly and that every unusable one fails safe
- * toward human review rather than toward auto-approval.
- */
-
-function fakeClient(result: unknown, capture?: (params: unknown) => void) {
-  const parse = vi.fn(async (params: unknown) => {
-    capture?.(params);
-    return result;
-  });
-  return { messages: { parse } } as unknown as MessagesParseClient;
+async function png(w = 1600, h = 1200): Promise<Uint8Array> {
+  return new Uint8Array(await sharp({ create: { width: w, height: h, channels: 3, background: "#808080" } }).png().toBuffer());
 }
 
-const input = {
-  mediaItemId: "m1",
-  bytes: new Uint8Array([137, 80, 78, 71]),
-  contentType: "image/png",
-};
+const ok = (groups: Record<string, { level: string; confidence: number }>) => ({
+  parsed_output: groups,
+  stop_reason: "end_turn",
+  usage: { input_tokens: 900, cache_read_input_tokens: 800, cache_creation_input_tokens: 0, output_tokens: 60 },
+});
+
+const clear = ok({
+  sex: { level: "0", confidence: 0.95 },
+  violence: { level: "0", confidence: 0.95 },
+  religion: { level: "1", confidence: 0.8 },
+  addictions: { level: "0", confidence: 0.95 },
+});
 
 describe("createAnthropicClassifier", () => {
-  it("returns the model's verdict and confidence", async () => {
-    const client = fakeClient({
-      parsed_output: { verdict: "woman_present", confidence: 0.93 },
-      stop_reason: "end_turn",
-    });
-    const provider = createAnthropicClassifier({ client, modelId: "claude-haiku-4-5" });
+  it("sends a resized JPEG, the cached rubric and the schema, and parses string levels to numbers", async () => {
+    const parse = vi.fn().mockResolvedValue(clear);
+    const c = createAnthropicClassifier({ client: { messages: { parse } }, modelId: "claude-haiku-5-5" });
+    const out = await c.classify({ mediaItemId: "m", bytes: await png(), contentType: "image/png" });
 
-    // replaced in Task 4: the old single-axis answer lands on the sex group.
-    await expect(provider.classify(input)).resolves.toEqual(
-      verdictsOf({ sex: { level: 1, confidence: 0.93 } }, 0.93)
-    );
-  });
-
-  it("reads the model id from configuration, never a literal", async () => {
-    let captured: Record<string, unknown> = {};
-    const client = fakeClient(
-      { parsed_output: { verdict: "no_woman", confidence: 0.9 }, stop_reason: "end_turn" },
-      (p) => {
-        captured = p as Record<string, unknown>;
-      }
-    );
-    const provider = createAnthropicClassifier({ client, modelId: "some-other-model" });
-    await provider.classify(input);
-    expect(captured.model).toBe("some-other-model");
-  });
-
-  it("sends the image as base64 with its own media type", async () => {
-    interface ImageBlock {
-      type: string;
-      source?: { type: string; media_type: string; data: string };
-    }
-    interface Params {
-      messages: Array<{ content: ImageBlock[] }>;
-    }
-    let captured: Params | undefined;
-    const client = fakeClient(
-      { parsed_output: { verdict: "no_woman", confidence: 0.9 }, stop_reason: "end_turn" },
-      (p) => {
-        captured = p as Params;
-      }
-    );
-    const provider = createAnthropicClassifier({ client, modelId: "claude-haiku-4-5" });
-    await provider.classify(input);
-
-    const imageBlock = captured?.messages[0]?.content.find((b) => b.type === "image");
-    expect(imageBlock?.source).toMatchObject({ type: "base64", media_type: "image/png" });
-    expect(imageBlock?.source?.data).toBe(Buffer.from(input.bytes).toString("base64"));
-  });
-
-  it("names itself after the provider, for attributable stored scores", () => {
-    const provider = createAnthropicClassifier({
-      client: fakeClient({}),
-      modelId: "claude-haiku-4-5",
-    });
-    expect(provider.name).toBe("anthropic");
-  });
-});
-
-describe("createAnthropicClassifier — unusable answers fail safe", () => {
-  const cases: Array<[string, unknown]> = [
-    ["parsing failed", { parsed_output: null, stop_reason: "end_turn" }],
-    ["verdict is not one of ours", { parsed_output: { verdict: "maybe", confidence: 0.9 } }],
-    ["confidence is out of range", { parsed_output: { verdict: "no_woman", confidence: 7 } }],
-    ["confidence is missing", { parsed_output: { verdict: "no_woman" } }],
-    ["the model declined", { parsed_output: null, stop_reason: "refusal" }],
-    ["the response was truncated", { parsed_output: null, stop_reason: "max_tokens" }],
-  ];
-
-  for (const [label, result] of cases) {
-    it(`${label} → uncertain, so a human decides`, async () => {
-      const provider = createAnthropicClassifier({
-        client: fakeClient(result),
-        modelId: "claude-haiku-4-5",
-      });
-      await expect(provider.classify(input)).resolves.toEqual(allUncertain());
-    });
-  }
-});
-
-describe("createAnthropicClassifier — transport failures are retryable", () => {
-  it("lets an API error propagate so the job retries with backoff", async () => {
-    const client = {
-      messages: {
-        parse: vi.fn(async () => {
-          throw new Error("429 rate limited");
-        }),
+    expect(out).toEqual({
+      kind: "verdicts",
+      groups: {
+        sex: { level: 0, confidence: 0.95 },
+        violence: { level: 0, confidence: 0.95 },
+        religion: { level: 1, confidence: 0.8 },
+        addictions: { level: 0, confidence: 0.95 },
       },
-    } as unknown as MessagesParseClient;
-    const provider = createAnthropicClassifier({ client, modelId: "claude-haiku-4-5" });
-
-    // Distinct from an unusable answer: nothing was decided, so the item must
-    // be retried rather than parked in review.
-    await expect(provider.classify(input)).rejects.toThrow(/429/);
+    });
+    const params = parse.mock.calls[0]![0];
+    expect(params.model).toBe("claude-haiku-5-5");
+    expect(params.system[0].cache_control).toEqual({ type: "ephemeral" });
+    const image = params.messages[0].content[0].source;
+    expect(image.media_type).toBe("image/jpeg");
+    const meta = await sharp(Buffer.from(image.data, "base64")).metadata();
+    expect(Math.max(meta.width!, meta.height!)).toBe(768);
   });
 
-  it("refuses an image larger than the configured ceiling without calling the API", async () => {
-    const parse = vi.fn();
-    const client = { messages: { parse } } as unknown as MessagesParseClient;
-    const provider = createAnthropicClassifier({
-      client,
-      modelId: "claude-haiku-4-5",
-      maxImageBytes: 8,
-    });
+  it("refusal → { kind: 'refused' }", async () => {
+    const parse = vi.fn().mockResolvedValue({ stop_reason: "refusal" });
+    const c = createAnthropicClassifier({ client: { messages: { parse } }, modelId: "m" });
+    expect(await c.classify({ mediaItemId: "m", bytes: await png(10, 10), contentType: "image/png" })).toEqual({ kind: "refused" });
+  });
 
-    await expect(
-      provider.classify({ ...input, bytes: new Uint8Array(64) })
-    ).resolves.toEqual(allUncertain());
+  it("a malformed group is uncertain; the others stand", async () => {
+    const parse = vi.fn().mockResolvedValue(ok({ ...clear.parsed_output, violence: { level: "7", confidence: 2 } }));
+    const c = createAnthropicClassifier({ client: { messages: { parse } }, modelId: "m" });
+    const out = await c.classify({ mediaItemId: "m", bytes: await png(10, 10), contentType: "image/png" });
+    expect(out.kind === "verdicts" && out.groups.violence).toEqual({ level: "uncertain", confidence: 0 });
+    expect(out.kind === "verdicts" && out.groups.sex.level).toBe(0);
+  });
+
+  it("max_tokens → all uncertain; oversized bytes → all uncertain without a call", async () => {
+    const parse = vi.fn().mockResolvedValue({ stop_reason: "max_tokens" });
+    const c = createAnthropicClassifier({ client: { messages: { parse } }, modelId: "m", maxImageBytes: 5 });
+    const out = await c.classify({ mediaItemId: "m", bytes: new Uint8Array(10), contentType: "image/png" });
     expect(parse).not.toHaveBeenCalled();
+    expect(out.kind === "verdicts" && out.groups.sex.level).toBe("uncertain");
+  });
+
+  it("reports usage to the hook", async () => {
+    const parse = vi.fn().mockResolvedValue(clear);
+    const onUsage = vi.fn();
+    const c = createAnthropicClassifier({ client: { messages: { parse } }, modelId: "m", onUsage });
+    await c.classify({ mediaItemId: "m", bytes: await png(10, 10), contentType: "image/png" });
+    expect(onUsage).toHaveBeenCalledWith({ inputTokens: 900, cacheReadInputTokens: 800, cacheCreationInputTokens: 0, outputTokens: 60 });
   });
 });

@@ -2,7 +2,9 @@
  * The classification prompt — a reviewable product artifact, not an
  * implementation detail.
  *
- * The vision model finds an adult woman in a clear photograph essentially
+ * The vision model reports, per image, a level and a confidence in each of
+ * four independent content groups: sex, violence, religion and addictions
+ * (ADR 0018). It recognises clear cases in a clear photograph essentially
  * every time. What it cannot do is guess where WE draw the line on the edge
  * cases, and every edge left unstated is one the model resolves on its own,
  * differently from one image to the next. So the edges are enumerated here,
@@ -13,8 +15,9 @@
  * gives (07-moderation-spec.md §2.1: prefer a false positive to a false
  * negative), and they need Eli's review — in particular whether an
  * illustration, a statue or a mannequin should count as a depiction at all,
- * and where childhood ends for this purpose. Changing any answer here changes
- * what the product does; treat it like spec text.
+ * and where childhood ends for this purpose; this applies to the sex rubric
+ * and equally to the religion and addictions lines. Changing any answer here
+ * changes what the product does; treat it like spec text.
  */
 
 export const CLASSIFIER_SYSTEM_PROMPT = `You classify images for a social platform whose users each choose what kinds of content they are shown. Your only job is to report what the image contains, in four independent groups. You are not judging the image, the person who uploaded it, or anyone shown in it, and nothing you say removes or blocks anything: every answer below is a description that a viewer's own settings are compared against.
@@ -75,7 +78,7 @@ function group(levels: readonly string[], what: string) {
 
 /**
  * The response schema. Constrained so the model cannot return prose: the
- * pipeline stores the verdict and the confidence and nothing else, and a
+ * pipeline stores a level and a confidence per group and nothing else, and a
  * free-text field would be a written description of a real person's photo
  * sitting in the database (see migration 0008).
  */
