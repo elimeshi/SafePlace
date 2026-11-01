@@ -19,6 +19,7 @@ import {
   FAMILY_SPACE_ID,
   GROUP2_ID,
   GROUP_ID,
+  LEVEL_MEDIA,
   MEDIA,
   POSTS,
   USER,
@@ -197,7 +198,7 @@ describe("feed_page: media goes through media_items_visible", () => {
       const { rows } = await feedFor(u.id);
       for (const row of rows) {
         for (const m of row.media) {
-          const fx = MEDIA.find((x) => x.mediaId === m.id)!;
+          const fx = [...MEDIA, ...LEVEL_MEDIA].find((x) => x.mediaId === m.id)!;
           const exp = expectedMedia(u, fx);
           expect(exp.rowPresent, `${u.key} ${fx.classification}: row`).toBe(true);
           expect(m.storage_path !== null, `${u.key} ${fx.classification}: url`).toBe(exp.contentVisible);
@@ -278,16 +279,18 @@ describe("spaces_rail", () => {
     expect((await railFor(USER.fsMember.id)).rows.map((r) => r.space_id)).toEqual([FAMILY_SPACE_ID]);
   });
 
-  it("the Family Space card previews a post and lifts the filter on its media (carve-out)", async () => {
+  it("the Family Space card previews a post; its media lifts sex only (carve-out)", async () => {
     const card = (await railFor(USER.fsMember.id)).rows[0]!;
     expect(card.space_kind).toBe("family_space");
     expect(card.latest_post_id).not.toBeNull();
+    expect(card.latest_media.length).toBeGreaterThan(0);
     for (const m of card.latest_media) {
-      const fx = MEDIA.find((x) => x.mediaId === m.id)!;
+      const fx = [...MEDIA, ...LEVEL_MEDIA].find((x) => x.mediaId === m.id)!;
       expect(fx.familySpaceId).toBe(FAMILY_SPACE_ID);
-      // fsMember is a FILTERED viewer, yet every media they can see is served.
-      expect(m.storage_path).toBeTruthy();
-      expect(m.is_filtered).toBe(false);
+      // fsMember is filtered (maxima 0): sex is lifted in the space, the other groups are not.
+      const exp = expectedMedia(USER.fsMember, fx);
+      expect(m.storage_path !== null).toBe(exp.contentVisible);
+      expect(m.is_filtered).toBe(exp.isFiltered);
     }
   });
 

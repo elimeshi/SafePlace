@@ -22,7 +22,7 @@ import {
   type FeedCursor,
 } from "@safeplace/api-client";
 import { createTestDb, type TestDb } from "../harness";
-import { GROUP2_ID, USER, seedFixtures } from "../seed";
+import { GROUP2_ID, USER, seedFixtures, setMediaClassification } from "../seed";
 import { pgliteClient } from "../supabase-adapter";
 
 let db: TestDb;
@@ -47,7 +47,7 @@ async function composePublic(text: string, classify?: "contains_women" | "genera
     media: [{ storagePath: `${USER.author.id}/${postId}`, contentType: "image/png" }],
   });
   if (classify) {
-    await db.raw.query(`update public.media_items set classification = $2 where id = $1`, [mediaIds[0], classify]);
+    await setMediaClassification(db.raw, mediaIds[0]!, classify);
   }
   return { postId, mediaIds };
 }
@@ -194,14 +194,14 @@ describe("interactions and comments", () => {
     expect(waiting.media[0]).toMatchObject({ filtered: true, storagePath: null });
 
     // Classified as containing women: still withheld from the filtered viewer, served to the unfiltered one.
-    await db.raw.query(`update public.media_items set classification = 'contains_women' where id = $1`, [mediaIds[0]]);
+    await setMediaClassification(db.raw, mediaIds[0]!, "contains_women");
     const hidden = await read(follower());
     expect(hidden.media[0]).toMatchObject({ classification: "contains_women", filtered: true, storagePath: null });
     expect(JSON.stringify(hidden)).not.toContain(path);
     expect((await read(commenter)).media[0]).toMatchObject({ filtered: false, storagePath: path });
 
     // Frozen for review: nothing at all reaches anyone but the uploader.
-    await db.raw.query(`update public.media_items set classification = 'pending_review' where id = $1`, [mediaIds[0]]);
+    await setMediaClassification(db.raw, mediaIds[0]!, "pending_review");
     expect((await read(follower())).media).toEqual([]); // not even a row: the view hides frozen media from others
     expect((await read(commenter)).media[0]).toMatchObject({ filtered: false, storagePath: path });
   });

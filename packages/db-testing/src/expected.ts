@@ -12,8 +12,6 @@ import {
   viewerSatisfiesAudience,
   viewerSatisfiesExposure,
   type ContentAudience,
-  type ContentLevels,
-  type MediaClassification,
   type PostContext,
   type Viewer,
 } from "@safeplace/visibility-policy";
@@ -40,13 +38,6 @@ export function expectedAudiences(u: UserFixture, p: PostFixture): ContentAudien
   if (!canViewPost(v, postContextOf(p))) return [];
   if (u.id === p.authorId) return [...p.exposure];
   return p.exposure.filter((a) => viewerSatisfiesAudience(v, a));
-}
-
-// shortcut: fixtures carry no levels yet, so they are derived the way Task 10 will seed
-// the existing grid (contains_women = sex 1). Replace with the fixture's own `levels` then.
-function levelsOf(c: MediaClassification): ContentLevels | null {
-  if (c !== "general" && c !== "contains_women") return null;
-  return { sex: c === "contains_women" ? 1 : 0, violence: 0, religion: 0, addictions: 0 };
 }
 
 export const USER_BY_ID = new Map(USERS.map((u) => [u.id, u]));
@@ -104,7 +95,7 @@ export function expectedMedia(u: UserFixture, m: MediaFixture): ExpectedMedia {
     rowPresent &&
     canViewMedia(v, {
       classification: m.classification,
-      levels: levelsOf(m.classification),
+      levels: m.levels,
       exposure: m.exposure,
       isWithinViewersFamilySpace: isWithinFamilySpace,
       uploaderId: m.uploaderId,
@@ -126,12 +117,16 @@ export function expectedAvatar(
 ): ExpectedAvatar {
   const profileVisible =
     viewer.id === target.id || !isBlockedBetween(viewer.id, target.id);
-  const avatarClassification = target.avatar?.classification ?? "general";
+  // No avatar at all: nothing to withhold (avatar_permitted(null) = true).
+  const avatar = target.avatar ?? {
+    classification: "general" as const,
+    levels: { sex: 0, violence: 0, religion: 0, addictions: 0 } as const,
+  };
   const avatarVisible =
     profileVisible &&
     canViewProfilePhoto(viewerOf(viewer), {
-      classification: avatarClassification,
-      levels: levelsOf(avatarClassification),
+      classification: avatar.classification,
+      levels: avatar.levels,
       // The avatar's owner is the profile it belongs to — canViewProfilePhoto
       // grants the owner their own photo.
       ownerId: target.id,

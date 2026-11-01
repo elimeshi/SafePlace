@@ -71,9 +71,12 @@ it("does not let the uploader change their own media's classification", async ()
 it("lets the pipeline (service_role) transition classification", async () => {
   const target = publicOf("unclassified");
   await db.asService((q) =>
-    q.query(`update public.media_items set classification = 'general' where id = $1`, [
-      target.mediaId,
-    ])
+    q.query(
+      `update public.media_items set classification = 'general',
+         sex_level = 0, violence_level = 0, religion_level = 0, addictions_level = 0
+       where id = $1`,
+      [target.mediaId]
+    )
   );
   const { rows } = await db.raw.query<{ classification: string }>(
     `select classification from public.media_items where id = $1`,
@@ -82,7 +85,9 @@ it("lets the pipeline (service_role) transition classification", async () => {
   expect(rows[0]?.classification).toBe("general");
   // restore so later assertions/other files aren't affected via shared fixtures logic
   await db.raw.query(
-    `update public.media_items set classification = 'unclassified' where id = $1`,
+    `update public.media_items set classification = 'unclassified',
+       sex_level = null, violence_level = null, religion_level = null, addictions_level = null
+     where id = $1`,
     [target.mediaId]
   );
 });
@@ -143,8 +148,8 @@ it("lets a user flip their own content filter and immediately see the effect", a
   };
   const setHide = (v: boolean) =>
     db.asUser(USER.maleFiltered.id, (q) =>
-      q.query(`update public.filter_settings set hide_content_with_women = $1 where user_id = $2`, [
-        v,
+      q.query(`update public.filter_settings set max_sex_level = $1 where user_id = $2`, [
+        v ? 0 : 1,
         USER.maleFiltered.id,
       ])
     );
@@ -154,4 +159,18 @@ it("lets a user flip their own content filter and immediately see the effect", a
   expect(await hasUrl()).toBe(true); // toggled off: now visible
   await setHide(true); // restore seeded state
   expect(await hasUrl()).toBe(false);
+});
+
+it("does not let a user change someone else's content filter", async () => {
+  const { rows } = await db.asUser(USER.maleFiltered.id, (q) =>
+    q.query(`update public.filter_settings set max_sex_level = 2 where user_id = $1 returning user_id`, [
+      USER.author.id,
+    ])
+  );
+  expect(rows).toHaveLength(0);
+  const truth = await db.raw.query<{ max_sex_level: number }>(
+    `select max_sex_level from public.filter_settings where user_id = $1`,
+    [USER.author.id]
+  );
+  expect(truth.rows[0]?.max_sex_level).toBe(0);
 });

@@ -11,7 +11,8 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "../harness";
-import { insertPublicPost, seedFixtures, USER } from "../seed";
+import type { MediaClassification } from "@safeplace/visibility-policy";
+import { insertPublicPost, seedFixtures, setMediaClassification, USER } from "../seed";
 
 let db: TestDb;
 
@@ -19,8 +20,8 @@ const POST_ID = "00000000-0000-0000-0000-0000000009a1";
 const MEDIA_ID = "00000000-0000-0000-0000-0000000009b1";
 const PATH = `${USER.author.id}/${MEDIA_ID}`;
 const author = USER.author;
-const filteredViewer = USER.maleFiltered;      // hideContentWithWomen = true
-const unfilteredViewer = USER.maleUnfiltered;  // hideContentWithWomen = false
+const filteredViewer = USER.maleFiltered;      // max_sex_level 0
+const unfilteredViewer = USER.maleUnfiltered;  // max_sex_level 1
 
 interface VisRow { id: string; classification: string; storage_path: string | null; is_filtered: boolean }
 
@@ -44,10 +45,8 @@ async function canSignAs(userId: string) {
   return rows[0]?.n === 1;
 }
 
-async function setClassification(value: string) {
-  await db.asService((q) =>
-    q.query(`update public.media_items set classification = $2::media_classification, classified_at = now() where id = $1`, [MEDIA_ID, value])
-  );
+async function setClassification(value: MediaClassification) {
+  await db.asService((q) => setMediaClassification(q, MEDIA_ID, value));
 }
 
 beforeAll(async () => {
@@ -156,4 +155,71 @@ describe("3. storage refuses to sign a withheld object", () => {
     expect(await canSignAs(unfilteredViewer.id)).toBe(false);
     expect(await canSignAs(author.id)).toBe(true);
   });
+});
+
+describe("4. completion through the RPC carries levels (ADR 0018)", () => {
+  let n = 0;
+  // A fresh upload: the insert itself enqueues the classification job.
+  async function freshUpload(): Promise<string> {
+    n += 1;
+    const id = `00000000-0000-0000-0000-${`9c${n}`.padStart(12, "0")}`;
+    await db.asUser(author.id, (q) =>
+      q.query(
+        `insert into public.media_items (id, post_id, uploader_id, storage_path, classification)
+         values ($1, $2, $3, $4, 'unclassified')`,
+        [id, POST_ID, author.id, `${author.id}/${id}`]
+      )
+    );
+    return id;
+  }
+
+  it("a resolved classification without levels is rejected", async () => {
+    const id = await freshUpload();
+    await expect(
+      db.asService((q) =>
+        q.query(`select moderation.complete_classification_job($1,'general','stub','m','levels',0.9,0.05,null)`, [id])
+      )
+    ).rejects.toThrow(/must carry levels/);
+    const { rows } = await db.raw.query<{ classification: string }>(
+      `select classification from public.media_items where id = $1`, [id]
+    );
+    expect(rows[0]?.classification).toBe("unclassified");
+  });
+
+  it("resolved levels land on the row", async () => {
+    const id = await freshUpload();
+    await db.asService((q) =>
+      q.query(
+        `select moderation.complete_classification_job($1,'contains_women','stub','m','levels',0.95,0.9,$2)`,
+        [id, JSON.stringify({ sex: 2, violence: 1, religion: 0, addictions: 0 })]
+      )
+    );
+    const { rows } = await db.raw.query(
+      `select classification, sex_level, violence_level, religion_level, addictions_level from public.media_items where id = $1`,
+      [id]
+    );
+    expect(rows[0]).toEqual({ classification: "contains_women", sex_level: 2, violence_level: 1, religion_level: 0, addictions_level: 0 });
+  });
+
+  for (const [reason, aiLevels] of [
+    ["ai_prohibited_content", { sex: 0, violence: 3, religion: 0, addictions: 0 }],
+    ["ai_refusal", null],
+  ] as const) {
+    it(`${reason} lands in the queue with its reason and the raw answer`, async () => {
+      const id = await freshUpload();
+      await db.asService((q) =>
+        q.query(
+          `select moderation.complete_classification_job($1,'pending_review','stub','m','levels',0.99,0.5,null,$2,$3)`,
+          [id, reason, aiLevels && JSON.stringify(aiLevels)]
+        )
+      );
+      const { rows } = await db.asService((q) =>
+        q.query(`select reason, ai_levels from moderation.review_queue where media_item_id = $1`, [id])
+      );
+      expect(rows).toEqual([{ reason, ai_levels: aiLevels }]);
+      // Frozen, and pending_review never carries levels.
+      const truth = await db.raw.query(`select classification, sex_level from public.media_items where id = $1`, [id]);
+      expect(truth.rows[0]).toEqual({ classification: "pending_review", sex_level: null });
+    });
+  }
 });

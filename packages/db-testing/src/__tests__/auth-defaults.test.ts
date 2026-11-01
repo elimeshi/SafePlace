@@ -5,7 +5,11 @@
  * A drift between the SQL trigger and the TS defaults fails here.
  */
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { resolveDefaultFilterSettings, type Gender } from "@safeplace/visibility-policy";
+import {
+  DEFAULT_FILTER_SETTINGS,
+  resolveDefaultFilterSettings,
+  type Gender,
+} from "@safeplace/visibility-policy";
 import { createTestDb, type TestDb } from "../harness";
 
 let db: TestDb;
@@ -40,12 +44,24 @@ for (const gender of ["male", "female"] as const) {
       show_suggested_posts: boolean;
       gender_separation_in_messages: boolean;
       gender_separation_in_search: boolean;
+      max_sex_level: number;
+      max_violence_level: number;
+      max_religion_level: number;
+      max_addictions_level: number;
     }>(`select * from public.filter_settings where user_id = $1`, [IDS[gender]]);
 
     expect(rows).toHaveLength(1);
     const s = rows[0]!;
     const expected = resolveDefaultFilterSettings(gender);
 
+    expect({
+      sex: s.max_sex_level,
+      violence: s.max_violence_level,
+      religion: s.max_religion_level,
+      addictions: s.max_addictions_level,
+    }).toEqual(DEFAULT_FILTER_SETTINGS[gender].contentLevels);
+    // GENERATED from max_sex_level.
+    expect(s.hide_content_with_women).toBe(s.max_sex_level === 0);
     expect(s.hide_content_with_women).toBe(expected.hideContentWithWomen);
     expect(s.hide_women_accounts).toBe(expected.hideWomenAccounts);
     expect(s.filter_applies_to_avatars).toBe(expected.filterAppliesToAvatars);

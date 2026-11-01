@@ -8,23 +8,25 @@
  * someone else's media, or use the appeal path to learn anything about it.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { MediaClassification } from "@safeplace/visibility-policy";
 import { createTestDb, type TestDb } from "../harness";
-import { insertPublicPost, seedFixtures, USER } from "../seed";
+import { insertPublicPost, levelColumns, seedFixtures, USER } from "../seed";
 
 let db: TestDb;
 const author = USER.author;
 const stranger = USER.maleFiltered;
 
 let seq = 0;
-async function mediaClassifiedAs(classification: string): Promise<string> {
+async function mediaClassifiedAs(classification: MediaClassification): Promise<string> {
   seq += 1;
   const postId = `00000000-0000-0000-0000-${`ba${seq}`.padStart(12, "0")}`;
   const mediaId = `00000000-0000-0000-0000-${`bb${seq}`.padStart(12, "0")}`;
   await insertPublicPost(db.raw, postId, author.id, "a");
   await db.raw.query(
-    `insert into public.media_items (id, post_id, uploader_id, storage_path, content_type, classification, classified_at)
-     values ($1, $2, $3, $4, 'image/jpeg', $5::media_classification, now())`,
-    [mediaId, postId, author.id, `media/${mediaId}`, classification]
+    `insert into public.media_items (id, post_id, uploader_id, storage_path, content_type, classification, classified_at,
+                                     sex_level, violence_level, religion_level, addictions_level)
+     values ($1, $2, $3, $4, 'image/jpeg', $5::media_classification, now(), $6, $7, $8, $9)`,
+    [mediaId, postId, author.id, `media/${mediaId}`, classification, ...levelColumns(classification)]
   );
   return mediaId;
 }

@@ -31,6 +31,20 @@ describe("moderation.pipeline_config", () => {
     expect(rows[0]?.model_id).toBeTruthy();
   });
 
+  it("defaults to Haiku 5.5 with escalation off (ADR 0018)", async () => {
+    const { rows } = await db.asService((q) =>
+      q.query<{ model_id: string; escalation_model_id: string | null }>(
+        `select model_id, escalation_model_id from moderation.pipeline_config`
+      )
+    );
+    expect(rows[0]).toEqual({ model_id: "claude-haiku-5-5", escalation_model_id: null });
+    const def = await db.raw.query<{ column_default: string }>(
+      `select column_default from information_schema.columns
+        where table_schema = 'moderation' and table_name = 'pipeline_config' and column_name = 'model_id'`
+    );
+    expect(def.rows[0]?.column_default).toContain("claude-haiku-5-5");
+  });
+
   it("can be retuned without a deploy", async () => {
     await db.asService((q) =>
       q.query(`update moderation.pipeline_config set low_max = 0.1, high_min = 0.6`)

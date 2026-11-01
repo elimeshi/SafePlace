@@ -15,10 +15,13 @@ import type {
   PostStatus,
   FilterSettings,
   Gender,
+  ContentLevels,
   MediaClassification,
+  ViewerContentLevels,
 } from "@safeplace/visibility-policy";
 import { resolveDefaultFilterSettings } from "@safeplace/visibility-policy";
 import type { PGlite } from "@electric-sql/pglite";
+import type { Querier } from "./harness";
 
 const hx = (s: string): string =>
   `00000000-0000-0000-0000-${s.padStart(12, "0")}`;
@@ -55,7 +58,10 @@ export type UserKey =
   | "noSuggest"
   | "suppressor"
   | "group2Member"
-  | "bothGroups";
+  | "bothGroups"
+  | "maleLevels1"
+  | "femaleLevels2"
+  | "maleSexOnlyLifted";
 
 export interface UserFixture {
   key: UserKey;
@@ -69,12 +75,49 @@ export interface UserFixture {
   mutes?: string[];
   /** Users this user gave dont_suggest feedback on. */
   suppressed?: string[];
-  /** classification of this user's avatar, if any (media on their profile). */
-  avatar?: { id: string; classification: MediaClassification };
+  /** This user's avatar, if any (media on their profile): lifecycle + resolved levels. */
+  avatar?: { id: string; classification: MediaClassification; levels: ContentLevels | null };
 }
 
+/** Resolved levels for the legacy grid: only the women axis is known. */
+export function legacyLevels(c: MediaClassification): ContentLevels | null {
+  if (c !== "general" && c !== "contains_women") return null;
+  return { sex: c === "contains_women" ? 1 : 0, violence: 0, religion: 0, addictions: 0 };
+}
+
+/**
+ * Values for (sex_level, violence_level, religion_level, addictions_level):
+ * NULLs unless resolved. The DB CHECK media_levels_match_lifecycle requires a
+ * resolved row to carry all four, so every direct classification write uses this.
+ */
+export function levelColumns(
+  c: MediaClassification,
+  levels: ContentLevels | null = legacyLevels(c)
+): Array<number | null> {
+  return [levels?.sex ?? null, levels?.violence ?? null, levels?.religion ?? null, levels?.addictions ?? null];
+}
+
+/** A pipeline-equivalent write: moves a media row to `c` together with its level columns. */
+export async function setMediaClassification(
+  db: Querier,
+  mediaId: string,
+  c: MediaClassification,
+  levels: ContentLevels | null = legacyLevels(c)
+): Promise<void> {
+  await db.query(
+    `update public.media_items set classification = $2::media_classification, classified_at = now(),
+       sex_level = $3, violence_level = $4, religion_level = $5, addictions_level = $6
+     where id = $1`,
+    [mediaId, c, ...levelColumns(c, levels)]
+  );
+}
+
+const maxima = (n: 0 | 1 | 2): ViewerContentLevels => ({ sex: n, violence: n, religion: n, addictions: n });
+
 function withFilter(gender: Gender, overrides: Partial<FilterSettings> = {}): FilterSettings {
-  return { ...resolveDefaultFilterSettings(gender), ...overrides };
+  const f = { ...resolveDefaultFilterSettings(gender), ...overrides };
+  // hideContentWithWomen is derived (the DB column is GENERATED from max_sex_level).
+  return { ...f, hideContentWithWomen: f.contentLevels.sex === 0 };
 }
 
 const AUTHOR = hx("a00");
@@ -92,6 +135,9 @@ const NO_SUGGEST = hx("a0a");
 const SUPPRESSOR = hx("a0b");
 const GROUP2_MEMBER = hx("a0c");
 const BOTH_GROUPS = hx("a0d");
+const MALE_LEVELS_1 = hx("a0e");
+const FEMALE_LEVELS_2 = hx("a0f");
+const MALE_SEX_ONLY_LIFTED = hx("a10");
 
 export const USERS: UserFixture[] = [
   // Author of the content grid. Deliberately male/default (content filter ON):
@@ -109,14 +155,14 @@ export const USERS: UserFixture[] = [
     follows: [],
     groups: [GROUP_ID, GROUP2_ID],
     familySpaces: [FAMILY_SPACE_ID],
-    avatar: { id: hx("b00"), classification: "general" },
+    avatar: { id: hx("b00"), classification: "general", levels: legacyLevels("general") },
   },
   { key: "maleFiltered", id: MALE_FILTERED, gender: "male", filter: withFilter("male"), follows: [], groups: [], familySpaces: [] },
   {
     key: "maleUnfiltered",
     id: MALE_UNFILTERED,
     gender: "male",
-    filter: withFilter("male", { hideContentWithWomen: false, contentLevels: { sex: 1, violence: 0, religion: 0, addictions: 0 }, filterAppliesToAvatars: false }),
+    filter: withFilter("male", { contentLevels: { sex: 1, violence: 0, religion: 0, addictions: 0 }, filterAppliesToAvatars: false }),
     follows: [],
     groups: [],
     familySpaces: [],
@@ -130,13 +176,13 @@ export const USERS: UserFixture[] = [
     groups: [],
     familySpaces: [],
     // A woman's profile photo, classified as containing women — exercises avatar filtering.
-    avatar: { id: hx("b03"), classification: "contains_women" },
+    avatar: { id: hx("b03"), classification: "contains_women", levels: legacyLevels("contains_women") },
   },
   {
     key: "femaleFiltered",
     id: FEMALE_FILTERED,
     gender: "female",
-    filter: withFilter("female", { hideContentWithWomen: true, contentLevels: { sex: 0, violence: 0, religion: 0, addictions: 0 }, filterAppliesToAvatars: true }),
+    filter: withFilter("female", { contentLevels: { sex: 0, violence: 0, religion: 0, addictions: 0 }, filterAppliesToAvatars: true }),
     follows: [],
     groups: [],
     familySpaces: [],
@@ -152,7 +198,7 @@ export const USERS: UserFixture[] = [
     // An avatar still in the pipeline — exercises the fail-closed
     // 'unclassified' branch on the avatar path (migration 0007), which no
     // other fixture reaches.
-    avatar: { id: hx("b05"), classification: "unclassified" },
+    avatar: { id: hx("b05"), classification: "unclassified", levels: null },
   },
   { key: "groupMember", id: GROUP_MEMBER, gender: "male", filter: withFilter("male"), follows: [], groups: [GROUP_ID], familySpaces: [] },
   { key: "fsMember", id: FS_MEMBER, gender: "male", filter: withFilter("male"), follows: [], groups: [], familySpaces: [FAMILY_SPACE_ID] },
@@ -160,7 +206,7 @@ export const USERS: UserFixture[] = [
     key: "blocked",
     id: BLOCKED,
     gender: "male",
-    filter: withFilter("male", { hideContentWithWomen: false, contentLevels: { sex: 1, violence: 0, religion: 0, addictions: 0 }, filterAppliesToAvatars: false }),
+    filter: withFilter("male", { contentLevels: { sex: 1, violence: 0, religion: 0, addictions: 0 }, filterAppliesToAvatars: false }),
     follows: [],
     groups: [],
     familySpaces: [],
@@ -171,6 +217,23 @@ export const USERS: UserFixture[] = [
   { key: "suppressor", id: SUPPRESSOR, gender: "male", filter: withFilter("male"), follows: [], groups: [], familySpaces: [], suppressed: [AUTHOR] },
   { key: "group2Member", id: GROUP2_MEMBER, gender: "female", filter: withFilter("female"), follows: [], groups: [GROUP2_ID], familySpaces: [] },
   { key: "bothGroups", id: BOTH_GROUPS, gender: "male", filter: withFilter("male"), follows: [], groups: [GROUP_ID, GROUP2_ID], familySpaces: [] },
+  // Per-group level viewers (ADR 0018). The content filter still applies to their avatars.
+  { key: "maleLevels1", id: MALE_LEVELS_1, gender: "male", filter: withFilter("male", { contentLevels: maxima(1) }), follows: [], groups: [], familySpaces: [] },
+  {
+    key: "femaleLevels2",
+    id: FEMALE_LEVELS_2,
+    gender: "female",
+    filter: withFilter("female", { contentLevels: maxima(2) }),
+    follows: [],
+    groups: [],
+    familySpaces: [],
+    // An avatar with a non-sex level: the avatar opt-out lifts sex only, so a
+    // viewer with filterAppliesToAvatars=false but violence max 0 still gets
+    // the generic avatar (Eli, 2026-11-02).
+    avatar: { id: hx("b0f"), classification: "contains_women", levels: { sex: 1, violence: 1, religion: 0, addictions: 0 } },
+  },
+  // Family Space member with every maximum at 0: the space lifts sex, nothing else.
+  { key: "maleSexOnlyLifted", id: MALE_SEX_ONLY_LIFTED, gender: "male", filter: withFilter("male", { contentLevels: maxima(0) }), follows: [], groups: [], familySpaces: [FAMILY_SPACE_ID] },
 ];
 
 export const USER = Object.fromEntries(USERS.map((u) => [u.key, u])) as Record<UserKey, UserFixture>;
@@ -180,6 +243,8 @@ export interface MediaFixture {
   postId: string;
   uploaderId: string;
   classification: MediaClassification;
+  /** Resolved per-group levels; null while unclassified / pending_review. */
+  levels: ContentLevels | null;
   /** The parent post's exposure — the ContentExposure the TS policy evaluates. */
   exposure: ContentExposure;
   /** family space id iff this media's post is family-space-exposed. */
@@ -212,6 +277,7 @@ for (const exposure of EXPOSURES) {
       mediaId: hx(`d${seq.toString().padStart(2, "0")}`),
       uploaderId: AUTHOR,
       classification,
+      levels: legacyLevels(classification),
       exposure: exposureFor(exposure, AUTHOR),
       familySpaceId: exposure === "family" ? FAMILY_SPACE_ID : null,
     });
@@ -222,10 +288,39 @@ export const BLOCKED_POST_MEDIA: MediaFixture = {
   mediaId: hx("de0"),
   uploaderId: BLOCKED,
   classification: "general",
+  levels: legacyLevels("general"),
   exposure: [{ kind: "public" }],
   familySpaceId: null,
 };
 MEDIA.push(BLOCKED_POST_MEDIA);
+
+/**
+ * The per-group level grid (ADR 0018), all by `author`: for each non-sex group
+ * and level 1..2 one public `general` item with only that level set, one public
+ * `contains_women` at sex 2, and one Family Space item at {sex 2, violence 1}.
+ */
+export const LEVEL_MEDIA: MediaFixture[] = [];
+{
+  const zero: ContentLevels = { sex: 0, violence: 0, religion: 0, addictions: 0 };
+  let n = 0;
+  const add = (classification: MediaClassification, levels: ContentLevels, family: boolean): void => {
+    n += 1;
+    LEVEL_MEDIA.push({
+      postId: hx(`c8${n}`),
+      mediaId: hx(`d8${n}`),
+      uploaderId: AUTHOR,
+      classification,
+      levels,
+      exposure: exposureFor(family ? "family" : "public", AUTHOR),
+      familySpaceId: family ? FAMILY_SPACE_ID : null,
+    });
+  };
+  for (const g of ["violence", "religion", "addictions"] as const) {
+    for (const level of [1, 2] as const) add("general", { ...zero, [g]: level }, false);
+  }
+  add("contains_women", { ...zero, sex: 2 }, false);
+  add("contains_women", { ...zero, sex: 2, violence: 1 }, true);
+}
 
 /** Ordered (blocker, blocked) pairs — a single block establishes mutual invisibility. */
 export const BLOCKS: Array<[string, string]> = [[AUTHOR, BLOCKED]];
@@ -270,6 +365,17 @@ export const POSTS: PostFixture[] = [];
       });
     }
   }
+}
+for (const m of LEVEL_MEDIA) {
+  POSTS.push({
+    postId: m.postId,
+    authorId: m.uploaderId,
+    status: "published",
+    exposure: m.exposure,
+    sourceKind: m.familySpaceId ? "family_space" : "profile",
+    sourceGroupId: null,
+    sourceSpaceId: m.familySpaceId,
+  });
 }
 POSTS.push({
   postId: BLOCKED_POST_MEDIA.postId,
@@ -375,21 +481,27 @@ export async function seedFixtures(db: PGlite): Promise<void> {
     await q(
       db,
       `update public.filter_settings set
-         hide_content_with_women = $2,
+         max_sex_level = $2,
          hide_women_accounts = $3,
          filter_applies_to_avatars = $4,
          show_suggested_posts = $5,
          gender_separation_in_messages = $6,
-         gender_separation_in_search = $7
+         gender_separation_in_search = $7,
+         max_violence_level = $8,
+         max_religion_level = $9,
+         max_addictions_level = $10
        where user_id = $1`,
       [
         u.id,
-        u.filter.hideContentWithWomen,
+        u.filter.contentLevels.sex,
         u.filter.hideWomenAccounts,
         u.filter.filterAppliesToAvatars,
         u.filter.showSuggestedPosts,
         u.filter.genderSeparationInMessages,
         u.filter.genderSeparationInSearch,
+        u.filter.contentLevels.violence,
+        u.filter.contentLevels.religion,
+        u.filter.contentLevels.addictions,
       ]
     );
   }
@@ -419,12 +531,14 @@ export async function seedFixtures(db: PGlite): Promise<void> {
   // 4. Posts (draft -> audiences -> publish, as a client does) + their media
   // (classification set directly = post-pipeline state).
   for (const p of POSTS) await insertPost(db, p);
-  for (const m of MEDIA) {
+  for (const m of [...MEDIA, ...LEVEL_MEDIA]) {
     await q(
       db,
-      `insert into public.media_items (id, post_id, uploader_id, storage_path, classification, classified_at)
-       values ($1, $2, $3, $4, $5, now())`,
-      [m.mediaId, m.postId, m.uploaderId, `media/${m.mediaId}`, m.classification]
+      `insert into public.media_items (id, post_id, uploader_id, storage_path, classification, classified_at,
+                                       sex_level, violence_level, religion_level, addictions_level)
+       values ($1, $2, $3, $4, $5, now(), $6, $7, $8, $9)`,
+      [m.mediaId, m.postId, m.uploaderId, `media/${m.mediaId}`, m.classification,
+       ...levelColumns(m.classification, m.levels)]
     );
     // Mirror each media into a Storage object (name == storage_path) so the
     // storage-tier policy has something to gate.
@@ -436,9 +550,11 @@ export async function seedFixtures(db: PGlite): Promise<void> {
     if (!u.avatar) continue;
     await q(
       db,
-      `insert into public.media_items (id, profile_id, uploader_id, storage_path, classification, classified_at)
-       values ($1, $2, $2, $3, $4, now())`,
-      [u.avatar.id, u.id, `media/${u.avatar.id}`, u.avatar.classification]
+      `insert into public.media_items (id, profile_id, uploader_id, storage_path, classification, classified_at,
+                                       sex_level, violence_level, religion_level, addictions_level)
+       values ($1, $2, $2, $3, $4, now(), $5, $6, $7, $8)`,
+      [u.avatar.id, u.id, `media/${u.avatar.id}`, u.avatar.classification,
+       ...levelColumns(u.avatar.classification, u.avatar.levels)]
     );
     await q(db, `insert into storage.objects (bucket_id, name, owner) values ('media', $1, $2)`, [`media/${u.avatar.id}`, u.id]);
     await q(db, `update public.profiles set avatar_media_id = $2 where id = $1`, [u.id, u.avatar.id]);

@@ -11,8 +11,9 @@
  * it has product sign-off — see ADR 0012.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { MediaClassification } from "@safeplace/visibility-policy";
 import { createTestDb, type TestDb } from "../harness";
-import { insertPublicPost, seedFixtures, USER } from "../seed";
+import { insertPublicPost, levelColumns, seedFixtures, USER } from "../seed";
 
 let db: TestDb;
 const author = USER.author;
@@ -20,7 +21,7 @@ const filtered = USER.maleFiltered;
 const unfiltered = USER.maleUnfiltered;
 
 let seq = 0;
-async function mediaWithDerivative(classification: string): Promise<{
+async function mediaWithDerivative(classification: MediaClassification): Promise<{
   mediaId: string;
   originalPath: string;
   blurredPath: string;
@@ -34,9 +35,10 @@ async function mediaWithDerivative(classification: string): Promise<{
   await insertPublicPost(db.raw, postId, author.id, "b");
   await db.raw.query(
     `insert into public.media_items
-       (id, post_id, uploader_id, storage_path, blurred_storage_path, content_type, classification, classified_at)
-     values ($1, $2, $3, $4, $5, 'image/jpeg', $6::media_classification, now())`,
-    [mediaId, postId, author.id, originalPath, blurredPath, classification]
+       (id, post_id, uploader_id, storage_path, blurred_storage_path, content_type, classification, classified_at,
+        sex_level, violence_level, religion_level, addictions_level)
+     values ($1, $2, $3, $4, $5, 'image/jpeg', $6::media_classification, now(), $7, $8, $9, $10)`,
+    [mediaId, postId, author.id, originalPath, blurredPath, classification, ...levelColumns(classification)]
   );
   for (const name of [originalPath, blurredPath]) {
     await db.raw.query(
@@ -142,8 +144,9 @@ describe("with region blur enabled", () => {
     await insertPublicPost(db.raw, postId, author.id, "n");
     await db.raw.query(
       `insert into public.media_items
-         (id, post_id, uploader_id, storage_path, content_type, classification, classified_at)
-       values ($1, $2, $3, $4, 'image/jpeg', 'contains_women', now())`,
+         (id, post_id, uploader_id, storage_path, content_type, classification, classified_at,
+          sex_level, violence_level, religion_level, addictions_level)
+       values ($1, $2, $3, $4, 'image/jpeg', 'contains_women', now(), 1, 0, 0, 0)`,
       [mediaId, postId, author.id, `media/${mediaId}`]
     );
     expect(await served(filtered.id, mediaId)).toMatchObject({
