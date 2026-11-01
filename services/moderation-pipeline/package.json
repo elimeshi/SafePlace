@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "tsx src/dev.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "vitest run"
+    "lint": "eslint src eval",
+    "test": "vitest run",
+    "eval": "tsx eval/run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
