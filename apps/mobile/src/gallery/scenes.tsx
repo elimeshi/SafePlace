@@ -48,6 +48,7 @@ import {
   StatusBarMock,
   TopZones,
 } from "./fixtures";
+import { contentNoticeProps } from "@/lib/contentNotice";
 
 /**
  * The 24 lab screens (docs/design/phase-4-feed/feed-lab.html, `?screen=<name>`)
@@ -216,7 +217,7 @@ export const SCENES: Record<string, () => ReactElement> = {
       <ComposeMediaPreview height={150}>
         <SceneArt k="table" top />
       </ComposeMediaPreview>
-      <UploaderNotice mode="beforePublish" />
+      <UploaderNotice mode="beforePublish" {...contentNoticeProps(["sex", "violence"])} />
       <View style={{ flex: 1 }} />
       <ComposeActionBar />
     </ComposeShell>
@@ -264,7 +265,7 @@ export const SCENES: Record<string, () => ReactElement> = {
           post={{ author: ME, time: "לפני שעה", source: SRC.public, body: "שמחת בר המצווה של יוסי 🎉", likes: 3, comments: 1 }}
           mediaSlot={<SceneArt k="table" />}
           mediaHeight={150}
-          stateStrip={<UploaderNotice mode="afterPublish" />}
+          stateStrip={<UploaderNotice mode="afterPublish" {...contentNoticeProps(["sex", "violence"])} />}
         />
       </FeedColumn>
     </FeedShell>

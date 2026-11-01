@@ -55,12 +55,12 @@ export function fixtureMediaSlot(url: string | null | undefined): ReactNode | nu
 const NOW = () => Date.now();
 const ago = (minutes: number) => new Date(NOW() - minutes * 60_000).toISOString();
 
-const media = (id: string, key: SceneKey, classification: MediaView["classification"] = "general"): MediaView => ({
+const media = (id: string, key: SceneKey, classification: MediaView["classification"] = "general", levels: MediaView["levels"] = null): MediaView => ({
   id,
   classification,
   filtered: false,
   redacted: false,
-  levels: null,
+  levels,
   storagePath: id,
   url: `fixture:${key}`,
 });
@@ -207,7 +207,7 @@ export const FIXTURE_SCENES: Record<string, () => FixtureScene> = {
     mediaHeight: 150,
     entries: [
       entry({ ...OWN, id: "own1", ageMin: 10, text: "ערב שבת בבית 🕯️", media: [media("o1", "table", "pending_review")] }),
-      entry({ ...OWN, id: "own2", ageMin: 61, text: "שמחת בר המצווה של יוסי 🎉", likes: 3, comments: 1, media: [media("o2", "table", "contains_women")] }),
+      entry({ ...OWN, id: "own2", ageMin: 61, text: "שמחת בר המצווה של יוסי 🎉", likes: 3, comments: 1, media: [media("o2", "table", "contains_women", { sex: 1, violence: 1, religion: 0, addictions: 0 })] }),
     ],
   }),
   empty: () => ({ status: "empty", entries: [] }),

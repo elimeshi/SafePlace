@@ -3,7 +3,7 @@ import { shadows } from "@safeplace/design-tokens";
 import { theme } from "../theme";
 import { assistant, lh } from "../foundation/style";
 
-/** Lab `.notice` — the inline, before-publish women-detected notice (compose). */
+/** Lab `.notice` — the inline, before-publish content notice (compose). */
 export function resolveUploaderNoticeStyle(): {
   container: ViewStyle;
   iconSize: number;
@@ -11,6 +11,7 @@ export function resolveUploaderNoticeStyle(): {
   iconWrap: ViewStyle;
   column: ViewStyle;
   text: TextStyle;
+  details: ViewStyle;
   actions: ViewStyle;
 } {
   return {
@@ -34,6 +35,7 @@ export function resolveUploaderNoticeStyle(): {
     iconWrap: { marginTop: 1 },
     column: { flex: 1 },
     text: { ...assistant(14.5), lineHeight: lh(14.5, 1.55), color: theme.colors.ink900, marginBottom: 10 },
+    details: { marginBottom: 10 },
     actions: { flexDirection: "row", gap: 8, alignItems: "center" },
   };
 }

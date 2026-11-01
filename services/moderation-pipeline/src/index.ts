@@ -97,9 +97,10 @@ export {
 } from "./classifier-prompt";
 
 export {
+  CONTENT_GROUP_LABELS_HE,
+  CONTENT_NOTICE_HE,
   PENDING_REVIEW_NOTICE_HE,
   PROCESSING_NOTICE_HE,
-  WOMEN_DETECTED_NOTICE_HE,
 } from "./notice-copy";
 
 export { dhashHex, hashMedia, sha256Hex, type MediaHashes } from "./hashes";

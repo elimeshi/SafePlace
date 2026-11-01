@@ -1,5 +1,6 @@
 import type { MediaView } from "@safeplace/api-client";
 import type { IconName, PostCardData, PostCardSource } from "@safeplace/ui";
+import type { ContentGroup } from "@safeplace/visibility-policy";
 import { relativeTime } from "./time";
 import type { EntryLabel, FeedEntry, SpaceCardVM } from "./types";
 
@@ -44,6 +45,11 @@ export function stripKindOf(entry: FeedEntry, noticeDismissed: readonly string[]
   return null;
 }
 
+/** Groups the notice names: what was found across the author's media that the notice is about. */
+export function noticeGroupsOf(entry: FeedEntry): ContentGroup[] {
+  return (entry.uploaderMedia ?? []).filter((m) => m.state === "filtered_for_some_viewers").flatMap((m) => m.foundGroups);
+}
+
 /** The first media is the card's media; a filtered one becomes the placeholder and carries no url. */
 export function primaryMedia(media: readonly MediaView[]): { filtered: boolean; url: string | null; hasMedia: boolean } {
   const first = media[0];
@@ -57,6 +63,7 @@ export interface CardProps {
   filtered: boolean;
   hasMedia: boolean;
   strip: StripKind | null;
+  noticeGroups: ContentGroup[];
   foldable: boolean;
 }
 
@@ -79,6 +86,7 @@ export function toCardProps(entry: FeedEntry, noticeDismissed: readonly string[]
     filtered: m.filtered,
     hasMedia: m.hasMedia,
     strip: stripKindOf(entry, noticeDismissed),
+    noticeGroups: noticeGroupsOf(entry),
     foldable: item.text.length > FOLD_AT_CHARS,
   };
 }

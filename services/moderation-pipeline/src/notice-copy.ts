@@ -8,7 +8,8 @@
  * exactly one definition of each string. Do not redeclare them below.
  */
 export {
+  CONTENT_GROUP_LABELS_HE,
+  CONTENT_NOTICE_HE,
   PENDING_REVIEW_NOTICE_HE,
   PROCESSING_NOTICE_HE,
-  WOMEN_DETECTED_NOTICE_HE,
 } from "@safeplace/shared-types";

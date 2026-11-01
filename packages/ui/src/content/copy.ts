@@ -21,9 +21,11 @@ export const contentCopy = {
   moreA11y: "עוד אפשרויות",
   processingStrip: "המדיה בעיבוד ותוצג בקרוב.",
   reviewStrip: "התוכן שלך בבדיקה ויפורסם בקרוב.",
-  /** Shared-types women-detected notice, verbatim (07-moderation / master §4.4.2). */
-  womenDetectedNotice:
-    "זוהו נשים במדיה שהעלית. עליך לדעת שבעקבות זאת משתמשים רבים ברשת לא יוכלו לראות את תוכן המדיה שלך בפוסט הנוכחי.",
+  /** Shared-types CONTENT_NOTICE_HE.title, verbatim. Accepted by Eli 2026-11-01 (open-questions-backlog.md §K). */
+  contentNotice:
+    "זוהה במדיה שהעלית תוכן שמשתמשים רבים ברשת בחרו שלא לראות. עליך לדעת שבעקבות זאת חלק מהמשתמשים לא יוכלו לראות את המדיה בפוסט הנוכחי.",
+  /** Shared-types CONTENT_NOTICE_HE.detailsLabel, verbatim. */
+  noticeDetails: "מה זוהה?",
   noticeConfirm: "אישור",
   noticeBack: "חזרה",
   noticeAppeal: "ערער",

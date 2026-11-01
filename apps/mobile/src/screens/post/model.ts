@@ -1,6 +1,6 @@
 import type { Comment, CommentCursor, CommentThread, MediaView } from "@safeplace/api-client";
 import { resolveUploaderMediaViews } from "@safeplace/api-client";
-import type { Gender } from "@safeplace/visibility-policy";
+import type { ContentGroup, Gender } from "@safeplace/visibility-policy";
 
 /**
  * Pure view-model helpers for the single-post screen. No visibility decision is
@@ -109,7 +109,7 @@ export type OwnMediaStrip =
   | { kind: "none" }
   | { kind: "processing" }
   | { kind: "review" }
-  | { kind: "notice"; mediaId: string };
+  | { kind: "notice"; mediaId: string; groups: ContentGroup[] };
 
 const RANK = { none: 0, processing: 1, review: 2, notice: 3 } as const;
 
@@ -127,7 +127,7 @@ export function ownMediaStrip(media: MediaView[], gender: Gender, dismissed: Rea
         : v.state === "under_review"
           ? { kind: "review" }
           : v.state === "filtered_for_some_viewers" && !dismissed.has(v.id)
-            ? { kind: "notice", mediaId: v.id }
+            ? { kind: "notice", mediaId: v.id, groups: v.foundGroups }
             : { kind: "none" };
     if (RANK[next.kind] > RANK[best.kind]) best = next;
   }

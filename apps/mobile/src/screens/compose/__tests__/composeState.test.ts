@@ -51,12 +51,12 @@ describe("deriveView", () => {
   });
 
   it("clears the checking chip once resolved", () => {
-    const s = run([...attached, { type: "uploaderState", state: "published" }]);
+    const s = run([...attached, { type: "uploaderState", state: "published", foundGroups: [] }]);
     expect(deriveView(s).checking).toBe(false);
   });
 
   it("shows the review strip for under_review, never a block", () => {
-    const s = run([...attached, { type: "uploaderState", state: "under_review" }]);
+    const s = run([...attached, { type: "uploaderState", state: "under_review", foundGroups: [] }]);
     const v = deriveView(s);
     expect(v.showReview).toBe(true);
     expect(v.canPublish).toBe(true);
@@ -64,10 +64,11 @@ describe("deriveView", () => {
 });
 
 describe("women-detected notice", () => {
-  const flagged = run([{ type: "text", text: "x" }, ...attached, { type: "uploaderState", state: "filtered_for_some_viewers" }]);
+  const flagged = run([{ type: "text", text: "x" }, ...attached, { type: "uploaderState", state: "filtered_for_some_viewers", foundGroups: ["sex"] }]);
 
   it("shows before publish, and Publish while unanswered is allowed (treated as Confirm)", () => {
     expect(deriveView(flagged).showNotice).toBe(true);
+    expect(deriveView(flagged).noticeGroups).toEqual(["sex"]);
     expect(mayPublishNow(flagged)).toBe(true);
     expect(flagged.media?.noticeResolved).toBe(false);
   });
@@ -99,7 +100,7 @@ describe("reducer", () => {
   });
 
   it("ignores poll results with no media (removed meanwhile)", () => {
-    expect(run([{ type: "uploaderState", state: "published" }]).media).toBeNull();
+    expect(run([{ type: "uploaderState", state: "published", foundGroups: [] }]).media).toBeNull();
   });
 
   it("a failed publish is recoverable", () => {

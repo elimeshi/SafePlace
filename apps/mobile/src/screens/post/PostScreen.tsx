@@ -27,6 +27,7 @@ import {
   sheetCopy,
   type PostCardSource,
 } from "@safeplace/ui";
+import { contentNoticeProps } from "@/lib/contentNotice";
 import { theme } from "@/lib/theme";
 import { postCopy } from "./copy";
 import type { PostBackend, PostView, ScreenData } from "./data";
@@ -129,6 +130,7 @@ export function PostScreen({ backend, postId, onBack, onOpenPost, renderMedia, d
             {s.kind === "notice" ? (
               <UploaderNotice
                 mode="afterPublish"
+                {...contentNoticeProps(s.groups)}
                 onUnderstood={() => c.dismissNotice(s.mediaId)}
                 onRemoveMedia={() => void c.removeOwnMedia(s.mediaId, cm.id)}
                 onAppeal={() => void c.appeal(s.mediaId)}
@@ -330,7 +332,7 @@ function OwnStrip({
   if (strip.kind === "review") return <StateStrip kind="review" />;
   if (strip.kind === "notice") {
     const id = strip.mediaId;
-    return <UploaderNotice mode="afterPublish" onUnderstood={() => onUnderstood(id)} onRemoveMedia={() => onRemove(id)} onAppeal={() => onAppeal(id)} />;
+    return <UploaderNotice mode="afterPublish" {...contentNoticeProps(strip.groups)} onUnderstood={() => onUnderstood(id)} onRemoveMedia={() => onRemove(id)} onAppeal={() => onAppeal(id)} />;
   }
   return null;
 }

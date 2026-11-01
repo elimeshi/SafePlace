@@ -131,7 +131,11 @@ describe("ownMediaStrip (three-tier outcome, through visibility-policy)", () => 
     expect(ownMediaStrip([mv("1", "general")], "male").kind).toBe("none");
   });
   it("contains_women -> the notice for a male uploader, with its media id", () => {
-    expect(ownMediaStrip([mv("1", "contains_women")], "male")).toEqual({ kind: "notice", mediaId: "1" });
+    expect(ownMediaStrip([mv("1", "contains_women")], "male")).toEqual({ kind: "notice", mediaId: "1", groups: ["sex"] });
+  });
+  it("the notice carries every group found on that media", () => {
+    const levels = { sex: 0, violence: 2, religion: 0, addictions: 1 } as const;
+    expect(ownMediaStrip([mv("1", "general", { levels })], "female")).toEqual({ kind: "notice", mediaId: "1", groups: ["violence", "addictions"] });
   });
   it("contains_women -> no notice for a female uploader (an open question, not answered in code)", () => {
     expect(ownMediaStrip([mv("1", "contains_women")], "female").kind).toBe("none");

@@ -58,7 +58,7 @@ describe("UploaderNotice (lab .notice)", () => {
   it("is a bordered, shadowed 18px card with the verbatim notice copy", () => {
     const s = resolveUploaderNoticeStyle();
     expect(s.container).toMatchObject({ borderRadius: 18, borderWidth: 1, borderColor: "#C4CBEC", gap: 10 });
-    expect(contentCopy.womenDetectedNotice.startsWith("זוהו נשים במדיה שהעלית.")).toBe(true);
+    expect(contentCopy.contentNotice.startsWith("זוהה במדיה שהעלית תוכן")).toBe(true);
   });
 });
 

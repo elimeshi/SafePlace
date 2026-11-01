@@ -1,6 +1,7 @@
 import { Text, View, type StyleProp, type ViewStyle } from "react-native";
 import { Icon } from "./Icon";
 import { MiniButton } from "./MiniButton";
+import { NoticeDetails } from "./NoticeDetails";
 import { StateStrip } from "./StateStrip";
 import { contentCopy } from "./copy";
 import { resolveUploaderNoticeStyle } from "./UploaderNotice.styles";
@@ -20,6 +21,9 @@ export interface UploaderNoticeProps {
   onAppeal?: () => void;
   /** Defaults to the shared-types notice, verbatim; overridable per ADR 0007. */
   message?: string;
+  /** The found group names, already joined; shown behind `detailsLabel`. Omitted or empty → no disclosure. */
+  details?: string;
+  detailsLabel?: string;
   confirmLabel?: string;
   backLabel?: string;
   appealLabel?: string;
@@ -35,7 +39,9 @@ export function UploaderNotice({
   onUnderstood,
   onRemoveMedia,
   onAppeal,
-  message = contentCopy.womenDetectedNotice,
+  message = contentCopy.contentNotice,
+  details,
+  detailsLabel = contentCopy.noticeDetails,
   confirmLabel = contentCopy.noticeConfirm,
   backLabel = contentCopy.noticeBack,
   appealLabel = contentCopy.noticeAppeal,
@@ -48,6 +54,8 @@ export function UploaderNotice({
       <StateStrip
         kind="notice"
         message={message}
+        details={details}
+        detailsLabel={detailsLabel}
         actions={
           <>
             <MiniButton label={understoodLabel} onPress={onUnderstood} testID="notice-understood" />
@@ -66,6 +74,11 @@ export function UploaderNotice({
       </View>
       <View style={s.column}>
         <Text style={s.text}>{message}</Text>
+        {details ? (
+          <View style={s.details}>
+            <NoticeDetails label={detailsLabel} details={details} textStyle={[s.text, { marginBottom: 0 }]} />
+          </View>
+        ) : null}
         <View style={s.actions}>
           <MiniButton label={confirmLabel} onPress={onConfirm} testID="notice-confirm" />
           <MiniButton label={backLabel} variant="secondary" onPress={onBack} testID="notice-back" />

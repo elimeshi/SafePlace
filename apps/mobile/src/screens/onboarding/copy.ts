@@ -49,6 +49,11 @@ export const onboardingCopy = {
     // (on for the male defaults, off for the female defaults) — same labels,
     // same mechanism, symmetric for both (invariant #4).
     hideContentWithWomen: "אינך רואה תוכן הכולל נשים",
+    // Accepted by Eli 2026-11-01 (open-questions-backlog.md §K). Same label for
+    // both genders, and the default value is the same for both too.
+    hideViolence: "אינך רואה תוכן אלים",
+    hideReligion: "אינך רואה סמלים דתיים זרים",
+    hideAddictions: "אינך רואה תוכן של התמכרויות",
     hideWomenAccounts: "אינך רואה חשבונות שהוגדרו כנשיים",
     // Small flag beside each toggle — this preview only shows the defaults, it
     // doesn't ask (spec §6.2.3); editing lives in the personal area.

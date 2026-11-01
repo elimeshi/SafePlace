@@ -35,7 +35,11 @@ export default function Defaults() {
   const settings = resolveDefaultFilterSettings(gender);
 
   const rows = [
-    { key: "hideContentWithWomen", label: c.hideContentWithWomen, value: settings.hideContentWithWomen },
+    // Level 0 = hide every level of the group (visibility-policy contentLevels); sex is the women row.
+    { key: "hideContentWithWomen", label: c.hideContentWithWomen, value: settings.contentLevels.sex === 0 },
+    { key: "hideViolence", label: c.hideViolence, value: settings.contentLevels.violence === 0 },
+    { key: "hideReligion", label: c.hideReligion, value: settings.contentLevels.religion === 0 },
+    { key: "hideAddictions", label: c.hideAddictions, value: settings.contentLevels.addictions === 0 },
     // TODO(open-question): hideWomenAccounts is displayed per master spec
     // §6.2.3, but its enforcement semantics are still undefined (see
     // open-questions-backlog.md §J and invariant #1). The value shown here is

@@ -20,6 +20,7 @@ import {
   type SpaceOption,
 } from "@safeplace/ui";
 import type { ContentAudience } from "@safeplace/visibility-policy";
+import { contentNoticeProps } from "@/lib/contentNotice";
 import { screenCopy } from "./copy";
 import { deriveView, type ComposeState } from "./composeState";
 import type { ComposeContext } from "./data";
@@ -143,6 +144,7 @@ export function ComposeView({
         {view.showNotice ? (
           <UploaderNotice
             mode="beforePublish"
+            {...contentNoticeProps(view.noticeGroups)}
             onConfirm={h.onNoticeConfirm}
             onBack={h.onNoticeBack}
             onAppeal={h.onNoticeAppeal}

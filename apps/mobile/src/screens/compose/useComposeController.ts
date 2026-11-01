@@ -74,7 +74,7 @@ export function useComposeController(ctx: ComposeContext) {
         const poll = await pollUploaderMedia(supabase, postId, ctx.gender);
         if (stop) return;
         const mine = poll.views.find((v) => v.id === mediaId);
-        if (mine) dispatch({ type: "uploaderState", state: mine.state });
+        if (mine) dispatch({ type: "uploaderState", state: mine.state, foundGroups: mine.foundGroups });
         if (poll.settled || n >= POLL_MAX) return;
       } catch {
         if (stop || n >= POLL_MAX) return;

@@ -3,7 +3,7 @@ import type { FeedItem, UploaderMediaView } from "@safeplace/api-client";
 import { feedReducer, initialFeedState, visibleEntries, type FeedState } from "../reducer";
 import { COLLAPSE_AT, nextCollapsed, shouldShowFollowRail } from "../scroll";
 import { relativeTime } from "../time";
-import { primaryMedia, sourceProps, stripKindOf, toCardProps } from "../viewModel";
+import { noticeGroupsOf, primaryMedia, sourceProps, stripKindOf, toCardProps } from "../viewModel";
 import type { FeedEntry } from "../types";
 
 const NOW = Date.parse("2026-10-20T12:00:00Z");
@@ -171,5 +171,18 @@ describe("view model", () => {
     expect(stripKindOf(own(["filtered_for_some_viewers"]), ["1"])).toBeNull();
     expect(stripKindOf(own(["published"]), [])).toBeNull();
     expect(stripKindOf(entry("2"), [])).toBeNull();
+  });
+
+  it("the notice names the groups found on the media it is about", () => {
+    const e = entry("1", {}, {
+      uploaderMedia: [
+        { id: "m0", classification: "contains_women", state: "filtered_for_some_viewers", foundGroups: ["sex"] },
+        { id: "m1", classification: "general", state: "filtered_for_some_viewers", foundGroups: ["violence"] },
+        { id: "m2", classification: "general", state: "published", foundGroups: [] },
+      ],
+    });
+    expect(noticeGroupsOf(e)).toEqual(["sex", "violence"]);
+    expect(toCardProps(e, [], { now: NOW, isIcon }).noticeGroups).toEqual(["sex", "violence"]);
+    expect(noticeGroupsOf(entry("2"))).toEqual([]);
   });
 });

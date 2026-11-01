@@ -76,24 +76,27 @@ describe("feed", () => {
     await expect(fetchFeedPage(client, { seed: "s" })).rejects.toThrow("fetchFeedPage: boom");
   });
 
+  const NO_LEVELS = { sex_level: null, violence_level: null, religion_level: null, addictions_level: null };
+
   it("toMediaView drops a path that arrives with is_filtered", () => {
     expect(
-      toMediaView({ id: "m", classification: "contains_women", storage_path: "leak", is_filtered: true }).storagePath
+      toMediaView({ id: "m", classification: "contains_women", storage_path: "leak", is_filtered: true, ...NO_LEVELS }).storagePath
     ).toBeNull();
   });
 
   it("toMediaView maps the level columns to levels, or null when absent (not the uploader's row)", () => {
     const row = { id: "m", classification: "contains_women" as const, storage_path: "u/x", is_filtered: false };
     expect(toMediaView({ ...row, sex_level: 1, violence_level: 0, religion_level: 2, addictions_level: 0 }).levels).toEqual({ sex: 1, violence: 0, religion: 2, addictions: 0 });
-    expect(toMediaView({ ...row, sex_level: null, violence_level: null, religion_level: null, addictions_level: null }).levels).toBeNull();
-    expect(toMediaView(row).levels).toBeNull();
+    expect(toMediaView({ ...row, ...NO_LEVELS }).levels).toBeNull();
+    // A JSON payload that omits the columns still resolves to null at runtime.
+    expect(toMediaView(row as Parameters<typeof toMediaView>[0]).levels).toBeNull();
   });
 
   it("resolveMediaUrls signs only unfiltered media", async () => {
     const { client } = mockClient();
     const views = [
-      toMediaView({ id: "m1", classification: "contains_women", storage_path: null, is_filtered: true }),
-      toMediaView({ id: "m2", classification: "general", storage_path: "u/x", is_filtered: false }),
+      toMediaView({ id: "m1", classification: "contains_women", storage_path: null, is_filtered: true, ...NO_LEVELS }),
+      toMediaView({ id: "m2", classification: "general", storage_path: "u/x", is_filtered: false, ...NO_LEVELS }),
     ];
     const out = await resolveMediaUrls(client, views);
     expect(out.map((v) => v.url)).toEqual([null, "signed://u/x"]);

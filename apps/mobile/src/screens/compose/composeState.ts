@@ -1,6 +1,7 @@
 import {
   isAudienceSetValid,
   type ContentAudience,
+  type ContentGroup,
   type UploaderMediaState,
 } from "@safeplace/visibility-policy";
 
@@ -20,7 +21,9 @@ export interface ComposeMedia {
   mediaId?: string;
   /** Resolved by visibility-policy; undefined until the first poll lands. */
   uploader?: UploaderMediaState;
-  /** The author confirmed or appealed the women-detected notice. */
+  /** What the notice names (api-client foundGroups); empty until the first poll lands. */
+  foundGroups: ContentGroup[];
+  /** The author confirmed or appealed the content notice. */
   noticeResolved: boolean;
 }
 
@@ -51,7 +54,7 @@ export type ComposeAction =
   | { type: "mediaAttached"; mediaId: string }
   | { type: "mediaFailed" }
   | { type: "mediaRemoved" }
-  | { type: "uploaderState"; state: UploaderMediaState }
+  | { type: "uploaderState"; state: UploaderMediaState; foundGroups: ContentGroup[] }
   | { type: "noticeResolved"; appealed: boolean }
   | { type: "publishStart" }
   | { type: "publishFailed" }
@@ -93,7 +96,7 @@ export function composeReducer(s: ComposeState, a: ComposeAction): ComposeState 
       return {
         ...s,
         error: null,
-        media: { localUri: a.localUri, contentType: a.contentType, phase: "uploading", noticeResolved: false },
+        media: { localUri: a.localUri, contentType: a.contentType, phase: "uploading", foundGroups: [], noticeResolved: false },
       };
     case "mediaAttached":
       return s.media ? { ...s, media: { ...s.media, phase: "attached", mediaId: a.mediaId } } : s;
@@ -102,7 +105,7 @@ export function composeReducer(s: ComposeState, a: ComposeAction): ComposeState 
     case "mediaRemoved":
       return { ...s, media: null };
     case "uploaderState":
-      return s.media ? { ...s, media: { ...s.media, uploader: a.state } } : s;
+      return s.media ? { ...s, media: { ...s.media, uploader: a.state, foundGroups: a.foundGroups } } : s;
     case "noticeResolved":
       return s.media ? { ...s, media: { ...s.media, noticeResolved: true }, appealSent: a.appealed } : s;
     case "publishStart":
@@ -121,8 +124,10 @@ export interface ComposeView {
   canPublish: boolean;
   /** "checking the media…" chip: uploading, or queued/in flight in the pipeline. */
   checking: boolean;
-  /** Inline women-detected notice before publish (Confirm / Back / Appeal). */
+  /** Inline content notice before publish (Confirm / Back / Appeal). */
   showNotice: boolean;
+  /** The groups that notice names. */
+  noticeGroups: ContentGroup[];
   /** Under-review strip (neutral; never a rejection). */
   showReview: boolean;
 }
@@ -136,12 +141,13 @@ export function deriveView(s: ComposeState): ComposeView {
     canPublish: hasContent && !uploading && !s.publishing && isAudienceSetValid(s.audiences),
     checking: m != null && (uploading || m.uploader === undefined || m.uploader === "processing"),
     showNotice: m?.uploader === "filtered_for_some_viewers" && !m.noticeResolved,
+    noticeGroups: m?.foundGroups ?? [],
     showReview: m?.uploader === "under_review",
   };
 }
 
 /**
- * Publish with the women-detected notice still showing counts as Confirm (Eli):
+ * Publish with the content notice still showing counts as Confirm (Eli):
  * the media stays, no appeal is sent, and Publish is never a no-op. The notice
  * has already been shown inline, which is what moderation-pipeline §3 requires.
  */

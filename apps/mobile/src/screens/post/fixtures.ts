@@ -1,5 +1,5 @@
 import type { Comment, CommentThread, MediaView, PostItem } from "@safeplace/api-client";
-import type { MediaClassification } from "@safeplace/visibility-policy";
+import type { ContentLevels, MediaClassification } from "@safeplace/visibility-policy";
 import type { CommentsPageView, PostBackend, PostView, ScreenData } from "./data";
 import type { DevInit } from "./usePostController";
 
@@ -36,6 +36,9 @@ const media = (id: string, classification: MediaClassification, over: Partial<Me
   url: "fixture:street",
   ...over,
 });
+
+/** Classified media defaults to `levels: null`; the notice needs levels to name what was found. */
+const SEX_ONLY: ContentLevels = { sex: 1, violence: 0, religion: 0, addictions: 0 };
 
 const post = (over: Partial<PostItem> = {}): PostItem => ({
   id: "p1",
@@ -154,7 +157,7 @@ export const SCENES: Record<string, Scene> = {
   // Own post, one scene per uploader state (03 §2.1, moderation-pipeline §2-3).
   ownProcessing: { data: base(view({ media: [media("m1", "unclassified")] }, { authorId: ME, media: [media("m1", "unclassified")] })), comments: page([]) },
   ownReview: { data: base(view({ media: [media("m1", "pending_review")] }, { authorId: ME, media: [media("m1", "pending_review")] })), comments: page([]) },
-  ownNotice: { data: base(view({ media: [media("m1", "contains_women")] }, { authorId: ME, media: [media("m1", "contains_women")] })), comments: page([]) },
+  ownNotice: { data: base(view({ media: [media("m1", "contains_women", { levels: SEX_ONLY })] }, { authorId: ME, media: [media("m1", "contains_women", { levels: SEX_ONLY })] })), comments: page([]) },
   // Somebody else's post whose media this viewer's filter withholds.
   filtered: { data: base(view({ media: [media("m1", "contains_women", { filtered: true, url: null })] })), comments: MAIN },
 };

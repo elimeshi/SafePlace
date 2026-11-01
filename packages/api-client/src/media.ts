@@ -7,10 +7,10 @@ export const MEDIA_BUCKET = "media";
 export const LEVEL_COLUMNS = "sex_level, violence_level, religion_level, addictions_level";
 
 export interface LevelColumns {
-  sex_level?: number | null;
-  violence_level?: number | null;
-  religion_level?: number | null;
-  addictions_level?: number | null;
+  sex_level: number | null;
+  violence_level: number | null;
+  religion_level: number | null;
+  addictions_level: number | null;
 }
 
 /**

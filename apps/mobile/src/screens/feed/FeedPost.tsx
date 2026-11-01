@@ -10,6 +10,7 @@ import {
   contentCopy,
   type IconName,
 } from "@safeplace/ui";
+import { contentNoticeProps } from "@/lib/contentNotice";
 import { feedScreenCopy } from "./copy";
 import { fixtureMediaSlot } from "./fixtures";
 import { FOLD_LINES, primaryMedia, toCardProps, type MapOptions } from "./viewModel";
@@ -57,6 +58,7 @@ export function FeedPost({
     ) : c.strip === "notice" ? (
       <UploaderNotice
         mode="afterPublish"
+        {...contentNoticeProps(c.noticeGroups)}
         onUnderstood={() => actions.dismissNotice(id)}
         onRemoveMedia={() => actions.removeMedia(entry)}
         onAppeal={() => actions.appeal(entry)}

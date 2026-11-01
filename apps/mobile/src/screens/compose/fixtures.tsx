@@ -94,7 +94,7 @@ export function ComposeFixtureScene({ scene }: { scene: ComposeFixture }) {
           { type: "text", text: "שמחת בר המצווה של יוסי 🎉" },
           { type: "mediaPicked", localUri: "fixture", contentType: "image/jpeg" },
           { type: "mediaAttached", mediaId: "m1" },
-          { type: "uploaderState", state: "filtered_for_some_viewers" },
+          { type: "uploaderState", state: "filtered_for_some_viewers", foundGroups: ["sex"] },
         ],
         pub()
       );

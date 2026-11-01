@@ -56,6 +56,8 @@ import {
 import { theme } from "@/lib/theme";
 import { DirView, GROUP, LabCard, POSTS, SRC, SceneArt, TopZones, AppBar } from "@/gallery/fixtures";
 import { SCENES, SCENE_NAMES } from "@/gallery/scenes";
+import { CONTENT_NOTICE_HE } from "@safeplace/shared-types";
+import { contentNoticeProps } from "@/lib/contentNotice";
 
 /**
  * Component gallery. Renders every @safeplace/ui piece in its key states so
@@ -272,13 +274,13 @@ export default function Gallery() {
           </Section>
 
           <Section index={5} title="הודעות מערכת ומצבי פוסט">
-            <SystemNotice tone="info" title="זוהו נשים במדיה שהעלית" message="עליך לדעת שבעקבות זאת משתמשים רבים ברשת לא יוכלו לראות את תוכן המדיה שלך בפוסט הנוכחי." confirmLabel="אישור" cancelLabel="חזרה" />
+            <SystemNotice tone="info" message={CONTENT_NOTICE_HE.title} confirmLabel={CONTENT_NOTICE_HE.confirmLabel} cancelLabel={CONTENT_NOTICE_HE.cancelLabel} />
             <View style={{ borderRadius: 18, overflow: "hidden" }}>
               <StateStrip kind="processing" />
               <StateStrip kind="review" />
-              <UploaderNotice mode="afterPublish" />
+              <UploaderNotice mode="afterPublish" {...contentNoticeProps(["sex", "violence"])} />
             </View>
-            <UploaderNotice mode="beforePublish" style={{ marginHorizontal: 0 }} />
+            <UploaderNotice mode="beforePublish" {...contentNoticeProps(["sex", "violence"])} style={{ marginHorizontal: 0 }} />
             <View style={{ borderRadius: 18, overflow: "hidden" }}>
               <FilteredMedia />
             </View>
@@ -300,7 +302,7 @@ export default function Gallery() {
               post={{ author: { name: "אבי מזרחי" }, time: "לפני שעה", source: SRC.public, body: "שמחת בר המצווה של יוסי 🎉", likes: 3, comments: 1 }}
               mediaSlot={<SceneArt k="table" />}
               mediaHeight={150}
-              stateStrip={<UploaderNotice mode="afterPublish" />}
+              stateStrip={<UploaderNotice mode="afterPublish" {...contentNoticeProps(["sex", "violence"])} />}
             />
           </Section>
 
