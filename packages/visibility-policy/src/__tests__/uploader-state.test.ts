@@ -19,3 +19,16 @@ describe("uploader notice (ADR 0018 §7)", () => {
     expect(resolveUploaderMediaState("unclassified", null, "male")).toBe("processing");
   });
 });
+
+describe("noticeGroupsFor — each group alone", () => {
+  for (const g of ["violence", "religion", "addictions"] as const) {
+    it(`${g} is reported to both a male and a female uploader`, () => {
+      expect(noticeGroupsFor(lv({ [g]: 1 }), "male")).toEqual([g]);
+      expect(noticeGroupsFor(lv({ [g]: 1 }), "female")).toEqual([g]);
+    });
+  }
+  it("sex is reported to a male uploader only", () => {
+    expect(noticeGroupsFor(lv({ sex: 1 }), "male")).toEqual(["sex"]);
+    expect(noticeGroupsFor(lv({ sex: 1 }), "female")).toEqual([]);
+  });
+});

@@ -198,7 +198,7 @@ describe("the uploader always sees their own content", () => {
       userId: "me",
       filterSettings: {
         ...resolveDefaultFilterSettings("male"),
-        hideContentWithWomen: true,
+        contentLevels: sexMax(0),
       },
     });
     expect(
@@ -230,7 +230,7 @@ describe("the uploader always sees their own content", () => {
       userId: "someone-else",
       filterSettings: {
         ...resolveDefaultFilterSettings("male"),
-        hideContentWithWomen: true,
+        contentLevels: sexMax(0),
       },
     });
     expect(
@@ -266,11 +266,11 @@ describe("canViewMedia — unclassified (pipeline in flight)", () => {
 });
 
 describe("canViewProfilePhoto", () => {
-  it("respects filterAppliesToAvatars opt-out", () => {
+  it("the filterAppliesToAvatars opt-out lifts the women filter on avatars", () => {
     const viewer = makeViewer({
       filterSettings: {
         ...resolveDefaultFilterSettings("male"),
-        hideContentWithWomen: true,
+        contentLevels: sexMax(0),
         filterAppliesToAvatars: false,
       },
     });
@@ -287,7 +287,7 @@ describe("canViewProfilePhoto", () => {
     const viewer = makeViewer({
       filterSettings: {
         ...resolveDefaultFilterSettings("male"),
-        hideContentWithWomen: true,
+        contentLevels: sexMax(0),
         filterAppliesToAvatars: true,
       },
     });
@@ -305,7 +305,7 @@ describe("canViewProfilePhoto", () => {
       userId: "me",
       filterSettings: {
         ...resolveDefaultFilterSettings("male"),
-        hideContentWithWomen: true,
+        contentLevels: sexMax(0),
         filterAppliesToAvatars: true,
       },
     });
@@ -403,7 +403,7 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
     ).toBe(true);
   });
 
-  it("shows an unclassified avatar to a viewer who opted out of avatar filtering", () => {
+  it("withholds an unclassified avatar even from a viewer who opted out of avatar filtering", () => {
     const viewer = makeViewer({
       userId: "viewer-1",
       filterSettings: {
@@ -417,7 +417,7 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
         levels: null,
         ownerId: "owner-1",
       })
-    ).toBe(true);
+    ).toBe(false);
   });
 });
 
@@ -479,5 +479,60 @@ describe("per-group levels (ADR 0018)", () => {
   it("pending_review and unclassified stay withheld whatever the levels", () => {
     expect(viewerSatisfiesClassification(viewer(), { classification: "pending_review", levels: lv() }, true)).toBe(false);
     expect(viewerSatisfiesClassification(viewer(), { classification: "unclassified", levels: null }, true)).toBe(false);
+  });
+});
+
+describe("per-group levels — every group, Family Space and avatar branch", () => {
+  const ZERO = { sex: 0, violence: 0, religion: 0, addictions: 0 } as const;
+  const general = (levels: ContentLevels | null) => ({ classification: "general" as const, levels });
+
+  for (const g of ["religion", "addictions"] as const) {
+    it(`${g}: below and at the viewer's max shows, above withholds`, () => {
+      const v = viewer({ contentLevels: { ...ZERO, [g]: 1 } });
+      expect(viewerSatisfiesClassification(v, general(lv({ [g]: 0 })), false)).toBe(true);
+      expect(viewerSatisfiesClassification(v, general(lv({ [g]: 1 })), false)).toBe(true);
+      expect(viewerSatisfiesClassification(v, general(lv({ [g]: 2 })), false)).toBe(false);
+    });
+
+    it(`a Family Space does not lift ${g}`, () => {
+      expect(viewerSatisfiesClassification(viewer({ contentLevels: ZERO }), general(lv({ [g]: 1 })), true)).toBe(false);
+    });
+  }
+
+  it("sex 2 is withheld from a female-default viewer (max 1)", () => {
+    const v = viewer({ contentLevels: resolveDefaultFilterSettings("female").contentLevels });
+    expect(viewerSatisfiesClassification(v, { classification: "contains_women", levels: lv({ sex: 2 }) }, false)).toBe(false);
+  });
+
+  it("inside a Family Space, sex 2 + violence 1 is withheld from a viewer at violence max 0", () => {
+    const v = viewer({ contentLevels: ZERO });
+    expect(viewerSatisfiesClassification(v, { classification: "contains_women", levels: lv({ sex: 2, violence: 1 }) }, true)).toBe(false);
+  });
+
+  it("null levels are withheld on contains_women and on a resolved row inside a Family Space", () => {
+    const v = viewer({ contentLevels: { sex: 2, violence: 2, religion: 2, addictions: 2 } });
+    expect(viewerSatisfiesClassification(v, { classification: "contains_women", levels: null }, false)).toBe(false);
+    expect(viewerSatisfiesClassification(v, general(null), true)).toBe(false);
+  });
+
+  it("the uploader sees their own media even with a non-sex level above their own max", () => {
+    const me = makeViewer({ userId: "me", filterSettings: { ...resolveDefaultFilterSettings("male"), contentLevels: ZERO } });
+    expect(
+      canViewMedia(me, { ...general(lv({ violence: 2 })), exposure: [{ kind: "public" }], isWithinViewersFamilySpace: false, uploaderId: "me" })
+    ).toBe(true);
+  });
+
+  it("avatars with filterAppliesToAvatars on: a non-sex level above max, or null levels, are withheld", () => {
+    const v = viewer({ contentLevels: ZERO, filterAppliesToAvatars: true });
+    expect(canViewProfilePhoto(v, { ...general(lv({ religion: 1 })), ownerId: "someone-else" })).toBe(false);
+    expect(canViewProfilePhoto(v, { ...general(null), ownerId: "someone-else" })).toBe(false);
+  });
+
+  it("avatar opt-out lifts the sex group only (Eli, 2026-11-02)", () => {
+    const v = viewer({ contentLevels: ZERO, filterAppliesToAvatars: false });
+    expect(canViewProfilePhoto(v, { classification: "contains_women", levels: lv({ sex: 2 }), ownerId: "someone-else" })).toBe(true);
+    expect(canViewProfilePhoto(v, { ...general(lv({ violence: 1 })), ownerId: "someone-else" })).toBe(false);
+    expect(canViewProfilePhoto(v, { classification: "unclassified", levels: null, ownerId: "someone-else" })).toBe(false);
+    expect(canViewProfilePhoto(v, { ...general(null), ownerId: "someone-else" })).toBe(false);
   });
 });

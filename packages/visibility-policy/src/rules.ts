@@ -244,8 +244,8 @@ export function canViewProfilePhoto(
   // The owner always sees their own profile photo (same principle as
   // canViewMedia's uploader rule).
   if (viewer.userId === photo.ownerId) return true;
-  if (!viewer.filterSettings.filterAppliesToAvatars) return true;
-  return viewerSatisfiesClassification(viewer, photo, /* isWithinViewersFamilySpace */ false);
+  // Avatar opt-out lifts the sex group only (Eli, 2026-11-02), mirroring the Family Space exception.
+  return viewerSatisfiesClassification(viewer, photo, /* lift sex */ !viewer.filterSettings.filterAppliesToAvatars);
 }
 
 /**
