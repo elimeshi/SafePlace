@@ -151,19 +151,30 @@ See ADR 0003. All of these are placeholder-until-locked:
 
 ## K. Moderation
 
-- **Female default for the `sex` level** — ADR 0018 carries today's
-  `hideContentWithWomen: false` forward as `max_sex_level = 1` (modest women
-  visible, immodest not). Eli to confirm 1 vs 2 before onboarding copy is
-  final.
-- **Hebrew copy for multi-group classification** — the general uploader
-  notice card, its "what was found" details, the three new onboarding rows
-  and the settings rows (`content-categories.md` §6). Drafts live in
-  `docs/plans/classifier-cascade.md`; product copy is Eli's.
+- ~~**Female default for the `sex` level**~~ — **resolved 2026-11-01**: Eli
+  confirmed `max_sex_level = 1` (modest women visible, immodest not).
+- ~~**Hebrew copy for multi-group classification**~~ — **resolved
+  2026-11-01**: Eli accepted the plan's copy for the general notice card, the
+  "what was found" details and the three onboarding rows (shipped in
+  `packages/shared-types/src/moderation-copy.ts` and onboarding `copy.ts`).
+  The settings-screen rows come with the settings screen (Phase 6).
+- **Onboarding women row is yes/no** — it reads `contentLevels.sex === 0`, so
+  for a woman at level 1 it shows "off" although immodest content stays
+  hidden. Level 1 vs 2 is only expressible on the future settings screen.
+- **Feed notice names the union of groups** across a post's media, while its
+  remove/appeal actions target the first filtered item (pre-existing).
+- ~~**Avatar opt-out with four groups**~~ — **resolved 2026-11-02**: Eli
+  decided `filterAppliesToAvatars: false` lifts the `sex` group only
+  (`content-categories.md` §4).
 - **Product-spec entries for violence / religion / addictions** — the master
   spec covers women only; ADR 0018 is the authority until Eli writes the spec
   text (`docs/product/`).
 - **Dedupe and moderator overrides** — a moderator re-levelling a source
-  image does not propagate to hash-identical copies (ADR 0019).
+  image does not propagate to hash-identical copies (ADR 0019). Dedupe reuses
+  a verdict on exact SHA-256 only (ADR 0019 amendment, Eli 2026-11-02).
+- **Region blur on deduped items** — a deduped `contains_women` copy skips
+  the redaction stage, so it has no blurred derivative (fails safe; blur is
+  off). Decide before switching blur on.
 
 - Exact AI confidence thresholds — placeholder direction is conservative
   toward over-flagging rather than under-flagging (`07-moderation-spec.md` §2.1).
