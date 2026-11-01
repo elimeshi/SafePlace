@@ -2,6 +2,8 @@ import type {
   CommentContext,
   ContentAudience,
   ContentExposure,
+  ContentGroup,
+  ContentLevels,
   DiscoverableInSearch,
   FeedPlacement,
   FilterSettings,
@@ -12,7 +14,7 @@ import type {
   PostContext,
   Viewer,
 } from "./types";
-import { DEFAULT_FILTER_SETTINGS } from "./types";
+import { CONTENT_GROUPS, DEFAULT_FILTER_SETTINGS } from "./types";
 
 /**
  * Axis 1: does the viewer satisfy the content's intended exposure circle?
@@ -167,45 +169,45 @@ export function canSuggestUserToFollow(
 }
 
 /**
- * Axis 2: does the viewer's personal filter settings permit this
- * classification — independent of exposure, and independent of who
- * uploaded it. See visibility-model.md §3.
+ * Axis 2: does the viewer's personal filter settings permit this media's
+ * per-group levels (ADR 0018) — independent of exposure, and independent of
+ * who uploaded it. See visibility-model.md §3.
  *
- * Family Space context lifts this check entirely (visibility-model.md §8)
- * — but note exposure (Axis 1) above is NOT lifted; a Family Space post is
- * still only visible to Family Space members.
+ * Family Space context lifts the sex group only (visibility-model.md §8,
+ * ADR 0018 §4) — and exposure (Axis 1) above is NOT lifted; a Family Space
+ * post is still only visible to Family Space members.
  */
 export function viewerSatisfiesClassification(
   viewer: Viewer,
-  classification: MediaClassification,
+  media: { classification: MediaClassification; levels: ContentLevels | null },
   isWithinViewersFamilySpace: boolean
 ): boolean {
-  if (isWithinViewersFamilySpace) return true;
-
-  switch (classification) {
-    case "general":
-      return true;
+  switch (media.classification) {
     case "unclassified":
-      // Fail CLOSED until the pipeline resolves the item. Classification is
-      // asynchronous (moderation-pipeline.md §2), so there is a window
-      // between upload and the worker's write in which nothing is known
-      // about the content — serving the original during that window would
-      // show a filtered viewer exactly what the filter exists to withhold.
+    case "pending_review":
+      // Fail CLOSED: nothing is known, or a human has not decided. No viewer
+      // setting can opt into either, and a Family Space does not lift it.
       //
       // This withholds the reference, not the row: media_items stays
-      // SELECTable so the UI can render a "processing" state (distinguished
-      // from the filtered state by the classification value it is served
-      // alongside). The uploader is unaffected — canViewMedia short-circuits
-      // for them before this axis is evaluated.
+      // SELECTable so the UI can render a "processing" state. The uploader is
+      // unaffected — canViewMedia short-circuits for them before this axis.
       return false;
-    case "pending_review":
-      // Frozen until a moderator decides. This pure axis returns false for
-      // everyone; the uploader's own view is granted by canViewMedia's
-      // uploader short-circuit (they always see their own content).
-      return false;
+    case "general":
     case "contains_women":
-      return !viewer.filterSettings.hideContentWithWomen;
+      break;
   }
+  // A resolved row always carries levels (DB CHECK); a null here is a defect
+  // upstream and is withheld rather than guessed at.
+  if (media.levels === null) return false;
+
+  const max = viewer.filterSettings.contentLevels;
+  for (const g of CONTENT_GROUPS) {
+    // The Family Space exception is about modesty between relatives (invariant
+    // #6, ADR 0018 §4). It lifts the sex group and nothing else.
+    if (g === "sex" && isWithinViewersFamilySpace) continue;
+    if (media.levels[g] > max[g]) return false;
+  }
+  return true;
 }
 
 /**
@@ -225,11 +227,7 @@ export function canViewMedia(
 
   return (
     viewerSatisfiesExposure(viewer, media.exposure) &&
-    viewerSatisfiesClassification(
-      viewer,
-      media.classification,
-      media.isWithinViewersFamilySpace
-    )
+    viewerSatisfiesClassification(viewer, media, media.isWithinViewersFamilySpace)
   );
 }
 
@@ -241,17 +239,13 @@ export function canViewMedia(
  */
 export function canViewProfilePhoto(
   viewer: Viewer,
-  photo: { classification: MediaClassification; ownerId: string }
+  photo: { classification: MediaClassification; levels: ContentLevels | null; ownerId: string }
 ): boolean {
   // The owner always sees their own profile photo (same principle as
   // canViewMedia's uploader rule).
   if (viewer.userId === photo.ownerId) return true;
   if (!viewer.filterSettings.filterAppliesToAvatars) return true;
-  return viewerSatisfiesClassification(
-    viewer,
-    photo.classification,
-    /* isWithinViewersFamilySpace */ false
-  );
+  return viewerSatisfiesClassification(viewer, photo, /* isWithinViewersFamilySpace */ false);
 }
 
 /**
@@ -302,8 +296,23 @@ export function resolveDefaultFilterSettings(gender: Gender): FilterSettings {
 export type UploaderMediaState =
   | "processing" // queued or in flight — not yet visible to others
   | "under_review" // frozen for human moderation
-  | "filtered_for_some_viewers" // classified as containing women; notice applies
+  | "filtered_for_some_viewers" // some group at level ≥ 1 the uploader is told about
   | "published";
+
+/**
+ * Which groups the uploader is told about. Every group at level ≥ 1 — except
+ * that `sex` is reported to a male uploader only: master spec §4.4.2 carries an
+ * explicit ⏳ over whether a woman uploading content containing women should be
+ * told, and an open question is not answered in code. Single place to change.
+ *
+ * Note this affects only what the uploader is TOLD. The filtering mechanism
+ * itself is identical regardless of who uploaded the media — the product
+ * classifies content, never users (invariant #1).
+ */
+export function noticeGroupsFor(levels: ContentLevels | null, uploaderGender: Gender): ContentGroup[] {
+  if (levels === null) return [];
+  return CONTENT_GROUPS.filter((g) => levels[g] >= 1 && (g !== "sex" || uploaderGender === "male"));
+}
 
 /**
  * Note what this is NOT: it never says the upload was blocked or rejected,
@@ -312,6 +321,7 @@ export type UploaderMediaState =
  */
 export function resolveUploaderMediaState(
   classification: MediaClassification,
+  levels: ContentLevels | null,
   uploaderGender: Gender
 ): UploaderMediaState {
   switch (classification) {
@@ -320,33 +330,9 @@ export function resolveUploaderMediaState(
     case "pending_review":
       return "under_review";
     case "general":
-      return "published";
     case "contains_women":
-      return shouldShowWomenDetectedNotice(classification, uploaderGender)
-        ? "filtered_for_some_viewers"
-        : "published";
+      return noticeGroupsFor(levels, uploaderGender).length > 0 ? "filtered_for_some_viewers" : "published";
   }
-}
-
-/**
- * Whether to show the neutral "women were identified in this media" notice
- * (master spec §3.5 / §4.4.2 — exact copy in @safeplace/shared-types).
- *
- * Shown to a male uploader only. That asymmetry is a deliberate gap, not a
- * rule: §4.4.2 carries an explicit ⏳ over whether a parallel notice should be
- * shown to a woman uploading content containing women, and an open question is
- * not an invitation to answer it in code. If that question is decided, this is
- * the single place that changes.
- *
- * Note this affects only what the uploader is TOLD. The filtering mechanism
- * itself is identical regardless of who uploaded the media — the product
- * classifies content, never users (invariant #1).
- */
-export function shouldShowWomenDetectedNotice(
-  classification: MediaClassification,
-  uploaderGender: Gender
-): boolean {
-  return classification === "contains_women" && uploaderGender === "male";
 }
 
 /**

@@ -152,6 +152,8 @@ export interface Viewer {
 
 export interface MediaItemContext {
   classification: MediaClassification;
+  /** Resolved per-group levels; null until classified (and null ⇒ withheld). */
+  levels: ContentLevels | null;
   exposure: ContentExposure;
   /**
    * The id of the user who uploaded this media. The uploader always sees their
@@ -161,9 +163,9 @@ export interface MediaItemContext {
   uploaderId: string;
   /**
    * True if this media is being evaluated within the context of a
-   * confirmed Family Space the viewer belongs to. When true, standard
-   * classification-based filtering is lifted for this item — see
-   * visibility-model.md §8. This must be computed from the actual
+   * confirmed Family Space the viewer belongs to. When true, the sex group's
+   * filtering is lifted for this item, and nothing else — see
+   * visibility-model.md §8 and ADR 0018 §4. This must be computed from the actual
    * space/membership relationship, never inferred from exposure alone.
    */
   isWithinViewersFamilySpace: boolean;

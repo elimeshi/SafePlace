@@ -7,11 +7,10 @@ import {
   canViewProfilePhoto,
   resolveDefaultFilterSettings,
   resolveUploaderMediaState,
-  shouldShowWomenDetectedNotice,
   viewerSatisfiesClassification,
   viewerSatisfiesExposure,
 } from "../rules";
-import type { ContentAudience, FilterSettings, Viewer } from "../types";
+import type { ContentAudience, ContentLevels, FilterSettings, Viewer } from "../types";
 
 function makeViewer(overrides: Partial<Viewer> = {}): Viewer {
   return {
@@ -27,6 +26,16 @@ function makeViewer(overrides: Partial<Viewer> = {}): Viewer {
     ...overrides,
   };
 }
+
+/** A male-default viewer with filter overrides; the derived flag follows contentLevels.sex. */
+function viewer(over: Partial<FilterSettings> = {}): Viewer {
+  const fs = { ...resolveDefaultFilterSettings("male"), ...over };
+  return makeViewer({ filterSettings: { ...fs, hideContentWithWomen: fs.contentLevels.sex === 0 } });
+}
+
+const lv = (over: Partial<ContentLevels> = {}): ContentLevels => ({ sex: 0, violence: 0, religion: 0, addictions: 0, ...over });
+/** contentLevels with only the sex maximum changed (the old hideContentWithWomen toggle). */
+const sexMax = (sex: 0 | 1) => ({ ...resolveDefaultFilterSettings("male").contentLevels, sex });
 
 /** Single-audience shorthand for the original per-kind exposure cases. */
 const satisfies = (v: Viewer, a: ContentAudience) =>
@@ -104,13 +113,8 @@ describe("viewerSatisfiesExposure", () => {
 });
 
 describe("viewerSatisfiesClassification", () => {
-  it("always shows general content", () => {
-    const viewer = makeViewer({
-      filterSettings: { ...resolveDefaultFilterSettings("male") },
-    });
-    expect(viewerSatisfiesClassification(viewer, "general", false)).toBe(
-      true
-    );
+  it("always shows general content with every level at 0", () => {
+    expect(viewerSatisfiesClassification(viewer(), { classification: "general", levels: lv() }, false)).toBe(true);
   });
 
   it("withholds unclassified content from everyone but the uploader", () => {
@@ -121,73 +125,32 @@ describe("viewerSatisfiesClassification", () => {
     // withhold. The row stays visible (so the UI can render "processing"),
     // only the underlying reference is withheld — the uploader's own view
     // is granted by canViewMedia's uploader short-circuit.
-    const viewer = makeViewer();
-    expect(
-      viewerSatisfiesClassification(viewer, "unclassified", false)
-    ).toBe(false);
+    expect(viewerSatisfiesClassification(viewer(), { classification: "unclassified", levels: null }, false)).toBe(false);
   });
 
   it("withholds unclassified content even from a viewer with the filter off", () => {
     // Not a filter decision — nobody can know what the item contains yet.
-    const viewer = makeViewer({
-      filterSettings: {
-        ...resolveDefaultFilterSettings("male"),
-        hideContentWithWomen: false,
-      },
-    });
-    expect(
-      viewerSatisfiesClassification(viewer, "unclassified", false)
-    ).toBe(false);
-  });
-
-  it("lifts the unclassified hold inside a family space", () => {
-    const viewer = makeViewer();
-    expect(
-      viewerSatisfiesClassification(viewer, "unclassified", true)
-    ).toBe(true);
+    const v = viewer({ contentLevels: sexMax(1) });
+    expect(viewerSatisfiesClassification(v, { classification: "unclassified", levels: null }, false)).toBe(false);
   });
 
   it("hides pending_review content from everyone by default", () => {
-    const viewer = makeViewer();
-    expect(
-      viewerSatisfiesClassification(viewer, "pending_review", false)
-    ).toBe(false);
+    expect(viewerSatisfiesClassification(viewer(), { classification: "pending_review", levels: null }, false)).toBe(false);
   });
 
   it("hides contains_women content from a viewer with the filter on", () => {
-    const viewer = makeViewer({
-      filterSettings: {
-        ...resolveDefaultFilterSettings("male"),
-        hideContentWithWomen: true,
-      },
-    });
-    expect(
-      viewerSatisfiesClassification(viewer, "contains_women", false)
-    ).toBe(false);
+    const v = viewer({ contentLevels: sexMax(0) });
+    expect(viewerSatisfiesClassification(v, { classification: "contains_women", levels: lv({ sex: 1 }) }, false)).toBe(false);
   });
 
   it("shows contains_women content from a viewer with the filter off", () => {
-    const viewer = makeViewer({
-      filterSettings: {
-        ...resolveDefaultFilterSettings("male"),
-        hideContentWithWomen: false,
-      },
-    });
-    expect(
-      viewerSatisfiesClassification(viewer, "contains_women", false)
-    ).toBe(true);
+    const v = viewer({ contentLevels: sexMax(1) });
+    expect(viewerSatisfiesClassification(v, { classification: "contains_women", levels: lv({ sex: 1 }) }, false)).toBe(true);
   });
 
-  it("the Family Space exception lifts classification filtering entirely", () => {
-    const viewer = makeViewer({
-      filterSettings: {
-        ...resolveDefaultFilterSettings("male"),
-        hideContentWithWomen: true,
-      },
-    });
-    expect(
-      viewerSatisfiesClassification(viewer, "contains_women", true)
-    ).toBe(true);
+  it("the Family Space exception lifts the women filter", () => {
+    const v = viewer({ contentLevels: sexMax(0) });
+    expect(viewerSatisfiesClassification(v, { classification: "contains_women", levels: lv({ sex: 1 }) }, true)).toBe(true);
   });
 });
 
@@ -198,6 +161,7 @@ describe("canViewMedia — both axes combined", () => {
     expect(
       canViewMedia(filteredMaleViewer, {
         classification: "contains_women",
+        levels: lv({ sex: 1 }),
         exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "author-1",
@@ -208,6 +172,7 @@ describe("canViewMedia — both axes combined", () => {
     expect(
       canViewMedia(filteredMaleViewer, {
         classification: "general",
+        levels: lv(),
         exposure: [{ kind: "group", groupId: "some-other-group" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "author-1",
@@ -218,6 +183,7 @@ describe("canViewMedia — both axes combined", () => {
     expect(
       canViewMedia(filteredMaleViewer, {
         classification: "general",
+        levels: lv(),
         exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "author-1",
@@ -238,6 +204,7 @@ describe("the uploader always sees their own content", () => {
     expect(
       canViewMedia(viewer, {
         classification: "contains_women",
+        levels: lv({ sex: 1 }),
         exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "me",
@@ -250,6 +217,7 @@ describe("the uploader always sees their own content", () => {
     expect(
       canViewMedia(viewer, {
         classification: "pending_review",
+        levels: null,
         exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "me",
@@ -268,6 +236,7 @@ describe("the uploader always sees their own content", () => {
     expect(
       canViewMedia(viewer, {
         classification: "contains_women",
+        levels: lv({ sex: 1 }),
         exposure: [{ kind: "public" }],
         isWithinViewersFamilySpace: false,
         uploaderId: "me",
@@ -279,6 +248,7 @@ describe("the uploader always sees their own content", () => {
 describe("canViewMedia — unclassified (pipeline in flight)", () => {
   const unclassifiedPost = {
     classification: "unclassified" as const,
+    levels: null,
     exposure: [{ kind: "public" }] as const,
     uploaderId: "author-1",
     isWithinViewersFamilySpace: false,
@@ -307,6 +277,7 @@ describe("canViewProfilePhoto", () => {
     expect(
       canViewProfilePhoto(viewer, {
         classification: "contains_women",
+        levels: lv({ sex: 1 }),
         ownerId: "someone-else",
       })
     ).toBe(true);
@@ -323,6 +294,7 @@ describe("canViewProfilePhoto", () => {
     expect(
       canViewProfilePhoto(viewer, {
         classification: "contains_women",
+        levels: lv({ sex: 1 }),
         ownerId: "someone-else",
       })
     ).toBe(false);
@@ -340,6 +312,7 @@ describe("canViewProfilePhoto", () => {
     expect(
       canViewProfilePhoto(viewer, {
         classification: "contains_women",
+        levels: lv({ sex: 1 }),
         ownerId: "me",
       })
     ).toBe(true);
@@ -402,6 +375,7 @@ describe("resolveDefaultFilterSettings", () => {
     const a = resolveDefaultFilterSettings("male");
     const b = resolveDefaultFilterSettings("male");
     expect(a).not.toBe(b);
+    expect(a.contentLevels).not.toBe(b.contentLevels);
     expect(a).toEqual(b);
   });
 });
@@ -412,6 +386,7 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
     expect(
       canViewProfilePhoto(viewer, {
         classification: "unclassified",
+        levels: null,
         ownerId: "owner-1",
       })
     ).toBe(false);
@@ -422,6 +397,7 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
     expect(
       canViewProfilePhoto(viewer, {
         classification: "unclassified",
+        levels: null,
         ownerId: "owner-1",
       })
     ).toBe(true);
@@ -438,6 +414,7 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
     expect(
       canViewProfilePhoto(viewer, {
         classification: "unclassified",
+        levels: null,
         ownerId: "owner-1",
       })
     ).toBe(true);
@@ -446,19 +423,19 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
 
 describe("resolveUploaderMediaState", () => {
   it("reports media still in the pipeline as processing", () => {
-    expect(resolveUploaderMediaState("unclassified", "male")).toBe("processing");
+    expect(resolveUploaderMediaState("unclassified", null, "male")).toBe("processing");
   });
 
   it("reports frozen media as under review", () => {
-    expect(resolveUploaderMediaState("pending_review", "female")).toBe("under_review");
+    expect(resolveUploaderMediaState("pending_review", null, "female")).toBe("under_review");
   });
 
   it("reports approved media as published", () => {
-    expect(resolveUploaderMediaState("general", "male")).toBe("published");
+    expect(resolveUploaderMediaState("general", lv(), "male")).toBe("published");
   });
 
   it("tells a male uploader their media will be filtered for many viewers", () => {
-    expect(resolveUploaderMediaState("contains_women", "male")).toBe(
+    expect(resolveUploaderMediaState("contains_women", lv({ sex: 1 }), "male")).toBe(
       "filtered_for_some_viewers"
     );
   });
@@ -467,23 +444,7 @@ describe("resolveUploaderMediaState", () => {
     // master spec §4.4.2 carries an explicit ⏳: whether a parallel notice
     // should be shown to a woman uploading content with women is deferred, so
     // the product does not invent an answer here.
-    expect(resolveUploaderMediaState("contains_women", "female")).toBe("published");
-  });
-});
-
-describe("shouldShowWomenDetectedNotice", () => {
-  it("is shown to a male uploader when the media is classified as containing women", () => {
-    expect(shouldShowWomenDetectedNotice("contains_women", "male")).toBe(true);
-  });
-
-  it("is not shown for any other classification", () => {
-    for (const c of ["general", "unclassified", "pending_review"] as const) {
-      expect(shouldShowWomenDetectedNotice(c, "male")).toBe(false);
-    }
-  });
-
-  it("is not shown to a female uploader pending that open question", () => {
-    expect(shouldShowWomenDetectedNotice("contains_women", "female")).toBe(false);
+    expect(resolveUploaderMediaState("contains_women", lv({ sex: 1 }), "female")).toBe("published");
   });
 });
 
@@ -493,5 +454,30 @@ describe("canViewFamilySpaceMemberCount", () => {
     expect(canViewFamilySpaceMemberCount(member, "s1")).toBe(true);
     expect(canViewFamilySpaceMemberCount(member, "s2")).toBe(false);
     expect(canViewFamilySpaceMemberCount(makeViewer(), "s1")).toBe(false);
+  });
+});
+
+describe("per-group levels (ADR 0018)", () => {
+  it("withholds a resolved item whose levels are null (fail closed)", () => {
+    expect(viewerSatisfiesClassification(viewer(), { classification: "general", levels: null }, false)).toBe(false);
+  });
+  it("a level above the viewer's maximum withholds; at or below shows", () => {
+    const v = viewer({ contentLevels: { sex: 0, violence: 1, religion: 0, addictions: 0 } });
+    expect(viewerSatisfiesClassification(v, { classification: "general", levels: lv({ violence: 1 }) }, false)).toBe(true);
+    expect(viewerSatisfiesClassification(v, { classification: "general", levels: lv({ violence: 2 }) }, false)).toBe(false);
+  });
+  it("contains_women is the sex axis: hidden at max 0, shown at max 1", () => {
+    const m = { classification: "contains_women" as const, levels: lv({ sex: 1 }) };
+    expect(viewerSatisfiesClassification(viewer({ contentLevels: { sex: 0, violence: 0, religion: 0, addictions: 0 } }), m, false)).toBe(false);
+    expect(viewerSatisfiesClassification(viewer({ contentLevels: { sex: 1, violence: 0, religion: 0, addictions: 0 } }), m, false)).toBe(true);
+  });
+  it("a Family Space lifts sex only", () => {
+    const v = viewer({ contentLevels: { sex: 0, violence: 0, religion: 0, addictions: 0 } });
+    expect(viewerSatisfiesClassification(v, { classification: "contains_women", levels: lv({ sex: 2 }) }, true)).toBe(true);
+    expect(viewerSatisfiesClassification(v, { classification: "general", levels: lv({ violence: 1 }) }, true)).toBe(false);
+  });
+  it("pending_review and unclassified stay withheld whatever the levels", () => {
+    expect(viewerSatisfiesClassification(viewer(), { classification: "pending_review", levels: lv() }, true)).toBe(false);
+    expect(viewerSatisfiesClassification(viewer(), { classification: "unclassified", levels: null }, true)).toBe(false);
   });
 });

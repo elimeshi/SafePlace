@@ -98,6 +98,7 @@ export function resolveUploaderMediaViews(
   return media.map((item) => ({
     id: item.id,
     classification: item.classification,
-    state: resolveUploaderMediaState(item.classification, uploaderGender),
+    // Levels are not read from the DB yet (Task 12), so no group is reported.
+    state: resolveUploaderMediaState(item.classification, null, uploaderGender),
   }));
 }
