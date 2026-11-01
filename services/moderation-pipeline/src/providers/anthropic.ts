@@ -7,7 +7,6 @@
  * no test run spends money.
  */
 import Anthropic from "@anthropic-ai/sdk";
-import { jsonSchemaOutputFormat } from "@anthropic-ai/sdk/helpers/json-schema";
 import sharp from "sharp";
 import { CONTENT_GROUPS, MAX_LEVEL_BY_GROUP } from "@safeplace/visibility-policy";
 import {
@@ -26,7 +25,7 @@ import {
 } from "../classifier";
 
 /**
- * The narrow slice of the SDK the classifier uses. A port for injection, not a
+ * The narrow slice of the SDK the localizer uses. A port for injection, not a
  * re-declaration of the SDK's types — production passes a real Anthropic
  * client straight in.
  */
@@ -34,6 +33,21 @@ export interface MessagesParseClient {
   messages: {
     parse(params: Record<string, unknown>): Promise<{
       parsed_output?: unknown;
+      stop_reason?: string | null;
+    }>;
+  };
+}
+
+/**
+ * What the classifier uses: `create`, not `parse`. The SDK's `parse` runs
+ * JSON.parse on the text before we can read stop_reason and throws an error
+ * quoting the model's prose, which would defeat refusal handling and leak
+ * model text into the retry/last_error path (ADR 0011).
+ */
+export interface MessagesCreateClient {
+  messages: {
+    create(params: Record<string, unknown>): Promise<{
+      content?: Array<{ type: string; text?: string }>;
       stop_reason?: string | null;
       usage?: {
         input_tokens?: number;
@@ -53,8 +67,8 @@ export interface ClassifierUsage {
 }
 
 export interface AnthropicClassifierOptions {
-  client: MessagesParseClient;
-  /** Read from config (VISION_MODEL_ID) — never hardcoded upstream. */
+  client: MessagesCreateClient;
+  /** Read from config (pipeline_config.model_id) — never hardcoded upstream. */
   modelId: string;
   /** Hard ceiling on what is read from storage. Defaults to 10 MB. */
   maxImageBytes?: number;
@@ -77,13 +91,13 @@ const MAX_TOKENS = 256;
  * Shrink before sending: Haiku 5.5 is a high-resolution-tier model and bills
  * ceil(w/28)*ceil(h/28) visual tokens, so a 1920x1080 phone photo costs 2,691
  * tokens unresized and ~784 at 768 px. Classification does not need the
- * pixels. If sharp cannot read the bytes, the original is sent as-is.
+ * pixels. If sharp cannot decode the bytes (e.g. HEIC, which the API rejects
+ * too) the result is null and the caller decides nothing without a paid call.
  */
 async function prepareImage(
   bytes: Uint8Array,
-  contentType: string,
   maxLongEdge: number
-): Promise<{ data: string; mediaType: string }> {
+): Promise<{ data: string; mediaType: string } | null> {
   try {
     const out = await sharp(Buffer.from(bytes), { animated: false })
       .rotate()
@@ -92,7 +106,7 @@ async function prepareImage(
       .toBuffer();
     return { data: out.toString("base64"), mediaType: "image/jpeg" };
   } catch {
-    return { data: Buffer.from(bytes).toString("base64"), mediaType: contentType };
+    return null;
   }
 }
 
@@ -104,8 +118,10 @@ function readGroup(raw: unknown, group: (typeof CONTENT_GROUPS)[number]): GroupV
     return UNCERTAIN_VERDICT;
   }
   if (level === "uncertain") return { level: "uncertain", confidence: 0 };
-  const n = typeof level === "string" ? Number(level) : NaN;
-  if (!Number.isInteger(n) || n < 0 || n > MAX_LEVEL_BY_GROUP[group]) return UNCERTAIN_VERDICT;
+  // Exactly one digit: Number() would accept "", " ", "1.0", " 1", "0x1".
+  if (typeof level !== "string" || !/^[0-3]$/.test(level)) return UNCERTAIN_VERDICT;
+  const n = Number(level);
+  if (n > MAX_LEVEL_BY_GROUP[group]) return UNCERTAIN_VERDICT;
   return { level: n as 0 | 1 | 2 | 3, confidence };
 }
 
@@ -132,12 +148,14 @@ export function createAnthropicClassifier(
       // goes to a human instead of looping through the backoff schedule.
       if (input.bytes.byteLength > maxImageBytes) return allUncertain();
 
-      const image = await prepareImage(input.bytes, input.contentType, maxLongEdge);
+      const image = await prepareImage(input.bytes, maxLongEdge);
+      // Undecodable: the API would 400 and the worker would retry it, paid, 5 times.
+      if (!image) return allUncertain();
 
       // A transport failure is deliberately NOT caught here. Nothing was
       // decided, so the worker should retry with backoff — which is a
       // different outcome from the model returning something unusable.
-      const response = await options.client.messages.parse({
+      const response = await options.client.messages.create({
         model: options.modelId,
         max_tokens: MAX_TOKENS,
         // Cached: the rubric is the same bytes on every call and is > 512 tokens,
@@ -153,23 +171,35 @@ export function createAnthropicClassifier(
           },
         ],
         // Haiku 5.5 defaults to medium effort; classification is a low-effort route.
-        output_config: { effort: "low", format: jsonSchemaOutputFormat(CLASSIFIER_OUTPUT_SCHEMA) },
+        output_config: { effort: "low", format: { type: "json_schema", schema: CLASSIFIER_OUTPUT_SCHEMA } },
       });
 
       if (response.usage && options.onUsage) {
-        options.onUsage({
-          inputTokens: response.usage.input_tokens ?? 0,
-          cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
-          cacheCreationInputTokens: response.usage.cache_creation_input_tokens ?? 0,
-          outputTokens: response.usage.output_tokens ?? 0,
-        });
+        try {
+          options.onUsage({
+            inputTokens: response.usage.input_tokens ?? 0,
+            cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
+            cacheCreationInputTokens: response.usage.cache_creation_input_tokens ?? 0,
+            outputTokens: response.usage.output_tokens ?? 0,
+          });
+        } catch {
+          // Accounting must never fail a classification and cause a paid retry.
+        }
       }
 
       // A refusal is a verdict of its own kind (ADR 0018 §5): the model saw
       // something it would not describe. A human looks; it is never retried.
       if (response.stop_reason === "refusal") return { kind: "refused" };
       if (response.stop_reason === "max_tokens") return allUncertain();
-      return readOutput(response.parsed_output ?? null);
+
+      // Parse only after stop_reason. Model text is never put in an error or a log.
+      const text = response.content?.find((b) => b.type === "text")?.text;
+      if (typeof text !== "string") return allUncertain();
+      try {
+        return readOutput(JSON.parse(text));
+      } catch {
+        return allUncertain();
+      }
     },
   };
 }
@@ -187,7 +217,7 @@ export function createAnthropicClassifierFromConfig(
 ): ClassifierProvider {
   const client = new Anthropic({ apiKey: options.apiKey });
   return createAnthropicClassifier({
-    client: client as unknown as MessagesParseClient,
+    client: client as unknown as MessagesCreateClient,
     modelId: options.modelId,
     maxImageBytes: options.maxImageBytes,
     onUsage: options.onUsage,
