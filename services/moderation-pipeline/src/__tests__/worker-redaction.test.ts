@@ -30,6 +30,7 @@ function harness(options: {
     claim: async () => [
       { mediaItemId: "m1", storagePath: "u/1.jpg", contentType: "image/jpeg" } as ClaimedJob,
     ],
+    findResolvedByHash: async () => null,
     complete: async (r) => {
       completed.push(r.classification);
     },

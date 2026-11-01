@@ -12,6 +12,9 @@ import { createTestDb, type TestDb } from "../harness";
 import { insertPublicPost, seedFixtures, USER } from "../seed";
 
 let db: TestDb;
+// A resolved completion must carry levels (ADR 0018).
+const LEVELS_SEX_1 = JSON.stringify({ sex: 1, violence: 0, religion: 0, addictions: 0 });
+const LEVELS_NONE = JSON.stringify({ sex: 0, violence: 0, religion: 0, addictions: 0 });
 const author = USER.author;
 const other = USER.maleFiltered;
 
@@ -202,8 +205,8 @@ describe("completing a job", () => {
     );
     await db.asService((q) =>
       q.query(
-        `select moderation.complete_classification_job($1, 'contains_women', $2, $3, $4, $5, $6)`,
-        [mediaId, "stub", "stub-v1", "woman_present", 0.93, 0.965]
+        `select moderation.complete_classification_job($1, 'contains_women', $2, $3, $4, $5, $6, $7::jsonb)`,
+        [mediaId, "stub", "stub-v1", "woman_present", 0.93, 0.965, LEVELS_SEX_1]
       )
     );
 
@@ -244,8 +247,8 @@ describe("completing a job", () => {
     const complete = (cls: string) =>
       db.asService((q) =>
         q.query(
-          `select moderation.complete_classification_job($1, $2::media_classification, $3, $4, $5, $6, $7)`,
-          [mediaId, cls, "stub", "stub-v1", "no_woman", 0.9, 0.05]
+          `select moderation.complete_classification_job($1, $2::media_classification, $3, $4, $5, $6, $7, $8::jsonb)`,
+          [mediaId, cls, "stub", "stub-v1", "no_woman", 0.9, 0.05, LEVELS_NONE]
         )
       );
     await complete("general");
@@ -267,7 +270,7 @@ describe("completing a job", () => {
     );
     await db.asService((q) =>
       q.query(
-        `select moderation.complete_classification_job($1, 'pending_review', $2, $3, $4, $5, $6)`,
+        `select moderation.complete_classification_job($1, 'pending_review', $2, $3, $4, $5, $6, null)`,
         [mediaId, "stub", "stub-v1", "uncertain", 0.2, 0.5]
       )
     );

@@ -41,6 +41,7 @@ export {
 export {
   createAnthropicClassifier,
   createAnthropicClassifierFromConfig,
+  type ClassifierUsage,
 } from "./providers/anthropic";
 
 export {
@@ -76,9 +77,12 @@ export {
   type JobStore,
   type Logger,
   type MediaFetcher,
+  type ResolvedByHash,
   type WorkerDeps,
   type WorkerLogEntry,
 } from "./worker";
+
+export { resolvedFromRow, type ResolvedRow } from "./supabase-store";
 
 export {
   sweepOrphans,

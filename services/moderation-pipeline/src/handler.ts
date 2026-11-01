@@ -7,7 +7,12 @@
  * `node --run dev` behind any tiny server.
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { createAnthropicClassifierFromConfig } from "./providers/anthropic";
+import {
+  createAnthropicClassifierFromConfig,
+  type ClassifierUsage,
+} from "./providers/anthropic";
+import { createEscalatingClassifier } from "./providers/escalating";
+import { DEFAULT_THRESHOLDS, type ClassificationThresholds } from "./classification";
 import { createStubClassifier, type ClassifierProvider } from "./classifier";
 import {
   createSupabaseDerivativeStore,
@@ -37,31 +42,6 @@ export interface PipelineEnv {
  * mark every upload 'uncertain', bury the review queue, and look healthy
  * while doing it.
  */
-export function resolveClassifierFromEnv(
-  env: PipelineEnv,
-  modelId = "claude-haiku-4-5"
-): ClassifierProvider {
-  const name = env.VISION_MODEL_PROVIDER?.trim() || "stub";
-
-  switch (name) {
-    case "stub":
-      return createStubClassifier();
-    case "anthropic": {
-      if (!env.VISION_MODEL_API_KEY) {
-        throw new Error(
-          "VISION_MODEL_API_KEY is required when VISION_MODEL_PROVIDER=anthropic"
-        );
-      }
-      return createAnthropicClassifierFromConfig({
-        apiKey: env.VISION_MODEL_API_KEY,
-        modelId,
-      });
-    }
-    default:
-      throw new Error(`Unknown VISION_MODEL_PROVIDER: ${name}`);
-  }
-}
-
 const consoleLogger: Logger = {
   log: (entry) => {
     // One JSON object per line: greppable, and carrying no bytes, no
@@ -69,6 +49,47 @@ const consoleLogger: Logger = {
     console.log(JSON.stringify({ service: "moderation-pipeline", ...entry }));
   },
 };
+
+export function resolveClassifierFromEnv(
+  env: PipelineEnv,
+  modelId = "claude-haiku-5-5",
+  escalationModelId: string | null = null,
+  logger: Logger = consoleLogger,
+  thresholds: ClassificationThresholds = DEFAULT_THRESHOLDS
+): ClassifierProvider {
+  const name = env.VISION_MODEL_PROVIDER?.trim() || "stub";
+
+  switch (name) {
+    case "stub":
+      return createStubClassifier();
+    case "anthropic": {
+      const apiKey = env.VISION_MODEL_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "VISION_MODEL_API_KEY is required when VISION_MODEL_PROVIDER=anthropic"
+        );
+      }
+      // Token counts only — never the model's text (ADR 0011).
+      const onUsage = (usage: ClassifierUsage): void =>
+        logger.log({ event: "usage", mediaItemId: "", usage });
+      const primary = createAnthropicClassifierFromConfig({ apiKey, modelId, onUsage });
+      if (!escalationModelId) return primary;
+      return createEscalatingClassifier({
+        primary,
+        secondary: createAnthropicClassifierFromConfig({
+          apiKey,
+          modelId: escalationModelId,
+          onUsage,
+        }),
+        thresholds,
+        onEscalate: (e) =>
+          logger.log({ event: "escalated", mediaItemId: e.mediaItemId, error: e.groups.join(",") }),
+      });
+    }
+    default:
+      throw new Error(`Unknown VISION_MODEL_PROVIDER: ${name}`);
+  }
+}
 
 /** Run one drain pass against the live project. */
 export async function runClassificationPass(
@@ -88,7 +109,13 @@ export async function runClassificationPass(
   );
 
   const config = await loadPipelineConfig(supabase);
-  const provider = resolveClassifierFromEnv(env, config.modelId);
+  const provider = resolveClassifierFromEnv(
+    env,
+    config.modelId,
+    config.escalationModelId,
+    logger,
+    config.thresholds
+  );
 
   // Only build the redaction stage when the feature is switched on. If nobody
   // will be served a derivative, producing one is two model calls spent on an
@@ -108,8 +135,9 @@ export async function runClassificationPass(
       // Re-classified by the same classifier that flagged it, on purpose: the
       // question asked of the derivative is exactly the question asked of the
       // original, so a model that sees a woman in one and not the other is
-      // telling us something meaningful.
-      recheck: provider,
+      // telling us something meaningful. The primary only: an unclean
+      // recheck already declines, so escalating it would buy nothing.
+      recheck: resolveClassifierFromEnv(env, config.modelId, null, logger),
       maxCoverage: 0.5,
       padding: 0.15,
     };

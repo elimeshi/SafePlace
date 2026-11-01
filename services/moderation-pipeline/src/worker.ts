@@ -15,15 +15,23 @@ import {
   resolveConfidenceBand,
   resolveMediaOutcome,
   type ClassificationThresholds,
+  type ReviewReason,
 } from "./classification";
 import { womanProbabilityFrom, type ClassifierProvider } from "./classifier";
+import { hashMedia, type MediaHashes } from "./hashes";
+import type { ClassifierUsage } from "./providers/anthropic";
 import {
   coverageFraction,
   padRegion,
   type RegionLocalizer,
 } from "./regions";
 import type { ImageRedactor } from "./redactor";
-import type { MediaClassification } from "@safeplace/visibility-policy";
+import {
+  CONTENT_GROUPS,
+  type ContentGroup,
+  type ContentLevels,
+  type MediaClassification,
+} from "@safeplace/visibility-policy";
 
 export interface ClaimedJob {
   mediaItemId: string;
@@ -36,13 +44,32 @@ export interface CompletedClassification {
   classification: MediaClassification;
   provider: string;
   modelId: string;
-  verdict: string;
+  verdict: "levels" | "refused" | "duplicate" | "unsupported_media";
+  /** Min confidence over the four groups when resolved; 0 when pending. */
   confidence: number;
+  /** Sex-axis projection, kept for ADR 0011 continuity. */
   womanProbability: number;
+  levels: ContentLevels | null;
+  reviewReason: ReviewReason | null;
+  /** The model's raw per-group levels (never its free text), for the review queue. */
+  aiLevels: Record<ContentGroup, number | "uncertain"> | null;
+  contentSha256: string | null;
+  contentDhash: string | null;
+}
+
+/** A prior, fully resolved item with the same bytes (ADR 0019). */
+export interface ResolvedByHash {
+  sourceMediaItemId: string;
+  classification: MediaClassification;
+  levels: ContentLevels;
 }
 
 export interface JobStore {
   claim(batchSize: number, workerId: string): Promise<ClaimedJob[]>;
+  findResolvedByHash(
+    hashes: MediaHashes,
+    excludeMediaItemId: string
+  ): Promise<ResolvedByHash | null>;
   complete(result: CompletedClassification): Promise<void>;
   fail(mediaItemId: string, error: string): Promise<void>;
 }
@@ -61,6 +88,9 @@ export interface MediaFetcher {
 export interface WorkerLogEntry {
   event:
     | "classified"
+    | "deduped"
+    | "escalated"
+    | "usage"
     | "failed"
     | "skipped_unsupported"
     | "redacted"
@@ -70,6 +100,8 @@ export interface WorkerLogEntry {
   band?: string;
   durationMs?: number;
   error?: string;
+  /** Token counts only. */
+  usage?: ClassifierUsage;
 }
 
 export interface Logger {
@@ -119,6 +151,11 @@ async function processJob(
       verdict: "unsupported_media",
       confidence: 0,
       womanProbability: 0.5,
+      levels: null,
+      reviewReason: null,
+      aiLevels: null,
+      contentSha256: null,
+      contentDhash: null,
     });
     deps.logger?.log({
       event: "skipped_unsupported",
@@ -131,6 +168,34 @@ async function processJob(
 
   try {
     const bytes = await deps.media.fetch(job.storagePath);
+    const hashes = await hashMedia(bytes);
+
+    // Identical bytes already decided: reuse the verdict, no model call (ADR 0019).
+    const prior = await deps.store.findResolvedByHash(hashes, job.mediaItemId);
+    if (prior) {
+      await deps.store.complete({
+        mediaItemId: job.mediaItemId,
+        classification: prior.classification,
+        provider: "dedupe",
+        modelId: `copy:${prior.sourceMediaItemId}`,
+        verdict: "duplicate",
+        confidence: 1,
+        womanProbability: prior.levels.sex >= 1 ? 1 : 0,
+        levels: prior.levels,
+        reviewReason: null,
+        aiLevels: null,
+        contentSha256: hashes.sha256,
+        contentDhash: hashes.dhash,
+      });
+      deps.logger?.log({
+        event: "deduped",
+        mediaItemId: job.mediaItemId,
+        classification: prior.classification,
+        durationMs: Date.now() - startedAt,
+      });
+      return "classified";
+    }
+
     const output = await deps.provider.classify({
       mediaItemId: job.mediaItemId,
       bytes,
@@ -139,24 +204,37 @@ async function processJob(
 
     const outcome = resolveMediaOutcome(output, deps.thresholds);
     const classification = outcome.classification;
-    const womanProbability = womanProbabilityFrom(output);
+    const aiLevels =
+      output.kind === "refused"
+        ? null
+        : (Object.fromEntries(
+            CONTENT_GROUPS.map((g) => [g, output.groups[g].level])
+          ) as Record<ContentGroup, number | "uncertain">);
+    const confidence =
+      outcome.levels && output.kind === "verdicts"
+        ? Math.min(...CONTENT_GROUPS.map((g) => output.groups[g].confidence))
+        : 0;
 
     await deps.store.complete({
       mediaItemId: job.mediaItemId,
       classification,
       provider: deps.provider.name,
       modelId: deps.modelId,
-      // replaced in Task 11 (store takes levels, not a single verdict)
       verdict: output.kind === "refused" ? "refused" : "levels",
-      confidence: output.kind === "refused" ? 0 : output.groups.sex.confidence,
-      womanProbability,
+      confidence,
+      womanProbability: womanProbabilityFrom(output),
+      levels: outcome.levels,
+      reviewReason: outcome.reviewReason,
+      aiLevels,
+      contentSha256: hashes.sha256,
+      contentDhash: hashes.dhash,
     });
 
     deps.logger?.log({
       event: "classified",
       mediaItemId: job.mediaItemId,
       classification,
-      band: resolveConfidenceBand(womanProbability, deps.thresholds),
+      band: outcome.reviewReason ?? "resolved",
       durationMs: Date.now() - startedAt,
     });
 

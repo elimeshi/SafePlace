@@ -77,7 +77,9 @@ async function served(userId: string, mediaId: string) {
 
 function deps(options: { regions: Region[]; foundAll: boolean; recheckClean: boolean }): WorkerDeps {
   return {
-    store: createPgliteJobStore(db),
+    // Every upload here is the same image; dedupe off so each one reaches the
+    // redaction stage (a deduped item gets no derivative and stays withheld).
+    store: { ...createPgliteJobStore(db), findResolvedByHash: async () => null },
     media: { fetch: async () => image } as MediaFetcher,
     provider: createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.99 } }, 0.99) }),
     modelId: "stub-v1",

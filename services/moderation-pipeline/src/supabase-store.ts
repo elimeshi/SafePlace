@@ -10,7 +10,9 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { MEDIA_BUCKET } from "@safeplace/api-client";
+import { isContentLevels, type MediaClassification } from "@safeplace/visibility-policy";
 import type { ClassificationThresholds } from "./classification";
+import type { MediaHashes } from "./hashes";
 import type { ObjectRemover, OrphanStore } from "./sweep";
 import type {
   ClaimedJob,
@@ -19,6 +21,7 @@ import type {
   JobStore,
   MediaFetcher,
   RedactionRecord,
+  ResolvedByHash,
 } from "./worker";
 
 const MODERATION_SCHEMA = "moderation";
@@ -36,6 +39,8 @@ interface MediaRow {
 export interface PipelineConfig {
   thresholds: ClassificationThresholds;
   modelId: string;
+  /** Second-opinion model for undecided groups; null = escalation off (ADR 0018 §6). */
+  escalationModelId: string | null;
   batchSize: number;
   /** Gates the redaction stage. Off until the feature has product sign-off. */
   regionBlurEnabled: boolean;
@@ -61,6 +66,7 @@ export async function loadPipelineConfig(
         low_max: number;
         high_min: number;
         model_id: string;
+        escalation_model_id: string | null;
         batch_size: number;
         region_blur_enabled: boolean;
       }
@@ -72,6 +78,7 @@ export async function loadPipelineConfig(
   return {
     thresholds: { lowMax: Number(row.low_max), highMin: Number(row.high_min) },
     modelId: row.model_id,
+    escalationModelId: row.escalation_model_id?.trim() || null,
     batchSize: row.batch_size,
     regionBlurEnabled: row.region_blur_enabled === true,
   };
@@ -126,6 +133,29 @@ export function createSupabaseDerivativeStore(
   };
 }
 
+export interface ResolvedRow {
+  media_item_id: string;
+  classification: MediaClassification;
+  sex_level: number | null;
+  violence_level: number | null;
+  religion_level: number | null;
+  addictions_level: number | null;
+}
+
+/** Shared with the PGlite store, so both copy a prior verdict under the same rule. */
+export function resolvedFromRow(row: ResolvedRow | null | undefined): ResolvedByHash | null {
+  if (!row) return null;
+  const levels = {
+    sex: row.sex_level,
+    violence: row.violence_level,
+    religion: row.religion_level,
+    addictions: row.addictions_level,
+  };
+  // A row without full levels is not a verdict to copy.
+  if (!isContentLevels(levels)) return null;
+  return { sourceMediaItemId: row.media_item_id, classification: row.classification, levels };
+}
+
 export function createSupabaseJobStore(supabase: SupabaseClient): JobStore {
   return {
     async claim(batchSize: number, workerId: string): Promise<ClaimedJob[]> {
@@ -176,8 +206,29 @@ export function createSupabaseJobStore(supabase: SupabaseClient): JobStore {
           p_verdict: result.verdict,
           p_confidence: result.confidence,
           p_woman_probability: result.womanProbability,
+          p_levels: result.levels,
+          p_review_reason: result.reviewReason,
+          p_ai_levels: result.aiLevels,
+          p_content_sha256: result.contentSha256,
+          p_content_dhash: result.contentDhash,
         });
       if (error) throw new Error(`complete: ${error.message}`);
+    },
+
+    async findResolvedByHash(
+      hashes: MediaHashes,
+      excludeMediaItemId: string
+    ): Promise<ResolvedByHash | null> {
+      if (!hashes.sha256 && !hashes.dhash) return null;
+      const { data, error } = await supabase
+        .schema(MODERATION_SCHEMA)
+        .rpc("find_resolved_by_hash", {
+          p_sha256: hashes.sha256,
+          p_dhash: hashes.dhash,
+          p_exclude: excludeMediaItemId,
+        });
+      if (error) throw new Error(`dedupe lookup: ${error.message}`);
+      return resolvedFromRow((Array.isArray(data) ? data[0] : data) as ResolvedRow | undefined);
     },
 
     async fail(mediaItemId: string, message: string): Promise<void> {

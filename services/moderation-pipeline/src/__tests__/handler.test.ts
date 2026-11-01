@@ -1,5 +1,51 @@
 import { describe, expect, it, vi } from "vitest";
+import { verdictsOf } from "../classifier";
 import { resolveClassifierFromEnv, createClassificationHandler } from "../handler";
+import type { AnthropicClassifierEnvOptions } from "../providers/anthropic";
+import type { WorkerLogEntry } from "../worker";
+
+// No network in tests: the real factory is swapped for a stub that answers by
+// model id — the primary leaves religion undecided, the escalation settles it.
+vi.mock("../providers/anthropic", () => ({
+  createAnthropicClassifierFromConfig: (o: AnthropicClassifierEnvOptions) => ({
+    name: "anthropic",
+    classify: async () => {
+      o.onUsage?.({ inputTokens: 10, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 5 });
+      return o.modelId === "primary"
+        ? verdictsOf({ religion: { level: "uncertain", confidence: 0 } })
+        : verdictsOf({});
+    },
+  }),
+}));
+
+const input = { mediaItemId: "m1", bytes: new Uint8Array([1]), contentType: "image/jpeg" };
+const anthropicEnv = { VISION_MODEL_PROVIDER: "anthropic", VISION_MODEL_API_KEY: "sk-test" };
+
+describe("resolveClassifierFromEnv — escalation wiring", () => {
+  it("is off when no escalation model is configured", () => {
+    expect(resolveClassifierFromEnv(anthropicEnv, "primary", null).name).toBe("anthropic");
+  });
+
+  it("wraps the primary when an escalation model is configured, and logs usage and escalation", async () => {
+    const entries: WorkerLogEntry[] = [];
+    const provider = resolveClassifierFromEnv(anthropicEnv, "primary", "secondary", {
+      log: (e) => entries.push(e),
+    });
+    expect(provider.name).toBe("anthropic+anthropic");
+
+    const out = await provider.classify(input);
+    expect(out.kind === "verdicts" && out.groups.religion.level).toBe(0);
+    expect(entries).toEqual([
+      { event: "usage", mediaItemId: "", usage: { inputTokens: 10, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 5 } },
+      { event: "escalated", mediaItemId: "m1", error: "religion" },
+      { event: "usage", mediaItemId: "", usage: { inputTokens: 10, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 5 } },
+    ]);
+  });
+
+  it("leaves the stub path alone even when an escalation model is configured", () => {
+    expect(resolveClassifierFromEnv({ VISION_MODEL_PROVIDER: "stub" }, "primary", "secondary").name).toBe("stub");
+  });
+});
 
 /**
  * The worker runs as a stateless endpoint fired by a scheduler (ADR 0009), so

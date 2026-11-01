@@ -1,7 +1,19 @@
+import sharp from "sharp";
 import { describe, expect, it, vi } from "vitest";
+import type { ContentLevels } from "@safeplace/visibility-policy";
 import { createStubClassifier, verdictsOf, type ClassifierProvider } from "../classifier";
 import { DEFAULT_THRESHOLDS } from "../classification";
-import { drainOnce, type JobStore, type MediaFetcher, type ClaimedJob } from "../worker";
+import type { MediaHashes } from "../hashes";
+import {
+  drainOnce,
+  type ClaimedJob,
+  type CompletedClassification,
+  type JobStore,
+  type MediaFetcher,
+  type ResolvedByHash,
+} from "../worker";
+
+const lv = (o: Partial<ContentLevels> = {}): ContentLevels => ({ sex: 0, violence: 0, religion: 0, addictions: 0, ...o });
 
 /**
  * The worker's control flow, exercised against an in-memory store. The SQL it
@@ -10,23 +22,27 @@ import { drainOnce, type JobStore, type MediaFetcher, type ClaimedJob } from "..
  * with it.
  */
 
-function makeStore(jobs: ClaimedJob[]) {
-  const completed: Array<{ mediaItemId: string; classification: string; verdict: string }> = [];
+function makeStore(
+  jobs: ClaimedJob[],
+  opts: { resolved?: (hashes: MediaHashes, excludeId: string) => ResolvedByHash | null } = {}
+) {
+  const completed: CompletedClassification[] = [];
   const failed: Array<{ mediaItemId: string; error: string }> = [];
+  const lookups: Array<{ hashes: MediaHashes; excludeId: string }> = [];
   const store: JobStore = {
     claim: async (batchSize) => jobs.slice(0, batchSize),
+    findResolvedByHash: async (hashes, excludeId) => {
+      lookups.push({ hashes, excludeId });
+      return opts.resolved?.(hashes, excludeId) ?? null;
+    },
     complete: async (result) => {
-      completed.push({
-        mediaItemId: result.mediaItemId,
-        classification: result.classification,
-        verdict: result.verdict,
-      });
+      completed.push(result);
     },
     fail: async (mediaItemId, error) => {
       failed.push({ mediaItemId, error });
     },
   };
-  return { store, completed, failed };
+  return { store, completed, failed, lookups };
 }
 
 const job = (overrides: Partial<ClaimedJob> = {}): ClaimedJob => ({
@@ -56,10 +72,72 @@ describe("drainOnce", () => {
 
     const summary = await drainOnce(deps(provider, store), 10);
 
-    expect(completed).toEqual([
-      { mediaItemId: "m1", classification: "contains_women", verdict: "levels" },
-    ]);
+    expect(completed).toHaveLength(1);
+    expect(completed[0]).toMatchObject({
+      mediaItemId: "m1",
+      classification: "contains_women",
+      verdict: "levels",
+      levels: lv({ sex: 1 }),
+    });
     expect(summary).toMatchObject({ claimed: 1, classified: 1, failed: 0 });
+  });
+
+  it("writes levels, reason and hashes; dedupes an identical image without calling the model", async () => {
+    const bytes = new Uint8Array(
+      await sharp({ create: { width: 16, height: 16, channels: 3, background: "#fff" } }).png().toBuffer()
+    );
+    const { store, completed, lookups } = makeStore([job({ mediaItemId: "m1" }), job({ mediaItemId: "m2" })], {
+      // the second lookup finds the first item
+      resolved: (_h, exclude) =>
+        exclude === "m2" ? { sourceMediaItemId: "m1", classification: "general", levels: lv() } : null,
+    });
+    const provider = createStubClassifier({ fallback: verdictsOf({}) });
+    const classify = vi.spyOn(provider, "classify");
+    await drainOnce(deps(provider, store, fetcher(bytes)), 10);
+
+    expect(classify).toHaveBeenCalledTimes(1);
+    expect(completed[0]).toMatchObject({
+      mediaItemId: "m1", classification: "general", levels: lv(), reviewReason: null, provider: "stub",
+    });
+    expect(completed[0]?.contentSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(completed[0]?.contentDhash).toMatch(/^[0-9a-f]{16}$/);
+    expect(completed[1]).toMatchObject({
+      mediaItemId: "m2", provider: "dedupe", modelId: "copy:m1", verdict: "duplicate", levels: lv(),
+      contentSha256: completed[0]?.contentSha256,
+    });
+    expect(lookups.length).toBe(2);
+  });
+
+  it("level 3 → pending_review with ai_prohibited_content and the raw answer", async () => {
+    const { store, completed } = makeStore([job()]);
+    const provider = createStubClassifier({ fallback: verdictsOf({ violence: { level: 3, confidence: 0.99 } }) });
+    await drainOnce(deps(provider, store), 10);
+    expect(completed[0]).toMatchObject({
+      classification: "pending_review",
+      levels: null,
+      reviewReason: "ai_prohibited_content",
+      aiLevels: { violence: 3 },
+      confidence: 0,
+    });
+  });
+
+  it("refusal → pending_review with ai_refusal, not a failure", async () => {
+    const { store, completed, failed } = makeStore([job()]);
+    const provider = createStubClassifier({ fallback: { kind: "refused" } });
+    await drainOnce(deps(provider, store), 10);
+    expect(failed).toEqual([]);
+    expect(completed[0]).toMatchObject({
+      classification: "pending_review", reviewReason: "ai_refusal", verdict: "refused", aiLevels: null,
+    });
+  });
+
+  it("records the lowest group confidence when resolved", async () => {
+    const { store, completed } = makeStore([job()]);
+    const provider = createStubClassifier({
+      fallback: verdictsOf({ religion: { level: 1, confidence: 0.85 } }, 0.97),
+    });
+    await drainOnce(deps(provider, store), 10);
+    expect(completed[0]).toMatchObject({ classification: "general", confidence: 0.85 });
   });
 
   it("sends a confident negative to 'general'", async () => {
@@ -130,6 +208,11 @@ describe("drainOnce", () => {
     expect(completed[0]).toMatchObject({
       classification: "pending_review",
       verdict: "unsupported_media",
+      levels: null,
+      reviewReason: null,
+      aiLevels: null,
+      contentSha256: null,
+      contentDhash: null,
     });
   });
 });
@@ -153,5 +236,20 @@ describe("drainOnce — logging discloses nothing it shouldn't", () => {
     expect(joined).not.toContain("0.93");
     expect(joined).not.toContain("confidence");
     expect(joined).not.toContain("1,2,3");
+  });
+
+  it("a dedupe logs the classification only — no hashes, no source id", async () => {
+    const { store, completed } = makeStore([job()], {
+      resolved: () => ({ sourceMediaItemId: "src-1", classification: "general", levels: lv() }),
+    });
+    const entries: unknown[] = [];
+    await drainOnce(
+      { ...deps(createStubClassifier(), store), logger: { log: (e) => entries.push(e) } },
+      10
+    );
+    expect(entries).toEqual([
+      { event: "deduped", mediaItemId: "m1", classification: "general", durationMs: expect.any(Number) },
+    ]);
+    expect(JSON.stringify(entries)).not.toContain(completed[0]!.contentSha256!);
   });
 });

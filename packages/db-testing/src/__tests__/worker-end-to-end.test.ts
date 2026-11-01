@@ -27,7 +27,8 @@ const author = USER.author;
 const filteredViewer = USER.maleFiltered;
 const unfilteredViewer = USER.maleUnfiltered;
 
-const bytes: MediaFetcher = { fetch: async () => new Uint8Array([1, 2, 3]) };
+// Distinct bytes per object, so hash dedupe (ADR 0019) never links unrelated uploads.
+const bytes: MediaFetcher = { fetch: async (path) => new TextEncoder().encode(path) };
 
 let seq = 0;
 async function uploadAsAuthor(contentType = "image/jpeg"): Promise<string> {
@@ -59,10 +60,10 @@ async function servedUrlTo(userId: string, mediaId: string): Promise<string | nu
   return rows[0]?.storage_path ?? null;
 }
 
-function deps(provider: WorkerDeps["provider"]): WorkerDeps {
+function deps(provider: WorkerDeps["provider"], media: MediaFetcher = bytes): WorkerDeps {
   return {
     store: createPgliteJobStore(db),
-    media: bytes,
+    media,
     provider,
     modelId: "stub-v1",
     workerId: "e2e",
@@ -90,6 +91,64 @@ describe("upload → enqueue → classify → visibility", () => {
     expect(summary.classified).toBeGreaterThanOrEqual(1);
 
     expect(await servedUrlTo(filteredViewer.id, mediaId)).toBe(`${author.id}/${mediaId}`);
+  });
+
+  it("the resolved levels and the content hash land on the media row", async () => {
+    const mediaId = await uploadAsAuthor();
+    await drainOnce(
+      deps(createStubClassifier({ fallback: verdictsOf({ religion: { level: 1, confidence: 0.95 } }, 0.95) })),
+      50
+    );
+    const { rows } = await db.asService((q) =>
+      q.query(
+        `select classification, sex_level, violence_level, religion_level, addictions_level,
+                content_sha256 is not null as hashed
+           from public.media_items where id = $1`,
+        [mediaId]
+      )
+    );
+    expect(rows[0]).toEqual({
+      classification: "general",
+      sex_level: 0,
+      violence_level: 0,
+      religion_level: 1,
+      addictions_level: 0,
+      hashed: true,
+    });
+  });
+
+  it("an identical re-upload copies the verdict without calling the model", async () => {
+    const same: MediaFetcher = { fetch: async () => new Uint8Array([7, 7, 7, 7]) };
+    const first = await uploadAsAuthor();
+    await drainOnce(
+      deps(createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.99 } }, 0.99) }), same),
+      50
+    );
+    const second = await uploadAsAuthor();
+    await drainOnce(
+      deps(
+        {
+          name: "never-called",
+          classify: async () => {
+            throw new Error("a duplicate must not reach the model");
+          },
+        },
+        same
+      ),
+      50
+    );
+
+    const { rows } = await db.asService((q) =>
+      q.query<{ classification: string; sex_level: number; model_id: string }>(
+        `select m.classification, m.sex_level, s.model_id
+           from public.media_items m
+           join moderation.classification_scores s on s.media_item_id = m.id
+          where m.id = $1`,
+        [second]
+      )
+    );
+    expect(rows[0]).toEqual({ classification: "contains_women", sex_level: 1, model_id: `copy:${first}` });
+    expect(await servedUrlTo(filteredViewer.id, second)).toBeNull();
   });
 
   it("a confident positive stays withheld from a filtered viewer and reaches an unfiltered one", async () => {

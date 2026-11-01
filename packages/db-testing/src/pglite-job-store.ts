@@ -4,12 +4,16 @@
  * against a hand-written fake. Test-only: production uses the Supabase-backed
  * store in services/moderation-pipeline.
  */
-import type {
-  ClaimedJob,
-  CompletedClassification,
-  DerivativeStore,
-  JobStore,
-  RedactionRecord,
+import {
+  resolvedFromRow,
+  type ClaimedJob,
+  type CompletedClassification,
+  type DerivativeStore,
+  type JobStore,
+  type MediaHashes,
+  type RedactionRecord,
+  type ResolvedByHash,
+  type ResolvedRow,
 } from "@safeplace/moderation-pipeline";
 import type { TestDb } from "./harness";
 
@@ -35,7 +39,8 @@ export function createPgliteJobStore(db: TestDb): JobStore {
       await db.asService((q) =>
         q.query(
           `select moderation.complete_classification_job(
-             $1, $2::media_classification, $3, $4, $5, $6, $7)`,
+             $1, $2::media_classification, $3, $4, $5, $6, $7,
+             $8::jsonb, $9::moderation.review_reason, $10::jsonb, $11, $12)`,
           [
             result.mediaItemId,
             result.classification,
@@ -44,9 +49,28 @@ export function createPgliteJobStore(db: TestDb): JobStore {
             result.verdict,
             result.confidence,
             result.womanProbability,
+            result.levels && JSON.stringify(result.levels),
+            result.reviewReason,
+            result.aiLevels && JSON.stringify(result.aiLevels),
+            result.contentSha256,
+            result.contentDhash,
           ]
         )
       );
+    },
+
+    async findResolvedByHash(
+      hashes: MediaHashes,
+      excludeMediaItemId: string
+    ): Promise<ResolvedByHash | null> {
+      if (!hashes.sha256 && !hashes.dhash) return null;
+      const { rows } = await db.asService((q) =>
+        q.query<ResolvedRow>(
+          `select * from moderation.find_resolved_by_hash($1, $2, $3)`,
+          [hashes.sha256, hashes.dhash, excludeMediaItemId]
+        )
+      );
+      return resolvedFromRow(rows[0]);
     },
 
     async fail(mediaItemId: string, error: string): Promise<void> {

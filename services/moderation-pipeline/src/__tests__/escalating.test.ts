@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_THRESHOLDS } from "../classification";
+import { DEFAULT_THRESHOLDS, resolveMediaOutcome } from "../classification";
 import { createStubClassifier, verdictsOf } from "../classifier";
 import { createEscalatingClassifier } from "../providers/escalating";
 
@@ -39,5 +39,33 @@ describe("createEscalatingClassifier", () => {
     const c = createEscalatingClassifier({ primary, secondary, thresholds: DEFAULT_THRESHOLDS });
     expect(await c.classify(input)).toEqual({ kind: "refused" });
     expect(secondary.classify).not.toHaveBeenCalled();
+  });
+
+  const undecidedPrimary = () =>
+    createStubClassifier({ fallback: verdictsOf({ religion: { level: "uncertain", confidence: 0 } }) });
+
+  it("a secondary refusal after an answered primary makes the result a refusal", async () => {
+    const secondary = createStubClassifier({ fallback: { kind: "refused" } });
+    const c = createEscalatingClassifier({ primary: undecidedPrimary(), secondary, thresholds: DEFAULT_THRESHOLDS });
+    const out = await c.classify(input);
+    expect(out).toEqual({ kind: "refused" });
+    expect(resolveMediaOutcome(out, DEFAULT_THRESHOLDS)).toMatchObject({ reviewReason: "ai_refusal" });
+  });
+
+  it("a secondary that is also uncertain still sends the item to a human", async () => {
+    const secondary = createStubClassifier({ fallback: verdictsOf({ religion: { level: "uncertain", confidence: 0 } }) });
+    const c = createEscalatingClassifier({ primary: undecidedPrimary(), secondary, thresholds: DEFAULT_THRESHOLDS });
+    expect(resolveMediaOutcome(await c.classify(input), DEFAULT_THRESHOLDS)).toMatchObject({
+      classification: "pending_review",
+      levels: null,
+      reviewReason: "ai_medium_confidence",
+      undecided: ["religion"],
+    });
+  });
+
+  it("a secondary that throws propagates the error (the job fails and retries)", async () => {
+    const secondary = { name: "s", classify: vi.fn(async () => { throw new Error("secondary down"); }) };
+    const c = createEscalatingClassifier({ primary: undecidedPrimary(), secondary, thresholds: DEFAULT_THRESHOLDS });
+    await expect(c.classify(input)).rejects.toThrow("secondary down");
   });
 });
