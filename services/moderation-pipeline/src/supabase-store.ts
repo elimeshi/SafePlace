@@ -219,12 +219,13 @@ export function createSupabaseJobStore(supabase: SupabaseClient): JobStore {
       hashes: MediaHashes,
       excludeMediaItemId: string
     ): Promise<ResolvedByHash | null> {
-      if (!hashes.sha256 && !hashes.dhash) return null;
+      // Exact SHA-256 only: a dHash match never copies a verdict (ADR 0019 amendment).
+      if (!hashes.sha256) return null;
       const { data, error } = await supabase
         .schema(MODERATION_SCHEMA)
         .rpc("find_resolved_by_hash", {
           p_sha256: hashes.sha256,
-          p_dhash: hashes.dhash,
+          p_dhash: null,
           p_exclude: excludeMediaItemId,
         });
       if (error) throw new Error(`dedupe lookup: ${error.message}`);

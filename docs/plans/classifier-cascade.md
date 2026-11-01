@@ -1440,7 +1440,8 @@ end;
 $$;
 grant execute on function moderation.complete_classification_job(uuid, public.media_classification, text, text, text, numeric, numeric, jsonb, moderation.review_reason, jsonb, text, text) to service_role;
 
--- --- dedupe lookup (ADR 0019): equality only, resolved rows only --------------
+-- --- dedupe lookup (ADR 0019, amended 2026-11-02): exact SHA-256 only --------
+-- p_dhash is ignored: a dHash match is forgeable and never grants a clearance.
 create function moderation.find_resolved_by_hash(p_sha256 text, p_dhash text, p_exclude uuid)
   returns table (media_item_id uuid, classification public.media_classification,
                  sex_level smallint, violence_level smallint, religion_level smallint, addictions_level smallint)
@@ -1449,8 +1450,8 @@ create function moderation.find_resolved_by_hash(p_sha256 text, p_dhash text, p_
     from public.media_items m
    where m.id <> p_exclude
      and m.classification in ('general', 'contains_women')
-     and ((p_sha256 is not null and m.content_sha256 = p_sha256)
-       or (p_dhash  is not null and m.content_dhash  = p_dhash))
+     and p_sha256 is not null
+     and m.content_sha256 = p_sha256
    order by m.classified_at desc
    limit 1;
 $$;
@@ -1696,9 +1697,9 @@ return "classified";
 
 ```ts
 async findResolvedByHash(hashes, excludeMediaItemId) {
-  if (!hashes.sha256 && !hashes.dhash) return null;
+  if (!hashes.sha256) return null;   // exact SHA-256 only (ADR 0019 amendment)
   const { data, error } = await supabase.schema(MODERATION_SCHEMA).rpc("find_resolved_by_hash", {
-    p_sha256: hashes.sha256, p_dhash: hashes.dhash, p_exclude: excludeMediaItemId,
+    p_sha256: hashes.sha256, p_dhash: null, p_exclude: excludeMediaItemId,
   });
   if (error) throw new Error(`dedupe lookup: ${error.message}`);
   const row = (Array.isArray(data) ? data[0] : data) as

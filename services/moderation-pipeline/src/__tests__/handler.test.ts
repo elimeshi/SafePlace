@@ -35,10 +35,11 @@ describe("resolveClassifierFromEnv — escalation wiring", () => {
 
     const out = await provider.classify(input);
     expect(out.kind === "verdicts" && out.groups.religion.level).toBe(0);
+    const usage = { inputTokens: 10, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 5 };
     expect(entries).toEqual([
-      { event: "usage", mediaItemId: "", usage: { inputTokens: 10, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 5 } },
-      { event: "escalated", mediaItemId: "m1", error: "religion" },
-      { event: "usage", mediaItemId: "", usage: { inputTokens: 10, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, outputTokens: 5 } },
+      { event: "usage", mediaItemId: "", modelId: "primary", usage },
+      { event: "escalated", mediaItemId: "m1", groups: ["religion"] },
+      { event: "usage", mediaItemId: "", modelId: "secondary", usage },
     ]);
   });
 

@@ -108,6 +108,20 @@ describe("drainOnce", () => {
     expect(lookups.length).toBe(2);
   });
 
+  it("a dedupe lookup that throws fails the job for retry; it never classifies", async () => {
+    const { store, completed, failed } = makeStore([job()]);
+    store.findResolvedByHash = async () => {
+      throw new Error("dedupe lookup: connection reset");
+    };
+    const provider = createStubClassifier({ fallback: verdictsOf({}) });
+    const classify = vi.spyOn(provider, "classify");
+    const summary = await drainOnce(deps(provider, store), 10);
+    expect(classify).not.toHaveBeenCalled();
+    expect(completed).toEqual([]);
+    expect(failed).toEqual([{ mediaItemId: "m1", error: "dedupe lookup: connection reset" }]);
+    expect(summary).toMatchObject({ classified: 0, failed: 1 });
+  });
+
   it("level 3 → pending_review with ai_prohibited_content and the raw answer", async () => {
     const { store, completed } = makeStore([job()]);
     const provider = createStubClassifier({ fallback: verdictsOf({ violence: { level: 3, confidence: 0.99 } }) });

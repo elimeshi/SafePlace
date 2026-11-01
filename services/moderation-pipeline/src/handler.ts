@@ -70,20 +70,22 @@ export function resolveClassifierFromEnv(
         );
       }
       // Token counts only — never the model's text (ADR 0011).
-      const onUsage = (usage: ClassifierUsage): void =>
-        logger.log({ event: "usage", mediaItemId: "", usage });
-      const primary = createAnthropicClassifierFromConfig({ apiKey, modelId, onUsage });
+      const onUsage =
+        (id: string) =>
+        (usage: ClassifierUsage): void =>
+          logger.log({ event: "usage", mediaItemId: "", modelId: id, usage });
+      const primary = createAnthropicClassifierFromConfig({ apiKey, modelId, onUsage: onUsage(modelId) });
       if (!escalationModelId) return primary;
       return createEscalatingClassifier({
         primary,
         secondary: createAnthropicClassifierFromConfig({
           apiKey,
           modelId: escalationModelId,
-          onUsage,
+          onUsage: onUsage(escalationModelId),
         }),
         thresholds,
         onEscalate: (e) =>
-          logger.log({ event: "escalated", mediaItemId: e.mediaItemId, error: e.groups.join(",") }),
+          logger.log({ event: "escalated", mediaItemId: e.mediaItemId, groups: e.groups }),
       });
     }
     default:

@@ -63,11 +63,12 @@ export function createPgliteJobStore(db: TestDb): JobStore {
       hashes: MediaHashes,
       excludeMediaItemId: string
     ): Promise<ResolvedByHash | null> {
-      if (!hashes.sha256 && !hashes.dhash) return null;
+      // Exact SHA-256 only: a dHash match never copies a verdict (ADR 0019 amendment).
+      if (!hashes.sha256) return null;
       const { rows } = await db.asService((q) =>
         q.query<ResolvedRow>(
-          `select * from moderation.find_resolved_by_hash($1, $2, $3)`,
-          [hashes.sha256, hashes.dhash, excludeMediaItemId]
+          `select * from moderation.find_resolved_by_hash($1, null, $2)`,
+          [hashes.sha256, excludeMediaItemId]
         )
       );
       return resolvedFromRow(rows[0]);

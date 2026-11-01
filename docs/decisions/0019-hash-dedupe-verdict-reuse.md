@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted (2026-10-30).
+Accepted (2026-10-30). Amended 2026-11-02: only an exact SHA-256 match copies
+a verdict; see the amendment at the end.
 
 ## Context
 
@@ -20,7 +21,7 @@ filtered viewer ends up seeing a woman.
 
 **Before calling the model, the worker computes a SHA-256 of the bytes and a
 64-bit dHash of the decoded image, and if another media item with the same
-SHA-256 or the same dHash already holds a resolved classification
+SHA-256 or the same dHash (dHash withdrawn by the 2026-11-02 amendment) already holds a resolved classification
 (`general` or `contains_women`, levels non-null), it copies that item's
 levels and classification without a model call.** Both hashes are stored on
 `media_items` for future lookups. Equality only — no Hamming-distance
@@ -38,8 +39,8 @@ auditable as a model verdict.
 - **Perceptual near-duplicate search (Hamming ≤ k).** Catches re-encoded
   and lightly cropped copies. Rejected for now: a small Hamming distance
   cannot distinguish a re-encode from a face swap, and a wrong "general"
-  copy fails open. Exact dHash equality already catches most re-encodes
-  (same pixels, different JPEG bytes). Revisit with data, and if revisited,
+  copy fails open. (Exact dHash equality was meant to catch re-encodes; the
+  2026-11-02 amendment withdrew it — it is forgeable too.) Revisit with data, and if revisited,
   the safe variant is asymmetric: near-duplicates may only *inherit a flag*,
   never a clearance.
 - **Copying `pending_review`.** Rejected; a frozen item has no verdict to
@@ -62,3 +63,22 @@ auditable as a model verdict.
   the same confidence band semantics.
 - The "gate" layer, if ever built, slots in after this step and before the
   model.
+
+## Amendment 2026-11-02 — exact SHA-256 only
+
+**Only an exact SHA-256 match copies a verdict.** The dHash is still computed
+and stored on `media_items` (for future near-duplicate work, e.g. the
+asymmetric "inherit a flag, never a clearance" variant above), but it never
+grants a clearance. `moderation.find_resolved_by_hash` keeps its signature and
+ignores `p_dhash`; both job stores skip the lookup when there is no SHA-256.
+
+Why: a 64-bit dHash is a forgeable fingerprint, and dHash equality is not
+pixel equality. A solid image and a ramp-overlaid photo of a woman both hash
+to `0000000000000000`, so an exact dHash match could copy a "general"
+clearance onto a different image — the fail-open case this ADR exists to
+prevent. Found in the Task 11 review; decided by Eli.
+
+Cost: re-encoded copies (same pixels, different bytes) are now reclassified
+by the model instead of copied, at about $0.00016 each (Haiku 5.5, one call).
+Byte-identical re-uploads — forwards and re-shares of the same file — still
+dedupe.

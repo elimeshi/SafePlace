@@ -112,8 +112,9 @@ such.
 
 ## 7. The pipeline, in three layers
 
-1. **Dedupe** (ADR 0019): exact SHA-256 or exact 64-bit dHash match against
-   an already-resolved item copies its verdict. No model call.
+1. **Dedupe** (ADR 0019, amended 2026-11-02): only an exact SHA-256 match
+   against an already-resolved item copies its verdict. No model call. The
+   64-bit dHash is stored but never grants a clearance (it is forgeable).
 2. **Gate** — *deferred*. A SigLIP-class encoder with one binary head was
    costed and does not pay for itself below ~100k images/day on Claude Haiku
    5.5 pricing. Revisit when volume or a self-hosting decision says so.

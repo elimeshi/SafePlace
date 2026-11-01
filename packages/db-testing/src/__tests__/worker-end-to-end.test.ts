@@ -8,6 +8,7 @@
  * database's enforcement; this is the seam between them, which is where a
  * pipeline that "works" in both halves can still fail as a whole.
  */
+import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   allUncertain,
@@ -149,6 +150,40 @@ describe("upload → enqueue → classify → visibility", () => {
     );
     expect(rows[0]).toEqual({ classification: "contains_women", sex_level: 1, model_id: `copy:${first}` });
     expect(await servedUrlTo(filteredViewer.id, second)).toBeNull();
+  });
+
+  it("a re-encoded copy (different bytes, same dHash) is asked of the model, never copied", async () => {
+    // Solid white as PNG and as JPEG: different bytes, both dHash 0000000000000000.
+    const solid = sharp({ create: { width: 32, height: 32, channels: 3, background: "#fff" } });
+    const png = new Uint8Array(await solid.clone().png().toBuffer());
+    const jpeg = new Uint8Array(await solid.clone().jpeg().toBuffer());
+    const byPath = new Map<string, Uint8Array>();
+    const media: MediaFetcher = { fetch: async (path) => byPath.get(path)! };
+
+    const cleared = await uploadAsAuthor();
+    byPath.set(`${author.id}/${cleared}`, png);
+    await drainOnce(deps(createStubClassifier({ fallback: verdictsOf({}, 0.95) }), media), 50);
+
+    const copy = await uploadAsAuthor();
+    byPath.set(`${author.id}/${copy}`, jpeg);
+    await drainOnce(
+      deps(createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.99 } }, 0.99) }), media),
+      50
+    );
+
+    const { rows } = await db.asService((q) =>
+      q.query<{ id: string; classification: string; content_dhash: string; provider: string }>(
+        `select m.id, m.classification, m.content_dhash, s.provider
+           from public.media_items m
+           join moderation.classification_scores s on s.media_item_id = m.id
+          where m.id = any($1::uuid[])`,
+        [[cleared, copy]]
+      )
+    );
+    const row = (id: string) => rows.find((r) => r.id === id);
+    expect(row(cleared)).toMatchObject({ classification: "general", content_dhash: "0000000000000000" });
+    expect(row(copy)).toMatchObject({ classification: "contains_women", content_dhash: "0000000000000000", provider: "stub" });
+    expect(await servedUrlTo(filteredViewer.id, copy)).toBeNull();
   });
 
   it("a confident positive stays withheld from a filtered viewer and reaches an unfiltered one", async () => {

@@ -39,8 +39,9 @@ create index idx_media_sha256 on public.media_items (content_sha256) where conte
 create index idx_media_dhash  on public.media_items (content_dhash)  where content_dhash  is not null;
 
 -- Hashes are written only by the pipeline (complete_classification_job):
--- find_resolved_by_hash copies a verdict across matching hashes, so a
--- client-chosen hash would let an upload borrow another row's verdict.
+-- find_resolved_by_hash copies a verdict across a matching SHA-256, so a
+-- client-chosen hash would let an upload borrow another row's verdict (the
+-- dHash is held to the same rule, for any future near-duplicate use).
 -- Policy body of 20261021100000_audit_fixes.sql verbatim, plus the hash check.
 -- (No UPDATE policy exists on media_items, so a client cannot set them later.)
 drop policy media_insert_own_unclassified on public.media_items;
@@ -223,7 +224,11 @@ begin
 end;
 $$;
 
--- --- dedupe lookup (ADR 0019): equality only, resolved rows only --------------
+-- --- dedupe lookup (ADR 0019): exact SHA-256 only, resolved rows only ---------
+-- p_dhash is accepted and deliberately ignored: dHash equality is not pixel
+-- equality, and a 64-bit fingerprint is forgeable (a solid image and a
+-- ramp-overlaid photo both hash to 0000000000000000), so it must never grant a
+-- clearance. Eli 2026-11-02, ADR 0019 amendment. The dHash is still stored.
 create function moderation.find_resolved_by_hash(p_sha256 text, p_dhash text, p_exclude uuid)
   returns table (media_item_id uuid, classification public.media_classification,
                  sex_level smallint, violence_level smallint, religion_level smallint, addictions_level smallint)
@@ -232,8 +237,8 @@ create function moderation.find_resolved_by_hash(p_sha256 text, p_dhash text, p_
     from public.media_items m
    where m.id is distinct from p_exclude
      and m.classification in ('general', 'contains_women')
-     and ((p_sha256 is not null and m.content_sha256 = p_sha256)
-       or (p_dhash  is not null and m.content_dhash  = p_dhash))
+     and p_sha256 is not null
+     and m.content_sha256 = p_sha256
    order by m.classified_at desc nulls last
    limit 1;
 $$;

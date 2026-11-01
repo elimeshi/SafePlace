@@ -102,6 +102,10 @@ export interface WorkerLogEntry {
   error?: string;
   /** Token counts only. */
   usage?: ClassifierUsage;
+  /** Which model the usage belongs to (primary or escalation). */
+  modelId?: string;
+  /** Groups re-asked of the escalation model. */
+  groups?: string[];
 }
 
 export interface Logger {
