@@ -5,8 +5,10 @@
 -- resolved row (general / contains_women) always carries all four, and a row
 -- never carries a 3 (prohibited content is a review-queue matter, never a
 -- published level). Viewer maxima live on filter_settings, 0..2.
--- hide_content_with_women becomes GENERATED from max_sex_level so every SQL
--- reader of it (viewer_hides_women, the parity suite) keeps working unchanged.
+-- hide_content_with_women becomes GENERATED from max_sex_level so existing
+-- readers of the column (api-client viewer context) keep working; writers move
+-- to max_sex_level. visibility.viewer_hides_women() is left defined but has no
+-- caller once classification_visible is dropped below.
 -- See docs/architecture/content-categories.md §5.
 -- ============================================================================
 
@@ -36,6 +38,29 @@ alter table public.media_items add constraint media_levels_match_lifecycle check
 create index idx_media_sha256 on public.media_items (content_sha256) where content_sha256 is not null;
 create index idx_media_dhash  on public.media_items (content_dhash)  where content_dhash  is not null;
 
+-- Hashes are written only by the pipeline (complete_classification_job):
+-- find_resolved_by_hash copies a verdict across matching hashes, so a
+-- client-chosen hash would let an upload borrow another row's verdict.
+-- Policy body of 20261021100000_audit_fixes.sql verbatim, plus the hash check.
+-- (No UPDATE policy exists on media_items, so a client cannot set them later.)
+drop policy media_insert_own_unclassified on public.media_items;
+create policy media_insert_own_unclassified on public.media_items for insert to authenticated
+  with check (
+    uploader_id = auth.uid()
+    and classification = 'unclassified'
+    and content_sha256 is null
+    and content_dhash is null
+    and left(storage_path, length(auth.uid()::text) + 1) = auth.uid()::text || '/'
+    and (blurred_storage_path is null
+         or left(blurred_storage_path, length(auth.uid()::text) + 1) = auth.uid()::text || '/')
+    and (
+      (post_id is not null and exists (select 1 from posts p where p.id = post_id and p.author_id = auth.uid()))
+      or (comment_id is not null and exists (select 1 from comments c where c.id = comment_id and c.author_id = auth.uid()))
+      or (profile_id is not null and profile_id = auth.uid())
+      or (message_id is not null and exists (select 1 from messages m where m.id = message_id and m.sender_id = auth.uid()))
+    )
+  );
+
 comment on column public.media_items.sex_level is
   'Resolved level per docs/architecture/content-categories.md; NULL until classified. Never 3.';
 
@@ -50,8 +75,9 @@ update public.filter_settings
    set max_sex_level = case when hide_content_with_women then 0 else 1 end;
 
 -- No view or policy depends on hide_content_with_women (checked across every
--- migration up to 20261021100000): its readers are SQL/plpgsql functions
--- (viewer_hides_women, handle_new_user), which resolve the name at call time.
+-- migration up to 20261021100000). The only functions naming it were
+-- handle_new_user (re-created below) and viewer_hides_women (now uncalled);
+-- neither records a dependency on the column.
 alter table public.filter_settings drop column hide_content_with_women;
 alter table public.filter_settings
   add column hide_content_with_women boolean generated always as (max_sex_level = 0) stored;
@@ -172,8 +198,9 @@ begin
          violence_level   = (p_levels->>'violence')::smallint,
          religion_level   = (p_levels->>'religion')::smallint,
          addictions_level = (p_levels->>'addictions')::smallint,
-         content_sha256   = coalesce(p_content_sha256, content_sha256),
-         content_dhash    = coalesce(p_content_dhash, content_dhash)
+         -- The pipeline is the only author of hashes (dedupe trusts them).
+         content_sha256   = p_content_sha256,
+         content_dhash    = p_content_dhash
    where id = p_media_item_id
      and classification = 'unclassified';
 
@@ -203,11 +230,11 @@ create function moderation.find_resolved_by_hash(p_sha256 text, p_dhash text, p_
   language sql stable set search_path = '' as $$
   select m.id, m.classification, m.sex_level, m.violence_level, m.religion_level, m.addictions_level
     from public.media_items m
-   where m.id <> p_exclude
+   where m.id is distinct from p_exclude
      and m.classification in ('general', 'contains_women')
      and ((p_sha256 is not null and m.content_sha256 = p_sha256)
        or (p_dhash  is not null and m.content_dhash  = p_dhash))
-   order by m.classified_at desc
+   order by m.classified_at desc nulls last
    limit 1;
 $$;
 

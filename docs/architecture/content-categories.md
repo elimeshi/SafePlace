@@ -77,7 +77,7 @@ to avatars, and an unresolved avatar stays withheld (Eli, 2026-11-02).
 
 ```
 media_items.sex_level, violence_level, religion_level, addictions_level
-  smallint, 0..3, NULL until classified
+  smallint, 0..2 (a 3 never lands on the row), NULL until classified
 ```
 
 Invariants held by `moderation.complete_classification_job`:
