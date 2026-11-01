@@ -13,6 +13,7 @@ import {
   DEFAULT_THRESHOLDS,
   type MediaFetcher,
   type Region,
+  verdictsOf,
   type WorkerDeps,
 } from "@safeplace/moderation-pipeline";
 import { createTestDb, type TestDb } from "../harness";
@@ -78,7 +79,7 @@ function deps(options: { regions: Region[]; foundAll: boolean; recheckClean: boo
   return {
     store: createPgliteJobStore(db),
     media: { fetch: async () => image } as MediaFetcher,
-    provider: createStubClassifier({ verdict: "woman_present", confidence: 0.99 }),
+    provider: createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.99 } }, 0.99) }),
     modelId: "stub-v1",
     workerId: "blur-e2e",
     thresholds: DEFAULT_THRESHOLDS,
@@ -90,8 +91,8 @@ function deps(options: { regions: Region[]; foundAll: boolean; recheckClean: boo
       redactor: createSharpRedactor(),
       derivatives: createPglitePersistedDerivativeStore(db),
       recheck: options.recheckClean
-        ? createStubClassifier({ verdict: "no_woman", confidence: 0.99 })
-        : createStubClassifier({ verdict: "woman_present", confidence: 0.9 }),
+        ? createStubClassifier({ fallback: verdictsOf({}, 0.99) })
+        : createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.9 } }, 0.9) }),
       maxCoverage: 0.5,
       padding: 0.15,
     },

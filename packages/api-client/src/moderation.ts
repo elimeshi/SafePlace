@@ -98,7 +98,13 @@ export function resolveUploaderMediaViews(
   return media.map((item) => ({
     id: item.id,
     classification: item.classification,
-    // Levels are not read from the DB yet (Task 12), so no group is reported.
-    state: resolveUploaderMediaState(item.classification, null, uploaderGender),
+    // shortcut: derived from lifecycle until Task 12 reads the level columns
+    state: resolveUploaderMediaState(
+      item.classification,
+      item.classification === "general" || item.classification === "contains_women"
+        ? { sex: item.classification === "contains_women" ? 1 : 0, violence: 0, religion: 0, addictions: 0 }
+        : null,
+      uploaderGender
+    ),
   }));
 }

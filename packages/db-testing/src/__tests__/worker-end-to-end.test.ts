@@ -10,10 +10,12 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  allUncertain,
   createStubClassifier,
   drainOnce,
   DEFAULT_THRESHOLDS,
   type MediaFetcher,
+  verdictsOf,
   type WorkerDeps,
 } from "@safeplace/moderation-pipeline";
 import { createTestDb, type TestDb } from "../harness";
@@ -82,7 +84,7 @@ describe("upload → enqueue → classify → visibility", () => {
     expect(await servedUrlTo(filteredViewer.id, mediaId)).toBeNull(); // in flight
 
     const summary = await drainOnce(
-      deps(createStubClassifier({ verdict: "no_woman", confidence: 0.95 })),
+      deps(createStubClassifier({ fallback: verdictsOf({}, 0.95) })),
       50
     );
     expect(summary.classified).toBeGreaterThanOrEqual(1);
@@ -93,7 +95,7 @@ describe("upload → enqueue → classify → visibility", () => {
   it("a confident positive stays withheld from a filtered viewer and reaches an unfiltered one", async () => {
     const mediaId = await uploadAsAuthor();
     await drainOnce(
-      deps(createStubClassifier({ verdict: "woman_present", confidence: 0.99 })),
+      deps(createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.99 } }, 0.99) })),
       50
     );
 
@@ -105,7 +107,7 @@ describe("upload → enqueue → classify → visibility", () => {
 
   it("an uncertain verdict freezes the item and files it for a human", async () => {
     const mediaId = await uploadAsAuthor();
-    await drainOnce(deps(createStubClassifier({ verdict: "uncertain", confidence: 0.2 })), 50);
+    await drainOnce(deps(createStubClassifier({ fallback: allUncertain() })), 50);
 
     // Frozen: nobody but the uploader can even see the row.
     expect(await servedUrlTo(unfilteredViewer.id, mediaId)).toBeNull();
@@ -123,7 +125,7 @@ describe("upload → enqueue → classify → visibility", () => {
   it("drains the queue empty and leaves nothing claimable behind", async () => {
     await uploadAsAuthor();
     await uploadAsAuthor();
-    await drainOnce(deps(createStubClassifier({ verdict: "no_woman", confidence: 0.95 })), 50);
+    await drainOnce(deps(createStubClassifier({ fallback: verdictsOf({}, 0.95) })), 50);
 
     const { rows } = await db.asService((q) =>
       q.query<{ n: string }>(
