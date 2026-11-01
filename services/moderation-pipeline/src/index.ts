@@ -84,3 +84,5 @@ export {
   PROCESSING_NOTICE_HE,
   WOMEN_DETECTED_NOTICE_HE,
 } from "./notice-copy";
+
+export { dhashHex, hashMedia, sha256Hex, type MediaHashes } from "./hashes";
