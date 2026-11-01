@@ -3,7 +3,7 @@ import type { FilterSettings } from "@safeplace/visibility-policy";
 import { mapFilterSettings } from "./viewer-context";
 
 const COLUMNS =
-  "hide_content_with_women, hide_women_accounts, filter_applies_to_avatars, show_suggested_posts, gender_separation_in_messages, gender_separation_in_search";
+  "max_sex_level, max_violence_level, max_religion_level, max_addictions_level, hide_women_accounts, filter_applies_to_avatars, show_suggested_posts, gender_separation_in_messages, gender_separation_in_search";
 
 /** Read the signed-in user's own filter settings (RLS: owner-only). */
 export async function getFilterSettings(
@@ -38,16 +38,17 @@ export async function setContentFilterEnabled(
 ): Promise<void> {
   const { error } = await supabase
     .from("filter_settings")
-    .update({ hide_content_with_women: contentFilterEnabled })
+    // 0 hides every depiction of a woman; 1 = modest women visible. Raising to 2
+    // is an explicit settings choice, never the result of this toggle.
+    .update({ max_sex_level: contentFilterEnabled ? 0 : 1 })
     .eq("user_id", userId);
   if (error) {
     throw new Error(`setContentFilterEnabled: ${error.message}`);
   }
 }
 
-/** Snake-case DB column names for a FilterSettings key. contentLevels has no column yet (Task 12), so it is not patchable. */
-const COLUMN_OF: Record<Exclude<keyof FilterSettings, "contentLevels">, string> = {
-  hideContentWithWomen: "hide_content_with_women",
+/** Snake-case DB column names for the boolean keys. contentLevels expands into four columns; hideContentWithWomen is derived (generated column), so it has none. */
+const COLUMN_OF: Record<Exclude<keyof FilterSettings, "contentLevels" | "hideContentWithWomen">, string> = {
   hideWomenAccounts: "hide_women_accounts",
   filterAppliesToAvatars: "filter_applies_to_avatars",
   showSuggestedPosts: "show_suggested_posts",
@@ -59,12 +60,22 @@ const COLUMN_OF: Record<Exclude<keyof FilterSettings, "contentLevels">, string> 
 export async function updateFilterSettings(
   supabase: SupabaseClient,
   userId: string,
-  patch: Partial<Omit<FilterSettings, "contentLevels">>
+  patch: Partial<Omit<FilterSettings, "hideContentWithWomen">>
 ): Promise<void> {
-  const dbPatch: Record<string, boolean> = {};
+  const dbPatch: Record<string, boolean | number> = {};
   for (const [key, value] of Object.entries(patch)) {
     if (value === undefined) continue;
-    dbPatch[COLUMN_OF[key as keyof typeof COLUMN_OF]] = value;
+    if (key === "contentLevels") {
+      const lv = value as FilterSettings["contentLevels"];
+      Object.assign(dbPatch, {
+        max_sex_level: lv.sex,
+        max_violence_level: lv.violence,
+        max_religion_level: lv.religion,
+        max_addictions_level: lv.addictions,
+      });
+      continue;
+    }
+    dbPatch[COLUMN_OF[key as keyof typeof COLUMN_OF]] = value as boolean;
   }
   if (Object.keys(dbPatch).length === 0) return;
 

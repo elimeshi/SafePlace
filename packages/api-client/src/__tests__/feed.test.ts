@@ -31,7 +31,7 @@ const row = (id: string, extra: Record<string, unknown> = {}) => ({
   audiences: [{ kind: "public", group_id: null, space_id: null }],
   media: [
     { id: "m1", classification: "contains_women", storage_path: null, is_filtered: true },
-    { id: "m2", classification: "general", storage_path: "u/x", is_filtered: false },
+    { id: "m2", classification: "general", storage_path: "u/x", is_filtered: false, sex_level: 0, violence_level: 0, religion_level: 0, addictions_level: 0 },
   ],
   ...extra,
 });
@@ -80,6 +80,13 @@ describe("feed", () => {
     expect(
       toMediaView({ id: "m", classification: "contains_women", storage_path: "leak", is_filtered: true }).storagePath
     ).toBeNull();
+  });
+
+  it("toMediaView maps the level columns to levels, or null when absent (not the uploader's row)", () => {
+    const row = { id: "m", classification: "contains_women" as const, storage_path: "u/x", is_filtered: false };
+    expect(toMediaView({ ...row, sex_level: 1, violence_level: 0, religion_level: 2, addictions_level: 0 }).levels).toEqual({ sex: 1, violence: 0, religion: 2, addictions: 0 });
+    expect(toMediaView({ ...row, sex_level: null, violence_level: null, religion_level: null, addictions_level: null }).levels).toBeNull();
+    expect(toMediaView(row).levels).toBeNull();
   });
 
   it("resolveMediaUrls signs only unfiltered media", async () => {

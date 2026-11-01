@@ -35,6 +35,7 @@ const mv = (id: string, classification: MediaView["classification"], over: Parti
   classification,
   filtered: false,
   redacted: false,
+  levels: classification === "contains_women" ? { sex: 1, violence: 0, religion: 0, addictions: 0 } : classification === "general" ? { sex: 0, violence: 0, religion: 0, addictions: 0 } : null,
   storagePath: null,
   url: "u",
   ...over,

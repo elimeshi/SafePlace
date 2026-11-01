@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { FilterSettings, Viewer } from "@safeplace/visibility-policy";
+import type { FilterSettings, Viewer, ViewerMaxLevel } from "@safeplace/visibility-policy";
 
 /**
  * Build the Viewer context that @safeplace/visibility-policy needs, from the
@@ -30,7 +30,7 @@ export async function buildViewerContext(
     supabase
       .from("filter_settings")
       .select(
-        "hide_content_with_women, hide_women_accounts, filter_applies_to_avatars, show_suggested_posts, gender_separation_in_messages, gender_separation_in_search"
+        "max_sex_level, max_violence_level, max_religion_level, max_addictions_level, hide_women_accounts, filter_applies_to_avatars, show_suggested_posts, gender_separation_in_messages, gender_separation_in_search"
       )
       .eq("user_id", userId)
       .single(),
@@ -69,7 +69,10 @@ export async function buildViewerContext(
 }
 
 interface FilterSettingsRow {
-  hide_content_with_women: boolean;
+  max_sex_level: ViewerMaxLevel;
+  max_violence_level: ViewerMaxLevel;
+  max_religion_level: ViewerMaxLevel;
+  max_addictions_level: ViewerMaxLevel;
   hide_women_accounts: boolean;
   filter_applies_to_avatars: boolean;
   show_suggested_posts: boolean;
@@ -80,9 +83,14 @@ interface FilterSettingsRow {
 /** Map the snake_case DB row to the camelCase FilterSettings the policy uses. */
 export function mapFilterSettings(row: FilterSettingsRow): FilterSettings {
   return {
-    hideContentWithWomen: row.hide_content_with_women,
-    // Minimal derived value; Task 12 replaces it with the real per-group columns.
-    contentLevels: { sex: row.hide_content_with_women ? 0 : 1, violence: 0, religion: 0, addictions: 0 },
+    // Derived here, never read from the DB boolean: one source of truth in TS.
+    hideContentWithWomen: row.max_sex_level === 0,
+    contentLevels: {
+      sex: row.max_sex_level,
+      violence: row.max_violence_level,
+      religion: row.max_religion_level,
+      addictions: row.max_addictions_level,
+    },
     hideWomenAccounts: row.hide_women_accounts,
     filterAppliesToAvatars: row.filter_applies_to_avatars,
     showSuggestedPosts: row.show_suggested_posts,

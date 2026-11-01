@@ -60,6 +60,7 @@ const media = (id: string, key: SceneKey, classification: MediaView["classificat
   classification,
   filtered: false,
   redacted: false,
+  levels: null,
   storagePath: id,
   url: `fixture:${key}`,
 });
@@ -68,6 +69,7 @@ const filteredMedia = (id: string): MediaView => ({
   classification: "contains_women",
   filtered: true,
   redacted: false,
+  levels: null,
   storagePath: null,
   url: null,
 });
@@ -134,7 +136,7 @@ function entry(p: {
     label: p.label,
     quote: p.quote ?? null,
     uploaderMedia:
-      authorId === ME ? resolveUploaderMediaViews(item.media.map((m) => ({ id: m.id, classification: m.classification })), "male") : null,
+      authorId === ME ? resolveUploaderMediaViews(item.media.map((m) => ({ id: m.id, classification: m.classification, levels: m.levels })), "male") : null,
   };
 }
 

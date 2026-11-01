@@ -1,7 +1,26 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { MediaClassification } from "@safeplace/visibility-policy";
+import { isContentLevels, type ContentLevels, type MediaClassification } from "@safeplace/visibility-policy";
 
 export const MEDIA_BUCKET = "media";
+
+/** The four per-group level columns. media_items_visible serves them to the uploader only (NULL for everyone else). */
+export const LEVEL_COLUMNS = "sex_level, violence_level, religion_level, addictions_level";
+
+export interface LevelColumns {
+  sex_level?: number | null;
+  violence_level?: number | null;
+  religion_level?: number | null;
+  addictions_level?: number | null;
+}
+
+/**
+ * Resolved levels from a media row, or null (not the uploader's row, or not classified yet).
+ * Feeds the uploader's notice ONLY — another viewer's visibility is decided by the DB.
+ */
+export function levelsFromRow(row: LevelColumns): ContentLevels | null {
+  const levels = { sex: row.sex_level, violence: row.violence_level, religion: row.religion_level, addictions: row.addictions_level };
+  return isContentLevels(levels) ? levels : null;
+}
 
 export interface SignedMedia {
   mediaId: string;

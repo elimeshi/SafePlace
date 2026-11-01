@@ -31,6 +31,7 @@ const media = (id: string, classification: MediaClassification, over: Partial<Me
   classification,
   filtered: false,
   redacted: false,
+  levels: null,
   storagePath: null,
   url: "fixture:street",
   ...over,

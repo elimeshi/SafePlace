@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Gender, MediaClassification } from "@safeplace/visibility-policy";
-import { resolveUploaderMediaState } from "@safeplace/visibility-policy";
+import type { ContentGroup, ContentLevels, Gender, MediaClassification } from "@safeplace/visibility-policy";
+import { noticeGroupsFor, resolveUploaderMediaState } from "@safeplace/visibility-policy";
 import type { UploaderMediaState } from "@safeplace/visibility-policy";
 
 /**
@@ -81,6 +81,8 @@ export interface UploaderMediaView {
   id: string;
   classification: MediaClassification;
   state: UploaderMediaState;
+  /** Groups the uploader is told about (levels >= 1; sex only for a male uploader). */
+  foundGroups: ContentGroup[];
 }
 
 /**
@@ -92,19 +94,13 @@ export interface UploaderMediaView {
  * short-circuit); this is only about what they are told alongside it.
  */
 export function resolveUploaderMediaViews(
-  media: Array<{ id: string; classification: MediaClassification }>,
+  media: Array<{ id: string; classification: MediaClassification; levels: ContentLevels | null }>,
   uploaderGender: Gender
 ): UploaderMediaView[] {
   return media.map((item) => ({
     id: item.id,
     classification: item.classification,
-    // shortcut: derived from lifecycle until Task 12 reads the level columns
-    state: resolveUploaderMediaState(
-      item.classification,
-      item.classification === "general" || item.classification === "contains_women"
-        ? { sex: item.classification === "contains_women" ? 1 : 0, violence: 0, religion: 0, addictions: 0 }
-        : null,
-      uploaderGender
-    ),
+    state: resolveUploaderMediaState(item.classification, item.levels, uploaderGender),
+    foundGroups: noticeGroupsFor(item.levels, uploaderGender),
   }));
 }

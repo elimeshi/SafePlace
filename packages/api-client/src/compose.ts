@@ -4,6 +4,7 @@ import {
   type ContentExposure,
   type Gender,
 } from "@safeplace/visibility-policy";
+import { LEVEL_COLUMNS, levelsFromRow, type LevelColumns } from "./media";
 import { exposureToAudienceRows, type AttachedMedia } from "./posts";
 import { resolveUploaderMediaViews, type UploaderMediaView } from "./moderation";
 import type { MediaClassification } from "@safeplace/visibility-policy";
@@ -116,12 +117,12 @@ export async function pollUploaderMedia(
 ): Promise<UploaderMediaPoll> {
   const { data, error } = await supabase
     .from("media_items_visible")
-    .select("id, classification")
+    .select(`id, classification, ${LEVEL_COLUMNS}`)
     .eq("post_id", postId);
   if (error) throw new Error(`pollUploaderMedia: ${error.message}`);
-  const rows = (data ?? []) as Array<{ id: string; classification: MediaClassification }>;
+  const rows = (data ?? []) as Array<{ id: string; classification: MediaClassification } & LevelColumns>;
   return {
-    views: resolveUploaderMediaViews(rows, uploaderGender),
+    views: resolveUploaderMediaViews(rows.map((r) => ({ id: r.id, classification: r.classification, levels: levelsFromRow(r) })), uploaderGender),
     settled: rows.every((r) => r.classification !== "unclassified"),
   };
 }

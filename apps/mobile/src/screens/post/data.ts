@@ -280,6 +280,7 @@ export function createSupabaseBackend(supabase: SupabaseClient, userId: string):
           classification: "unclassified" as const,
           filtered: false,
           redacted: false,
+          levels: null,
           storagePath: null,
           url: p.image?.uri ?? null,
         })),

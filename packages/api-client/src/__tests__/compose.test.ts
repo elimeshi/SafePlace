@@ -68,10 +68,13 @@ describe("compose", () => {
     const a = await pollUploaderMedia(pending.client, "d", "male");
     expect(a.settled).toBe(false);
     expect(a.views[0]!.state).toBeDefined();
-    const done = mockClient(() => ({ data: [{ id: "m", classification: "contains_women" }, { id: "n", classification: "general" }] }));
+    const lv = (sex: number) => ({ sex_level: sex, violence_level: 0, religion_level: 0, addictions_level: 0 });
+    const done = mockClient(() => ({ data: [{ id: "m", classification: "contains_women", ...lv(1) }, { id: "n", classification: "general", ...lv(0) }] }));
     const b = await pollUploaderMedia(done.client, "d", "male");
     expect(b.settled).toBe(true);
     expect(b.views.map((v) => v.id)).toEqual(["m", "n"]);
+    expect(b.views.map((v) => v.foundGroups)).toEqual([["sex"], []]);
+    expect((await pollUploaderMedia(done.client, "d", "female")).views[0]!.foundGroups).toEqual([]);
     expect((await pollUploaderMedia(mockClient(() => ({ data: [] })).client, "d", "female")).settled).toBe(true);
   });
 

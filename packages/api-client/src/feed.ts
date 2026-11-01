@@ -1,13 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   ContentAudience,
+  ContentLevels,
   ContentExposure,
   FeedPlacement,
   MediaClassification,
   PostContext,
   PostSourceKind,
 } from "@safeplace/visibility-policy";
-import { MEDIA_BUCKET } from "./media";
+import { MEDIA_BUCKET, levelsFromRow, type LevelColumns } from "./media";
 
 /**
  * Feed read paths. Ordering is random, seeded once per feed visit (plan §2);
@@ -26,6 +27,8 @@ export function newFeedSeed(): string {
 export interface MediaView {
   id: string;
   classification: MediaClassification;
+  /** The uploader's own media only (the view NULLs it for everyone else); drives their notice, never visibility. */
+  levels: ContentLevels | null;
   filtered: boolean;
   redacted: boolean;
   storagePath: string | null;
@@ -33,7 +36,7 @@ export interface MediaView {
   url: string | null;
 }
 
-export interface MediaRow {
+export interface MediaRow extends LevelColumns {
   id: string;
   classification: MediaClassification;
   storage_path: string | null;
@@ -46,6 +49,7 @@ export function toMediaView(row: MediaRow): MediaView {
   return {
     id: row.id,
     classification: row.classification,
+    levels: levelsFromRow(row),
     filtered,
     redacted: Boolean(row.is_redacted),
     storagePath: filtered ? null : row.storage_path,

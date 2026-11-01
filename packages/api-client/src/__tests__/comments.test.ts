@@ -20,7 +20,7 @@ describe("fetchComments", () => {
         return opsOf(call, "is").length > 0 ? { data: [c("t1"), c("t2")] } : { data: [c("r1", "t1"), c("r2", "t1")] };
       }
       if (call.target === "rpc:comment_stats") return { data: [{ comment_id: "t1", like_count: 4, viewer_liked: true }] };
-      return { data: [{ id: "m", comment_id: "r1", classification: "contains_women", storage_path: null, is_filtered: true }] };
+      return { data: [{ id: "m", comment_id: "r1", classification: "contains_women", sex_level: null, violence_level: null, religion_level: null, addictions_level: null, storage_path: null, is_filtered: true }] };
     });
     const page = await fetchComments(client, "p", { limit: 2, cursor: { createdAt: "2026-01-01", id: "x" } });
     expect(opsOf(calls[0], "limit")[0]).toEqual([2]);
@@ -28,7 +28,7 @@ describe("fetchComments", () => {
     expect(page.threads.map((t) => t.comment.id)).toEqual(["t1", "t2"]);
     expect(page.threads[0]!.replies.map((r) => r.id)).toEqual(["r1", "r2"]);
     expect(page.threads[0]!.comment).toMatchObject({ likeCount: 4, viewerLiked: true });
-    expect(page.threads[0]!.replies[0]!.media[0]).toMatchObject({ filtered: true, storagePath: null });
+    expect(page.threads[0]!.replies[0]!.media[0]).toMatchObject({ filtered: true, storagePath: null, levels: null });
     expect(page.threads[1]!.replies).toEqual([]);
     expect(page.nextCursor).toEqual({ createdAt: "2026-01-02", id: "t2" });
   });

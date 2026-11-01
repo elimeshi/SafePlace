@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toMediaView, type MediaRow, type MediaView } from "./feed";
+import { LEVEL_COLUMNS } from "./media";
 import type { AttachedMedia } from "./posts";
 
 /**
@@ -142,7 +143,7 @@ async function fetchCommentMedia(
   if (commentIds.length === 0) return out;
   const { data, error } = await supabase
     .from("media_items_visible")
-    .select("id, comment_id, classification, storage_path, is_filtered, is_redacted")
+    .select(`id, comment_id, classification, ${LEVEL_COLUMNS}, storage_path, is_filtered, is_redacted`)
     .in("comment_id", commentIds);
   if (error) throw new Error(`fetchComments media: ${error.message}`);
   for (const r of (data ?? []) as Array<MediaRow & { comment_id: string }>) {

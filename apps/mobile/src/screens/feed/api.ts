@@ -133,7 +133,7 @@ export async function hydrateEntries(supabase: SupabaseClient, viewer: Viewer, i
       uploaderMedia:
         item.authorId === viewer.userId
           ? resolveUploaderMediaViews(
-              item.media.map((m) => ({ id: m.id, classification: m.classification })),
+              item.media.map((m) => ({ id: m.id, classification: m.classification, levels: m.levels })),
               viewer.gender
             )
           : null,

@@ -94,8 +94,8 @@ describe("feedReducer", () => {
   });
 
   it("removing media clears it and its uploader state", () => {
-    const um: UploaderMediaView[] = [{ id: "m1", classification: "general", state: "published" }];
-    const e = entry("1", { media: [{ id: "m1", classification: "general", filtered: false, redacted: false, storagePath: "p", url: "u" }] }, { uploaderMedia: um });
+    const um: UploaderMediaView[] = [{ id: "m1", classification: "general", state: "published", foundGroups: [] }];
+    const e = entry("1", { media: [{ id: "m1", classification: "general", filtered: false, redacted: false, levels: null, storagePath: "p", url: "u" }] }, { uploaderMedia: um });
     const s = feedReducer(ready([e]), { type: "mediaRemoved", postId: "1", mediaId: "m1" });
     expect(s.entries[0]!.item.media).toEqual([]);
     expect(s.entries[0]!.uploaderMedia).toEqual([]);
@@ -135,8 +135,8 @@ describe("relativeTime", () => {
 });
 
 describe("view model", () => {
-  const filteredMedia = { id: "m", classification: "contains_women" as const, filtered: true, redacted: false, storagePath: null, url: null };
-  const okMedia = { id: "m", classification: "general" as const, filtered: false, redacted: false, storagePath: "p", url: "https://x/y.jpg" };
+  const filteredMedia = { id: "m", classification: "contains_women" as const, filtered: true, redacted: false, levels: null, storagePath: null, url: null };
+  const okMedia = { id: "m", classification: "general" as const, filtered: false, redacted: false, levels: null, storagePath: "p", url: "https://x/y.jpg" };
 
   it("a filtered media view yields the placeholder and never a url", () => {
     expect(primaryMedia([filteredMedia])).toEqual({ filtered: true, url: null, hasMedia: true });
@@ -164,7 +164,7 @@ describe("view model", () => {
 
   it("state strips: processing > review > notice; dismissed notice and others' posts show none", () => {
     const own = (states: UploaderMediaView["state"][]) =>
-      entry("1", {}, { uploaderMedia: states.map((state, i) => ({ id: `m${i}`, classification: "general", state })) });
+      entry("1", {}, { uploaderMedia: states.map((state, i) => ({ id: `m${i}`, classification: "general", state, foundGroups: [] })) });
     expect(stripKindOf(own(["published", "processing"]), [])).toBe("processing");
     expect(stripKindOf(own(["under_review"]), [])).toBe("review");
     expect(stripKindOf(own(["filtered_for_some_viewers"]), [])).toBe("notice");
