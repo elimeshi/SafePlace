@@ -64,6 +64,11 @@ Inside a confirmed Family Space the `sex` check is lifted and nothing else
 is: violence, religion and addictions levels still apply to every viewer.
 The exception exists for modesty between relatives; it was never about gore.
 
+The avatar opt-out (`filter_settings.filter_applies_to_avatars = false`,
+`05-personal-area-spec.md` §2.6.1) works the same way: it lifts the `sex`
+check on profile photos and nothing else. The other three groups still apply
+to avatars, and an unresolved avatar stays withheld (Eli, 2026-11-02).
+
 ## 5. Lifecycle vs. levels
 
 `media_items.classification` keeps its four values and its meaning as the
