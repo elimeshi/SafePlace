@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_THRESHOLDS } from "../classification";
-import { createStubClassifier, type ClassifierProvider } from "../classifier";
+import { createStubClassifier, verdictsOf, type ClassifierProvider } from "../classifier";
 import { createStubLocalizer, type Region } from "../regions";
 import { drainOnce, type ClaimedJob, type JobStore, type MediaFetcher, type WorkerDeps } from "../worker";
 import type { ImageRedactor } from "../redactor";
@@ -52,7 +52,7 @@ function harness(options: {
     store,
     media,
     // The first pass flags it, which is what sends it to the redaction stage.
-    provider: createStubClassifier({ verdict: "woman_present", confidence: 0.99 }),
+    provider: createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.99 } }, 0.99) }),
     modelId: "stub-v1",
     workerId: "w",
     thresholds: DEFAULT_THRESHOLDS,
@@ -66,7 +66,7 @@ function harness(options: {
       derivatives,
       // The gate: the blurred output must come back clean.
       recheck:
-        options.recheck ?? createStubClassifier({ verdict: "no_woman", confidence: 0.99 }),
+        options.recheck ?? createStubClassifier({ fallback: verdictsOf({}, 0.99) }),
       maxCoverage: options.maxCoverage ?? 0.5,
       padding: 0.15,
     },
@@ -120,7 +120,7 @@ describe("redaction stage", () => {
     // The gate that makes the whole feature safe: a missed woman shows up
     // here, and the item falls back to being withheld entirely.
     const { deps, stored, attached } = harness({
-      recheck: createStubClassifier({ verdict: "woman_present", confidence: 0.95 }),
+      recheck: createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.95 } }) }),
     });
     await drainOnce(deps, 10);
     // Nothing that fails the gate reaches storage at all: an unverified
@@ -132,7 +132,7 @@ describe("redaction stage", () => {
 
   it("discards the derivative when the re-check is merely unsure", async () => {
     const { deps, attached } = harness({
-      recheck: createStubClassifier({ verdict: "uncertain", confidence: 0.5 }),
+      recheck: createStubClassifier({ fallback: verdictsOf({ sex: { level: "uncertain", confidence: 0.5 } }) }),
     });
     await drainOnce(deps, 10);
     expect(attached).toHaveLength(0);
@@ -158,7 +158,7 @@ describe("redaction stage", () => {
   it("never runs for media that was not flagged", async () => {
     const { deps, stored } = harness({});
     const locate = vi.fn();
-    deps.provider = createStubClassifier({ verdict: "no_woman", confidence: 0.99 });
+    deps.provider = createStubClassifier({ fallback: verdictsOf({}, 0.99) });
     deps.redaction!.localizer = { name: "never", locate };
 
     await drainOnce(deps, 10);

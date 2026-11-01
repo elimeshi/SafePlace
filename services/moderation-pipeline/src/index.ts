@@ -15,19 +15,27 @@
  */
 export {
   DEFAULT_THRESHOLDS,
+  groupProbabilityFrom,
   resolveClassificationFromBand,
   resolveConfidenceBand,
+  resolveMediaOutcome,
   type ClassificationThresholds,
   type ConfidenceBand,
+  type MediaOutcome,
+  type ReviewReason,
 } from "./classification";
 
 export {
+  UNCERTAIN_VERDICT,
+  allUncertain,
   createStubClassifier,
+  verdictsOf,
   womanProbabilityFrom,
   type ClassifierInput,
   type ClassifierOutput,
   type ClassifierProvider,
-  type ClassifierVerdict,
+  type ClassifierVerdicts,
+  type GroupVerdict,
 } from "./classifier";
 
 export {

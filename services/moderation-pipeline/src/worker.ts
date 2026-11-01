@@ -12,15 +12,11 @@
  * against PGlite in the parity harness.
  */
 import {
-  resolveClassificationFromBand,
   resolveConfidenceBand,
+  resolveMediaOutcome,
   type ClassificationThresholds,
 } from "./classification";
-import {
-  womanProbabilityFrom,
-  type ClassifierProvider,
-  type ClassifierVerdict,
-} from "./classifier";
+import { womanProbabilityFrom, type ClassifierProvider } from "./classifier";
 import {
   coverageFraction,
   padRegion,
@@ -40,7 +36,7 @@ export interface CompletedClassification {
   classification: MediaClassification;
   provider: string;
   modelId: string;
-  verdict: ClassifierVerdict | "unsupported_media";
+  verdict: string;
   confidence: number;
   womanProbability: number;
 }
@@ -141,17 +137,18 @@ async function processJob(
       contentType: job.contentType,
     });
 
+    const outcome = resolveMediaOutcome(output, deps.thresholds);
+    const classification = outcome.classification;
     const womanProbability = womanProbabilityFrom(output);
-    const band = resolveConfidenceBand(womanProbability, deps.thresholds);
-    const classification = resolveClassificationFromBand(band);
 
     await deps.store.complete({
       mediaItemId: job.mediaItemId,
       classification,
       provider: deps.provider.name,
       modelId: deps.modelId,
-      verdict: output.verdict,
-      confidence: output.confidence,
+      // replaced in Task 11 (store takes levels, not a single verdict)
+      verdict: output.kind === "refused" ? "refused" : "levels",
+      confidence: output.kind === "refused" ? 0 : output.groups.sex.confidence,
       womanProbability,
     });
 
@@ -159,7 +156,7 @@ async function processJob(
       event: "classified",
       mediaItemId: job.mediaItemId,
       classification,
-      band,
+      band: resolveConfidenceBand(womanProbability, deps.thresholds),
       durationMs: Date.now() - startedAt,
     });
 

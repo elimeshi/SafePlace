@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createStubClassifier, type ClassifierProvider } from "../classifier";
+import { createStubClassifier, verdictsOf, type ClassifierProvider } from "../classifier";
 import { DEFAULT_THRESHOLDS } from "../classification";
 import { drainOnce, type JobStore, type MediaFetcher, type ClaimedJob } from "../worker";
 
@@ -52,33 +52,33 @@ const deps = (provider: ClassifierProvider, store: JobStore, media = fetcher()) 
 describe("drainOnce", () => {
   it("classifies a claimed job and completes it with the resolved enum", async () => {
     const { store, completed } = makeStore([job()]);
-    const provider = createStubClassifier({ verdict: "woman_present", confidence: 0.95 });
+    const provider = createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.95 } }) });
 
     const summary = await drainOnce(deps(provider, store), 10);
 
     expect(completed).toEqual([
-      { mediaItemId: "m1", classification: "contains_women", verdict: "woman_present" },
+      { mediaItemId: "m1", classification: "contains_women", verdict: "levels" },
     ]);
     expect(summary).toMatchObject({ claimed: 1, classified: 1, failed: 0 });
   });
 
   it("sends a confident negative to 'general'", async () => {
     const { store, completed } = makeStore([job()]);
-    const provider = createStubClassifier({ verdict: "no_woman", confidence: 0.95 });
+    const provider = createStubClassifier({ fallback: verdictsOf({}, 0.95) });
     await drainOnce(deps(provider, store), 10);
     expect(completed[0]?.classification).toBe("general");
   });
 
   it("sends an uncertain verdict to human review", async () => {
     const { store, completed } = makeStore([job()]);
-    const provider = createStubClassifier({ verdict: "uncertain", confidence: 0.1 });
+    const provider = createStubClassifier({ fallback: verdictsOf({ sex: { level: "uncertain", confidence: 0.1 } }) });
     await drainOnce(deps(provider, store), 10);
     expect(completed[0]?.classification).toBe("pending_review");
   });
 
   it("processes every claimed job, not just the first", async () => {
     const { store, completed } = makeStore([job({ mediaItemId: "a" }), job({ mediaItemId: "b" })]);
-    await drainOnce(deps(createStubClassifier({ verdict: "no_woman", confidence: 1 }), store), 10);
+    await drainOnce(deps(createStubClassifier({ fallback: verdictsOf({}, 1) }), store), 10);
     expect(completed.map((c) => c.mediaItemId)).toEqual(["a", "b"]);
   });
 
@@ -91,7 +91,7 @@ describe("drainOnce", () => {
       name: "flaky",
       classify: async ({ mediaItemId }) => {
         if (mediaItemId === "bad") throw new Error("provider timeout");
-        return { verdict: "no_woman", confidence: 1 };
+        return verdictsOf({}, 1);
       },
     };
 
@@ -110,7 +110,7 @@ describe("drainOnce", () => {
       },
     };
     await drainOnce(
-      deps(createStubClassifier({ verdict: "no_woman", confidence: 1 }), store, media),
+      deps(createStubClassifier({ fallback: verdictsOf({}, 1) }), store, media),
       10
     );
     expect(failed[0]).toMatchObject({ mediaItemId: "m1", error: "object missing" });
@@ -138,7 +138,7 @@ describe("drainOnce — logging discloses nothing it shouldn't", () => {
   it("logs the band and outcome but never bytes or the confidence number", async () => {
     const { store } = makeStore([job()]);
     const lines: string[] = [];
-    const provider = createStubClassifier({ verdict: "woman_present", confidence: 0.93 });
+    const provider = createStubClassifier({ fallback: verdictsOf({ sex: { level: 1, confidence: 0.93 } }) });
 
     await drainOnce(
       { ...deps(provider, store), logger: { log: (entry) => lines.push(JSON.stringify(entry)) } },

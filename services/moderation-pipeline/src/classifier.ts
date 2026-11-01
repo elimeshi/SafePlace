@@ -1,29 +1,54 @@
+import {
+  CONTENT_GROUPS,
+  type ContentGroup,
+  type ContentLevel,
+} from "@safeplace/visibility-policy";
+import { groupProbabilityFrom } from "./classification";
+
+export type { ContentGroup, ContentLevel };
+
 /**
  * The swappable classifier seam (ADR 0004). Everything upstream of this file
  * — the worker, the band logic, the persisted classification — depends on
  * this interface, never on a specific vendor, and the concrete model is
  * configuration rather than a literal in pipeline code.
  *
- * Why a verdict plus a confidence, rather than a bare probability: a vision
- * LLM is good at answering "is a woman shown here" and poor at emitting a
+ * Why a level plus a confidence per group, rather than a bare probability: a
+ * vision LLM is good at answering "what is shown here" and poor at emitting a
  * calibrated probability, so asking for a number directly produces a figure
  * that looks like a probability and is not one. The provider returns what the
- * model can actually give; womanProbabilityFrom projects that onto the 0..1
- * scale the product spec (07-moderation-spec.md §2.1) and the tunable
- * thresholds are written in. The three-band mechanism is unchanged.
+ * model can actually give; groupProbabilityFrom projects each group's answer
+ * onto the 0..1 scale the product spec (07-moderation-spec.md §2.1) and the
+ * tunable thresholds are written in. The three-band mechanism is unchanged.
  */
+
+/** One group's answer. 'uncertain' is a first-class answer (routes to a human). */
+export interface GroupVerdict {
+  level: ContentLevel | "uncertain";
+  /** The model's own certainty in that level, 0..1. */
+  confidence: number;
+}
+
+export type ClassifierVerdicts = Record<ContentGroup, GroupVerdict>;
 
 /**
- * What the model is asked to decide. 'uncertain' is a first-class answer, not
- * a failure: the medium band exists precisely so the model can decline to
- * call it and a human decides instead.
+ * Either an answer per group, or a refusal: the model declined to describe
+ * the image at all. A refusal is information ("it saw something it will not
+ * talk about"), never a transport error, so it is a value here, not a throw.
  */
-export type ClassifierVerdict = "woman_present" | "no_woman" | "uncertain";
+export type ClassifierOutput =
+  | { kind: "verdicts"; groups: ClassifierVerdicts }
+  | { kind: "refused" };
 
-export interface ClassifierOutput {
-  verdict: ClassifierVerdict;
-  /** The model's own certainty in its verdict, 0..1. */
-  confidence: number;
+export const UNCERTAIN_VERDICT: GroupVerdict = { level: "uncertain", confidence: 0 };
+
+export function allUncertain(): ClassifierOutput {
+  return {
+    kind: "verdicts",
+    groups: Object.fromEntries(
+      CONTENT_GROUPS.map((g) => [g, UNCERTAIN_VERDICT])
+    ) as ClassifierVerdicts,
+  };
 }
 
 export interface ClassifierInput {
@@ -40,53 +65,19 @@ export interface ClassifierProvider {
 }
 
 /**
- * The midpoint: "nothing can be concluded". Lands in the medium band for any
- * sane threshold pair, so it routes to a human.
- */
-const UNDECIDED = 0.5;
-
-function isUsableConfidence(value: unknown): value is number {
-  return (
-    typeof value === "number" &&
-    Number.isFinite(value) &&
-    value >= 0 &&
-    value <= 1
-  );
-}
-
-/**
- * Project a provider's answer onto the probability-the-content-contains-women
- * scale. A confident verdict reaches the end of the scale; an unsure one stays
- * near the middle, where the thresholds route it to review.
- *
- * Fails safe: any output that cannot be read — a non-finite or out-of-range
- * confidence, an unknown verdict, a missing object — resolves to the midpoint
- * and therefore to human review. A remote model behind a JSON schema can still
- * return nonsense, and nonsense must never auto-approve.
+ * The sex-group probability — what the redaction recheck gates on. A refusal
+ * resolves to the midpoint, i.e. to human review: nothing was concluded, and
+ * nothing unreadable may auto-approve.
  */
 export function womanProbabilityFrom(output: ClassifierOutput): number {
-  if (output === null || typeof output !== "object") return UNDECIDED;
-  if (!isUsableConfidence(output.confidence)) return UNDECIDED;
-
-  switch (output.verdict) {
-    case "woman_present":
-      return UNDECIDED + output.confidence / 2;
-    case "no_woman":
-      return UNDECIDED - output.confidence / 2;
-    case "uncertain":
-      return UNDECIDED;
-    default:
-      return UNDECIDED;
-  }
+  return output.kind === "refused" ? 0.5 : groupProbabilityFrom(output.groups.sex);
 }
 
 export interface StubClassifierOptions {
   /** Fixed answers keyed by media item id — for tests that need a given band. */
   byMediaItemId?: Record<string, ClassifierOutput>;
-  /** Fallback verdict for any id not listed above. */
-  verdict?: ClassifierVerdict;
-  /** Fallback confidence for any id not listed above. */
-  confidence?: number;
+  /** Fallback for ids not listed. Defaults to all-uncertain (routes to a human). */
+  fallback?: ClassifierOutput;
 }
 
 /**
@@ -94,20 +85,28 @@ export interface StubClassifierOptions {
  * provider for development and the only one the test suite uses, so no test
  * run ever spends money or depends on the network.
  *
- * Defaults to 'uncertain', which routes to human review. A stub that silently
- * auto-approved would make a misconfigured deployment look like a working one.
+ * Defaults to all-uncertain, which routes to human review. A stub that
+ * silently auto-approved would make a misconfigured deployment look like a
+ * working one.
  */
 export function createStubClassifier(
   options: StubClassifierOptions = {}
 ): ClassifierProvider {
-  const fallback: ClassifierOutput = {
-    verdict: options.verdict ?? "uncertain",
-    confidence: options.confidence ?? 0,
-  };
-
+  const fallback = options.fallback ?? allUncertain();
   return {
     name: "stub",
     classify: async ({ mediaItemId }: ClassifierInput) =>
       options.byMediaItemId?.[mediaItemId] ?? fallback,
   };
+}
+
+/** Convenience for tests: every group 0 except the ones given. */
+export function verdictsOf(
+  over: Partial<ClassifierVerdicts>,
+  confidence = 0.95
+): ClassifierOutput {
+  const groups = Object.fromEntries(
+    CONTENT_GROUPS.map((g) => [g, over[g] ?? { level: 0, confidence }])
+  ) as ClassifierVerdicts;
+  return { kind: "verdicts", groups };
 }

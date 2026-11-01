@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { allUncertain, verdictsOf } from "../classifier";
 import {
   createAnthropicClassifier,
   type MessagesParseClient,
@@ -33,10 +34,10 @@ describe("createAnthropicClassifier", () => {
     });
     const provider = createAnthropicClassifier({ client, modelId: "claude-haiku-4-5" });
 
-    await expect(provider.classify(input)).resolves.toEqual({
-      verdict: "woman_present",
-      confidence: 0.93,
-    });
+    // replaced in Task 4: the old single-axis answer lands on the sex group.
+    await expect(provider.classify(input)).resolves.toEqual(
+      verdictsOf({ sex: { level: 1, confidence: 0.93 } }, 0.93)
+    );
   });
 
   it("reads the model id from configuration, never a literal", async () => {
@@ -100,10 +101,7 @@ describe("createAnthropicClassifier — unusable answers fail safe", () => {
         client: fakeClient(result),
         modelId: "claude-haiku-4-5",
       });
-      await expect(provider.classify(input)).resolves.toEqual({
-        verdict: "uncertain",
-        confidence: 0,
-      });
+      await expect(provider.classify(input)).resolves.toEqual(allUncertain());
     });
   }
 });
@@ -135,7 +133,7 @@ describe("createAnthropicClassifier — transport failures are retryable", () =>
 
     await expect(
       provider.classify({ ...input, bytes: new Uint8Array(64) })
-    ).resolves.toEqual({ verdict: "uncertain", confidence: 0 });
+    ).resolves.toEqual(allUncertain());
     expect(parse).not.toHaveBeenCalled();
   });
 });

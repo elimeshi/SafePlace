@@ -13,10 +13,13 @@ import {
   CLASSIFIER_SYSTEM_PROMPT,
   CLASSIFIER_USER_INSTRUCTION,
 } from "../classifier-prompt";
-import type {
-  ClassifierInput,
-  ClassifierOutput,
-  ClassifierProvider,
+import {
+  UNCERTAIN_VERDICT,
+  allUncertain,
+  verdictsOf,
+  type ClassifierInput,
+  type ClassifierOutput,
+  type ClassifierProvider,
 } from "../classifier";
 
 /**
@@ -42,7 +45,7 @@ export interface AnthropicClassifierOptions {
 }
 
 /** Nothing could be concluded — routes to the medium band, i.e. to a human. */
-const UNCERTAIN: ClassifierOutput = { verdict: "uncertain", confidence: 0 };
+const UNCERTAIN: ClassifierOutput = allUncertain(); // replaced in Task 4
 
 const DEFAULT_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -76,7 +79,13 @@ function readOutput(parsed: unknown): ClassifierOutput {
     return UNCERTAIN;
   }
 
-  return { verdict, confidence };
+  // replaced in Task 4: the old single-axis answer, mapped onto the sex group.
+  return verdictsOf({
+    sex:
+      verdict === "uncertain"
+        ? UNCERTAIN_VERDICT
+        : { level: verdict === "woman_present" ? 1 : 0, confidence },
+  }, confidence);
 }
 
 export function createAnthropicClassifier(
