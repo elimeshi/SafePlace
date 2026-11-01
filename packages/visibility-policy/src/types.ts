@@ -9,6 +9,42 @@
 export type Gender = "male" | "female";
 
 /**
+ * The four classification groups (ADR 0018). Order is stable and is the order
+ * every per-group structure in the product uses.
+ */
+export const CONTENT_GROUPS = ["sex", "violence", "religion", "addictions"] as const;
+export type ContentGroup = (typeof CONTENT_GROUPS)[number];
+
+/** A level the MODEL may report. 3 is prohibited content and never auto-publishes. */
+export type ContentLevel = 0 | 1 | 2 | 3;
+/** A level a VIEWER may accept. There is no viewer setting that opts into 3. */
+export type ViewerMaxLevel = 0 | 1 | 2;
+
+export const PROHIBITED_LEVEL = 3;
+
+/** The top of each ladder. Addictions has two steps (Eli dropped "alcohol present"). */
+export const MAX_LEVEL_BY_GROUP: Readonly<Record<ContentGroup, ContentLevel>> = {
+  sex: 3,
+  violence: 3,
+  religion: 3,
+  addictions: 2,
+};
+
+/** Resolved levels of one media item. NULL on the row until classified. */
+export type ContentLevels = Readonly<Record<ContentGroup, ContentLevel>>;
+/** The viewer's maximum accepted level per group. */
+export type ViewerContentLevels = Readonly<Record<ContentGroup, ViewerMaxLevel>>;
+
+export function isContentLevels(value: unknown): value is ContentLevels {
+  if (value === null || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return CONTENT_GROUPS.every((g) => {
+    const n = v[g];
+    return Number.isInteger(n) && (n as number) >= 0 && (n as number) <= MAX_LEVEL_BY_GROUP[g];
+  });
+}
+
+/**
  * The resolved classification state of a single media item, as produced by
  * the moderation pipeline (services/moderation-pipeline). UI and policy
  * code must only ever read this resolved enum — never a raw model
@@ -64,8 +100,14 @@ export interface CommentContext {
  * copies of these flags from elsewhere; always resolve them from here.
  */
 export interface FilterSettings {
-  /** Hide media classified as containing women. */
+  /**
+   * DERIVED: equals `contentLevels.sex === 0`. Kept so existing readers keep
+   * working; the DB holds it as a generated column. Never write it — write
+   * `contentLevels.sex`.
+   */
   hideContentWithWomen: boolean;
+  /** Maximum accepted level per group (ADR 0018). */
+  contentLevels: ViewerContentLevels;
   /** Hide accounts that are tagged/flagged as women's accounts. */
   hideWomenAccounts: boolean;
   /** Show algorithmically suggested posts from non-followed sources. */
@@ -138,6 +180,7 @@ export interface MediaItemContext {
 export const DEFAULT_FILTER_SETTINGS: Record<Gender, FilterSettings> = {
   male: {
     hideContentWithWomen: true,
+    contentLevels: { sex: 0, violence: 0, religion: 0, addictions: 0 },
     hideWomenAccounts: true,
     showSuggestedPosts: true,
     genderSeparationInMessages: false,
@@ -146,6 +189,8 @@ export const DEFAULT_FILTER_SETTINGS: Record<Gender, FilterSettings> = {
   },
   female: {
     hideContentWithWomen: false,
+    // 1 = modest women visible, immodest not. Confirmed by Eli 2026-11-01.
+    contentLevels: { sex: 1, violence: 0, religion: 0, addictions: 0 },
     hideWomenAccounts: false,
     showSuggestedPosts: true,
     genderSeparationInMessages: false,

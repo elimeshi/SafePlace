@@ -286,7 +286,8 @@ export function canSendMessageRequest(
  * values and why they're framed as defaults, not rules.
  */
 export function resolveDefaultFilterSettings(gender: Gender): FilterSettings {
-  return { ...DEFAULT_FILTER_SETTINGS[gender] };
+  const defaults = DEFAULT_FILTER_SETTINGS[gender];
+  return { ...defaults, contentLevels: { ...defaults.contentLevels } };
 }
 
 /**

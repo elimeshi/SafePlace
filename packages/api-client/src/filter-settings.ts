@@ -45,8 +45,8 @@ export async function setContentFilterEnabled(
   }
 }
 
-/** Snake-case DB column names for a FilterSettings key. */
-const COLUMN_OF: Record<keyof FilterSettings, string> = {
+/** Snake-case DB column names for a FilterSettings key. contentLevels has no column yet (Task 12), so it is not patchable. */
+const COLUMN_OF: Record<Exclude<keyof FilterSettings, "contentLevels">, string> = {
   hideContentWithWomen: "hide_content_with_women",
   hideWomenAccounts: "hide_women_accounts",
   filterAppliesToAvatars: "filter_applies_to_avatars",
@@ -59,12 +59,12 @@ const COLUMN_OF: Record<keyof FilterSettings, string> = {
 export async function updateFilterSettings(
   supabase: SupabaseClient,
   userId: string,
-  patch: Partial<FilterSettings>
+  patch: Partial<Omit<FilterSettings, "contentLevels">>
 ): Promise<void> {
   const dbPatch: Record<string, boolean> = {};
   for (const [key, value] of Object.entries(patch)) {
     if (value === undefined) continue;
-    dbPatch[COLUMN_OF[key as keyof FilterSettings]] = value;
+    dbPatch[COLUMN_OF[key as keyof typeof COLUMN_OF]] = value;
   }
   if (Object.keys(dbPatch).length === 0) return;
 

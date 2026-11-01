@@ -81,6 +81,8 @@ interface FilterSettingsRow {
 export function mapFilterSettings(row: FilterSettingsRow): FilterSettings {
   return {
     hideContentWithWomen: row.hide_content_with_women,
+    // Minimal derived value; Task 12 replaces it with the real per-group columns.
+    contentLevels: { sex: row.hide_content_with_women ? 0 : 1, violence: 0, religion: 0, addictions: 0 },
     hideWomenAccounts: row.hide_women_accounts,
     filterAppliesToAvatars: row.filter_applies_to_avatars,
     showSuggestedPosts: row.show_suggested_posts,

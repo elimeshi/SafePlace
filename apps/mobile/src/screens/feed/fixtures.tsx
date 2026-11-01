@@ -78,6 +78,7 @@ const VIEWER: Viewer = {
   gender: "male",
   filterSettings: {
     hideContentWithWomen: true,
+    contentLevels: { sex: 0, violence: 0, religion: 0, addictions: 0 },
     hideWomenAccounts: false,
     showSuggestedPosts: true,
     genderSeparationInMessages: false,
