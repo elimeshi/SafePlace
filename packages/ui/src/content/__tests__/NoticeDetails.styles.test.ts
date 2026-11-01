@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detailsChevronName, detailsMotion, resolveNoticeDetailsStyle } from "../NoticeDetails.styles";
+import { MIN_TOUCH, detailsChevronName, detailsMotion, resolveNoticeDetailsStyle } from "../NoticeDetails.styles";
 import { resolveMiniButtonStyle } from "../MiniButton.styles";
 import { contentCopy } from "../copy";
 
@@ -22,7 +22,13 @@ describe("NoticeDetails (the notice's 'what was found?' line)", () => {
     expect(s.label).toEqual(resolveMiniButtonStyle("secondary").label);
     expect(s.chevronColor).toBe(s.label.color);
   });
-  it("default label is the shared-types detailsLabel", () => {
+  it("default label is the accepted Hebrew (parity with shared-types is tested in apps/mobile)", () => {
     expect(contentCopy.noticeDetails).toBe("מה זוהה?");
+  });
+  it("touch target is at least 44pt tall via hitSlop, without padding the visible line", () => {
+    const s = resolveNoticeDetailsStyle();
+    const minRow = s.chevronSize + 2 * Number(s.toggle.paddingVertical);
+    expect(minRow + s.hitSlop.top + s.hitSlop.bottom).toBeGreaterThanOrEqual(MIN_TOUCH);
+    expect(s.toggle.minHeight).toBeUndefined();
   });
 });

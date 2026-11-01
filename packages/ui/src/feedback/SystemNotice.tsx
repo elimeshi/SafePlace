@@ -24,7 +24,7 @@ export interface SystemNoticeProps {
 /**
  * Safe-Place SystemNotice — a neutral, factual message block. Ported from
  * design-reference/components/feedback/SystemNotice.jsx. Its signature use
- * is the women-detected upload alert (master spec §4.4.2): informs, never
+ * is the upload content alert (master spec §4.4.2): informs, never
  * blocks or preaches, and lets the user decide. Also used for the Settings
  * dangerous-zone double-confirm flows (§3.6 / §4). All copy — title,
  * message, button labels — is passed in by the caller.

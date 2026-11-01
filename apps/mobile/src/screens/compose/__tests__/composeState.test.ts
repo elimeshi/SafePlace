@@ -63,7 +63,7 @@ describe("deriveView", () => {
   });
 });
 
-describe("women-detected notice", () => {
+describe("content notice", () => {
   const flagged = run([{ type: "text", text: "x" }, ...attached, { type: "uploaderState", state: "filtered_for_some_viewers", foundGroups: ["sex"] }]);
 
   it("shows before publish, and Publish while unanswered is allowed (treated as Confirm)", () => {

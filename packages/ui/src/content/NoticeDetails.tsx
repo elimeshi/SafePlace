@@ -40,7 +40,7 @@ export function NoticeDetails({ label, details, textStyle }: NoticeDetailsProps)
         accessibilityLabel={label}
         accessibilityState={{ expanded }}
         onPress={() => setExpanded((e) => !e)}
-        hitSlop={8}
+        hitSlop={s.hitSlop}
         style={s.toggle}
         testID="notice-details-toggle"
       >

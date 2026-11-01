@@ -6,7 +6,7 @@ import { theme } from "../theme";
  * Pure styling for SystemNotice — kept separate from the view so it can be
  * unit-tested with vitest (no RN renderer). Ported from
  * design-reference/components/feedback/SystemNotice.jsx. A neutral, factual
- * message block; its signature use is the women-detected upload alert
+ * message block; its signature use is the upload content alert
  * (master spec §4.4.2) — informs, never blocks or preaches — and the
  * Settings dangerous-zone double-confirm flows (§3.6 / §4).
  */

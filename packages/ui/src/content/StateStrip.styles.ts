@@ -7,7 +7,7 @@ import { assistant, lh } from "../foundation/style";
 /**
  * Lab `.state-strip`: a full-width band at the foot of a post card — media
  * processing (cyan), under review (amber), or the uploader's post-hoc
- * women-detected notice (blue, stacked with actions).
+ * content notice (blue, stacked with actions).
  */
 export type StateStripKind = "processing" | "review" | "notice";
 
