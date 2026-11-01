@@ -61,7 +61,8 @@ export type UserKey =
   | "bothGroups"
   | "maleLevels1"
   | "femaleLevels2"
-  | "maleSexOnlyLifted";
+  | "maleSexOnlyLifted"
+  | "maleAvatarOptOut";
 
 export interface UserFixture {
   key: UserKey;
@@ -138,6 +139,7 @@ const BOTH_GROUPS = hx("a0d");
 const MALE_LEVELS_1 = hx("a0e");
 const FEMALE_LEVELS_2 = hx("a0f");
 const MALE_SEX_ONLY_LIFTED = hx("a10");
+const MALE_AVATAR_OPT_OUT = hx("a11");
 
 export const USERS: UserFixture[] = [
   // Author of the content grid. Deliberately male/default (content filter ON):
@@ -232,8 +234,29 @@ export const USERS: UserFixture[] = [
     // the generic avatar (Eli, 2026-11-02).
     avatar: { id: hx("b0f"), classification: "contains_women", levels: { sex: 1, violence: 1, religion: 0, addictions: 0 } },
   },
-  // Family Space member with every maximum at 0: the space lifts sex, nothing else.
-  { key: "maleSexOnlyLifted", id: MALE_SEX_ONLY_LIFTED, gender: "male", filter: withFilter("male", { contentLevels: maxima(0) }), follows: [], groups: [], familySpaces: [FAMILY_SPACE_ID] },
+  // Family Space member at sex 0, violence 1: inside the space sex is lifted
+  // entirely (even level 2) while violence still applies at their own max.
+  // (fsMember, at maxima 0, is the withheld-for-violence counterpart.)
+  {
+    key: "maleSexOnlyLifted",
+    id: MALE_SEX_ONLY_LIFTED,
+    gender: "male",
+    filter: withFilter("male", { contentLevels: { ...maxima(0), violence: 1 } }),
+    follows: [],
+    groups: [],
+    familySpaces: [FAMILY_SPACE_ID],
+  },
+  // Avatar opt-out at sex max 0: the only way avatar parity can tell whether
+  // the opt-out really lifts sex (every avatar here has sex <= 1).
+  {
+    key: "maleAvatarOptOut",
+    id: MALE_AVATAR_OPT_OUT,
+    gender: "male",
+    filter: withFilter("male", { contentLevels: maxima(0), filterAppliesToAvatars: false }),
+    follows: [],
+    groups: [],
+    familySpaces: [],
+  },
 ];
 
 export const USER = Object.fromEntries(USERS.map((u) => [u.key, u])) as Record<UserKey, UserFixture>;

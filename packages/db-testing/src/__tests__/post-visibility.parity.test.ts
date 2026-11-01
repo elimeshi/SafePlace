@@ -280,18 +280,27 @@ describe("spaces_rail", () => {
   });
 
   it("the Family Space card previews a post; its media lifts sex only (carve-out)", async () => {
-    const card = (await railFor(USER.fsMember.id)).rows[0]!;
-    expect(card.space_kind).toBe("family_space");
-    expect(card.latest_post_id).not.toBeNull();
-    expect(card.latest_media.length).toBeGreaterThan(0);
-    for (const m of card.latest_media) {
-      const fx = [...MEDIA, ...LEVEL_MEDIA].find((x) => x.mediaId === m.id)!;
-      expect(fx.familySpaceId).toBe(FAMILY_SPACE_ID);
-      // fsMember is filtered (maxima 0): sex is lifted in the space, the other groups are not.
-      const exp = expectedMedia(USER.fsMember, fx);
-      expect(m.storage_path !== null).toBe(exp.contentVisible);
-      expect(m.is_filtered).toBe(exp.isFiltered);
+    // fsMember (maxima 0) and maleSexOnlyLifted (sex 0, violence 1) are both
+    // sex-filtered; the space lifts sex for both, violence only for neither.
+    const served = new Map<string, boolean>();
+    for (const viewer of [USER.fsMember, USER.maleSexOnlyLifted]) {
+      const card = (await railFor(viewer.id)).rows[0]!;
+      expect(card.space_kind).toBe("family_space");
+      expect(card.latest_post_id).not.toBeNull();
+      expect(card.latest_media.length).toBeGreaterThan(0);
+      for (const m of card.latest_media) {
+        const fx = [...MEDIA, ...LEVEL_MEDIA].find((x) => x.mediaId === m.id)!;
+        expect(fx.familySpaceId).toBe(FAMILY_SPACE_ID);
+        const exp = expectedMedia(viewer, fx);
+        expect(m.storage_path !== null, viewer.key).toBe(exp.contentVisible);
+        expect(m.is_filtered, viewer.key).toBe(exp.isFiltered);
+        served.set(viewer.key, (served.get(viewer.key) ?? false) || m.storage_path !== null);
+      }
     }
+    // Decisive both ways: violence 1 withholds from maxima 0, and a sex-2 item
+    // is served on the rail to a sex-0 member once violence is within their max.
+    expect(served.get("fsMember")).toBe(false);
+    expect(served.get("maleSexOnlyLifted")).toBe(true);
   });
 
   it("a group card's preview media still obeys the viewer's filter", async () => {

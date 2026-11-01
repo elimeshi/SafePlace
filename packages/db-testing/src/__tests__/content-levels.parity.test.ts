@@ -72,8 +72,14 @@ describe("per-group levels: DB agrees with visibility-policy", () => {
 // cannot quietly stop exercising them.
 it("a Family Space lifts sex only: a member at maxima 0 is still withheld violence 1", async () => {
   const fs = LEVEL_MEDIA.find((m) => m.familySpaceId !== null)!;
-  const row = (await visibleMediaFor(USER.maleSexOnlyLifted.id)).get(fs.mediaId);
+  const row = (await visibleMediaFor(USER.fsMember.id)).get(fs.mediaId);
   expect(row).toMatchObject({ has_url: false, is_filtered: true });
+});
+
+it("a Family Space lifts sex entirely: a member at sex 0, violence 1 sees {sex 2, violence 1}", async () => {
+  const fs = LEVEL_MEDIA.find((m) => m.familySpaceId !== null)!;
+  const row = (await visibleMediaFor(USER.maleSexOnlyLifted.id)).get(fs.mediaId);
+  expect(row).toMatchObject({ has_url: true, is_filtered: false });
 });
 
 it("maxima are per group: level 1 passes a viewer at 1, level 2 does not", async () => {
