@@ -1988,3 +1988,79 @@ Cost per 1k: Haiku $0.164 (inside the $0.12–0.25 target), Sonnet $2.639
   $2.64 ≈ $1.09 per 1k images, and on these numbers would cut review from
   ~35 % to ~23 % of images. Raising Haiku's effort from low to medium is a
   second untested lever.
+
+### 2026-11-02 — rubric revision (Eli) + targeted re-measure
+
+**Decisions (Eli, 2026-11-02), applied to `CLASSIFIER_SYSTEM_PROMPT`:**
+1. *Uncertain only when undecidable.* "uncertain" only when the image does not
+   let you decide (too small, blurred, dark, cropped, crowded, or the figure
+   itself is ambiguous). Unsure between two levels → give the higher level and
+   report actual confidence. The per-group uncertain lines (adolescence, real
+   blood, is-the-symbol-religious) are unchanged.
+2. *Kitchen knife.* Violence 1 is a weapon held or brandished by a person,
+   "not a kitchen or table knife"; a kitchen or table knife in a food or
+   cooking context is 0.
+3. *Unheld weapons.* A weapon nobody is holding (museum, shop window, display
+   case, monument) is 0.
+4. *Idolatry needs worship.* Religion 3 idolatry = people shown worshipping
+   statues/figures/objects, or an image promoting their worship. A temple
+   interior with statues and no worship shown is 2.
+
+**Targeted re-measure** (Eli: not the whole sample). Subset
+`eval/manifest-retest-2026-11-02.csv`, 50 images, chosen deterministically by
+`sha256("retest-2026-11-02:<id>")`: 43 images where the previous Haiku run
+answered "uncertain" for the labelled group (up to 11 per group, images with a
+Sonnet reference first: sex 11, violence 11, religion 11, addictions 10; 40 of
+43 have a Sonnet reference), plus the 7 kitchen-knife images (the kitchen-knife
+cell, reconstructed from the manifest's round-robin order, where Haiku
+previously said violence 1). Results in `eval/results-haiku-retest-2026-11-02.jsonl`.
+
+*Run as shipped (Haiku 5.5, effort low, max_tokens 256), $0.0104:*
+
+| group | prev. uncertain | now numeric | still uncertain | numeric = label | numeric = Sonnet |
+|---|---|---|---|---|---|
+| sex | 11 | 0 | 11 | 0/0 | 0/0 |
+| violence | 11 | 3 | 8 | 2/3 | 3/3 |
+| religion | 11 | 1 | 10 | 0/1 | 1/1 |
+| addictions | 10 | 1 | 9 | 1/1 | 1/1 |
+
+Knives: violence 0 on 6 of 7, 1 on 1 (previously 1 on all 7). Regressions
+(previously numeric and right, now wrong or uncertain): 0.
+
+**Finding — the abstentions are truncation, not the rubric.** The uncertain
+answers all cost a tight ~$0.00021 per call against ~$0.00013 for numeric ones
+(in the original 820-image run too: 264 of 265 uncertain rows sit in that
+cluster). A diagnostic rerun of the same 50 images with only `max_tokens`
+raised to 1024 (client wrapper, not committed; stop reason and token counts
+recorded, never model text) showed Haiku 5.5 emits a thinking block on 41 of
+50 calls even at effort low, and 37 of 50 responses exceed 256 output tokens
+(median 333, max 683). With `MAX_TOKENS = 256` those stop at `max_tokens` and
+the provider returns all-uncertain. The previous entry's reading ("the model
+answering uncertain … a rubric-wording issue") is therefore wrong: most of
+Haiku's 32 % abstention was the token cap.
+
+*Diagnostic (same rubric, max_tokens 1024), $0.0126:*
+
+| group | prev. uncertain | now numeric | still uncertain | numeric = label | numeric = Sonnet |
+|---|---|---|---|---|---|
+| sex | 11 | 8 | 3 | 8/8 | 6/6 |
+| violence | 11 | 10 | 1 | 7/10 | 8/9 |
+| religion | 11 | 10 | 1 | 8/10 | 7/10 |
+| addictions | 10 | 10 | 0 | 7/10 | 6/7 |
+
+Level distribution over all 50 rows: sex 0:1 1:5 2:2 uncertain:3; violence
+0:10 1:6 2:1 uncertain:1; religion 0:2 1:2 2:6 uncertain:1; addictions 0:4
+1:2 2:4. Knives: same as the shipped run (0 on 6 of 7). Regressions: 0. All 50
+calls ended `end_turn`.
+
+Spend: $0.0230 (retest $0.0104 + diagnostic $0.0126). Total eval spend to
+date: $0.955.
+
+**Verdict:** under the shipped 256-token cap the uncertain rate on these 43
+images barely moved (43 → 38), because the cap, not the wording, drives it; with
+the cap lifted it drops to 5 of 43 with agreement roughly holding (label 30/38
+= 79 % and Sonnet 27/32 = 84 % on these hardest images, against 91 % / 90 %
+for the whole previous run), and the knife fix works (6 of 7 → 0) either way. **Open for Eli:**
+raise the provider's `MAX_TOKENS` (or stop thinking on this route) — output
+tokens then roughly triple (median ~333), so cost per 1k must be re-measured
+before it is changed.

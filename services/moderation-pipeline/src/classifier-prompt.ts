@@ -33,17 +33,17 @@ GROUP "sex" — adult women and sexual content.
 
 GROUP "violence" — violence, injury and death.
   0: nothing violent is depicted.
-  1: a weapon is shown (a gun, a knife as a weapon, a club) without being used; a combat sport; a mild scuffle or threatening posture; a historical or illustrated battle with no blood or injury.
+  1: a weapon held or brandished by a person (a gun, a knife held as a weapon — not a kitchen or table knife, a club) without being used to hurt anyone; a combat sport; a mild scuffle or threatening posture; a historical or illustrated battle with no blood or injury.
   2: people fighting or attacking; visible blood; a visible injury or wound; a person being hurt; destruction aimed at people.
   3: gore (mutilation, exposed organs, large amounts of blood), a dead body or the moment of death, torture, or self-harm (cutting, hanging, suicide, or instructions for it).
-  A kitchen knife used for cooking is 0. A toy weapon obviously used as a toy is 0. Sports with contact but no injury (football, boxing in a ring) are at most 1. If you cannot tell whether blood is real, answer "uncertain".
+  A kitchen or table knife in a food or cooking context is 0. A weapon nobody is holding — in a museum, a shop window, a display case or on a monument — is 0. A toy weapon obviously used as a toy is 0. Sports with contact but no injury (football, boxing in a ring) are at most 1. If you cannot tell whether blood is real, answer "uncertain".
 
 GROUP "religion" — non-Jewish religious imagery.
   0: nothing religious is depicted, or the religious content is Jewish (a synagogue, a Torah scroll, a menorah, Jewish ritual objects, Jewish religious figures).
   1: a non-Jewish religious symbol or building appears incidentally — a church or mosque in a skyline, a small cross on a necklace in a crowd, a passing religious reference on a sign.
   2: a non-Jewish religious symbol, building, ritual, clergy member or religious ceremony is a prominent or central part of the image.
-  3: idolatry (worship of statues, figures or objects shown as objects of worship), missionary content (material that promotes another religion, invites conversion, or targets Jews), or content mocking or desecrating Judaism, its symbols, its texts or its rabbis.
-  A generic landscape with an unidentifiable spire is 0. Art-history images of a famous church are 1 or 2 by prominence, never 3. When you cannot tell whether a symbol is religious at all, answer "uncertain".
+  3: idolatry (people shown worshipping statues, figures or objects, or an image that promotes their worship), missionary content (material that promotes another religion, invites conversion, or targets Jews), or content mocking or desecrating Judaism, its symbols, its texts or its rabbis.
+  A generic landscape with an unidentifiable spire is 0. Art-history images of a famous church are 1 or 2 by prominence, never 3. When you cannot tell whether a symbol is religious at all, answer "uncertain". A temple interior with statues, with no worship shown, is 2.
 
 GROUP "addictions" — alcohol abuse, smoking, drugs and gambling. This ladder has only levels 0, 1 and 2.
   0: nothing of this kind is depicted. A bottle of wine on a table, wine in a cup, beer at a meal, or a bar in the background is 0: alcohol merely present is NOT reported.
@@ -51,7 +51,7 @@ GROUP "addictions" — alcohol abuse, smoking, drugs and gambling. This ladder h
   2: hard drugs (powders, pills presented as drugs, needles, pipes for drug use, dealing), or gambling (casinos, slot machines, card games or dice for money, betting, lottery promotion).
   A pharmacy or a prescription bottle is 0. A medical syringe in a medical setting is 0. Board games and cards with no money are 0.
 
-WHEN YOU CANNOT TELL, for any group: if the image is too small, too blurred, too dark, or too crowded to be sure, or if a figure might or might not be what the level describes, answer "uncertain" for that group. If you find yourself between a level and "uncertain", choose "uncertain". Groups are independent: an uncertain answer in one group does not change the others.
+WHEN YOU CANNOT TELL, for any group: answer "uncertain" only when the image does not let you decide — it is too small, too blurred, too dark, cropped or too crowded, or the figure itself is ambiguous (for example, you cannot tell whether it is a person at all, or whether a symbol is religious at all). If you can see the content but are unsure which of two levels applies, give the higher level and report your actual confidence. Groups are independent: an uncertain answer in one group does not change the others.
 
 CONFIDENCE: for each group report how certain you are of the level you gave, as a number from 0 to 1, where 1 means certain. Report your actual certainty — a confident wrong answer is the most expensive outcome here, because only low-confidence answers get a human's attention. For "uncertain" report 0.
 

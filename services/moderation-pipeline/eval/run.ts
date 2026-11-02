@@ -91,7 +91,7 @@ async function main(): Promise<void> {
   const price = PRICE[modelId];
   if (!price) throw new Error(`no price table for ${modelId}`);
 
-  const out = `eval/results-${modelId}.jsonl`;
+  const out = process.env.EVAL_OUT ?? `eval/results-${modelId}.jsonl`;
   const done = new Set(loadResults(out).map((r) => r.id));
   // Optional hard stop on this run's running cost, in USD.
   const maxUsd = process.env.EVAL_MAX_USD ? Number(process.env.EVAL_MAX_USD) : Infinity;
@@ -106,7 +106,7 @@ async function main(): Promise<void> {
     },
   });
 
-  const rows = parseManifest("eval/manifest.csv");
+  const rows = parseManifest(process.env.EVAL_MANIFEST ?? "eval/manifest.csv");
   const byImage = new Map<string, Row[]>();
   for (const r of rows) byImage.set(r.id, [...(byImage.get(r.id) ?? []), r]);
 

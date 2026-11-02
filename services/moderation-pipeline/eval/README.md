@@ -44,6 +44,12 @@ environment.) Through `pnpm --filter … exec` from the repo root, give
 - Results append to `eval/results-<model>.jsonl` (gitignored). A rerun skips
   images already in that file, so a run can be resumed; delete the file to
   start over. The report always covers the whole file.
+- **Subset runs:** `EVAL_MANIFEST` points at another manifest with the same
+  columns and `EVAL_OUT` at another results file (name it `results*.jsonl` so
+  it stays gitignored), e.g.
+  `EVAL_MAX_IMAGES=50 EVAL_MAX_USD=0.05 EVAL_MANIFEST=eval/manifest-retest-2026-11-02.csv EVAL_OUT=eval/results-haiku-retest-2026-11-02.jsonl pnpm exec tsx --env-file=.env.local eval/run.ts`.
+  `manifest-retest-2026-11-02.csv` is the 50-image retest of the 2026-11-02
+  rubric revision (selection method in the plan's Progress log).
 - The last lines print per-group `n`, abstain %, agreement % and the
   `expected→level` breakdown, then `images`, cost and cost per 1k, then for
   this run only: `spent`, `attempted`, `dead-links`, `api-calls`,
