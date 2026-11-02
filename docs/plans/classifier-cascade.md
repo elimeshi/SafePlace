@@ -2064,3 +2064,14 @@ for the whole previous run), and the knife fix works (6 of 7 → 0) either way. 
 raise the provider's `MAX_TOKENS` (or stop thinking on this route) — output
 tokens then roughly triple (median ~333), so cost per 1k must be re-measured
 before it is changed.
+
+### 2026-11-02 — fix: classifier max_tokens 256 → 1024
+
+The targeted re-measure showed the 256-token cap truncated most Haiku 5.5
+answers (it writes a thinking block even at effort "low"; median 333, max 683
+output tokens), and a truncated answer is all-uncertain. That cap, not the
+rubric, drove most of the ~35% review rate. With 1024 the 50-image retest went
+from 38/43 to 5/43 still-uncertain, no regressions, agreement 79% with the
+dataset label and 84% with Sonnet on these hardest images. Expected cost
+~$0.20–0.25 per 1k (retest: $0.0126 / 50 hard images), within 2× of $0.15.
+A full 820-image re-measure was not run (Eli prefers targeted runs).

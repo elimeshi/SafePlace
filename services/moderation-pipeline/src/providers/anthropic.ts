@@ -82,10 +82,13 @@ const DEFAULT_MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const DEFAULT_MAX_LONG_EDGE = 768;
 
 /**
- * A classification answer is short and structured; 256 tokens is ample, and
- * capping it keeps a malformed generation from running up a bill.
+ * The JSON answer is short, but Haiku 5.5 writes a thinking block even at
+ * effort "low": the 2026-11-02 eval measured a median of 333 output tokens and
+ * a max of 683. At 256, most answers were cut off and became all-uncertain
+ * (about a third of images sent to review). 1024 covers the measured max with
+ * headroom and still caps a runaway generation.
  */
-const MAX_TOKENS = 256;
+const MAX_TOKENS = 1024;
 
 /**
  * Shrink before sending: Haiku 5.5 is a high-resolution-tier model and bills
