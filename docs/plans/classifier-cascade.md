@@ -1856,4 +1856,28 @@ Items 7 and 26–28 in `docs/legal/legal-tracker.md`. Nothing in this plan may s
 
 ## Progress log
 
-_(empty — append dated entries as tasks land)_
+### 2026-11-02 — implementation complete (Tasks 1–6, 8–13)
+
+All tasks built on `classifier-cascade`, each spec- and quality-reviewed;
+`pnpm turbo run typecheck lint test --force` 23/23 green (db-testing 340
+tests, pipeline 121, visibility-policy 113, mobile 78, ui 150). Final
+whole-branch review: no critical issues, hosted apply "go".
+
+Decisions taken with Eli during execution:
+- Avatar opt-out (`filterAppliesToAvatars: false`) lifts the `sex` group only.
+- Dedupe reuses a verdict on exact SHA-256 only; dHash stored, never grants a
+  clearance (ADR 0019 amendment — dHash is forgeable).
+- Base-table readability of levels and hashes accepted and documented.
+- Unresolved media is withheld even inside a Family Space (content-categories §5).
+
+Beyond the plan, from reviews: provider parses after `stop_reason` with
+`messages.create` (no model text in errors), strict level parsing, no API
+call for undecodable images; only the pipeline writes content hashes (RLS);
+blurred copy only when `sex` is the sole reason; feed `post_media_json`
+carries uploader-only levels (`20261030100200`); video reviews as
+`classification_failed`.
+
+Open: hosted migrations `20261030100000`, `…100100`, `…100200` not yet
+applied (needs Eli to run the apply script — the agent was not permitted);
+eval run in progress (Task 7, below); rubric wording for Eli after the eval;
+see `open-questions-backlog.md` §K for follow-ups.
