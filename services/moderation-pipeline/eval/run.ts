@@ -8,9 +8,9 @@ import { createAnthropicClassifierFromConfig } from "../src/providers/anthropic"
 import { resolveMediaOutcome, DEFAULT_THRESHOLDS } from "../src/classification";
 import { CONTENT_GROUPS } from "@safeplace/visibility-policy";
 
-// Anthropic pricing page, 2026-10-30, per million tokens, prompts ≤ 100k.
+// Anthropic pricing, per million tokens, prompts ≤ 100k (Sonnet 5.5 cache read is $0.20, corrected 2026-11-02).
 const PRICE = { "claude-haiku-5-5": { in: 0.10, cacheRead: 0.01, cacheWrite: 0.125, out: 0.50 },
-                "claude-sonnet-5-5": { in: 2.00, cacheRead: 0.10, cacheWrite: 2.50, out: 10.00 } } as const;
+                "claude-sonnet-5-5": { in: 2.00, cacheRead: 0.20, cacheWrite: 2.50, out: 10.00 } } as const;
 
 interface Row { id: string; url: string; source: string; license: string; group: string; expected: string }
 interface Result { id: string; group: string; expected: string; level: number | "uncertain" | "refused"; confidence: number; outcome: string; usd: number }
@@ -44,8 +44,12 @@ function report(results: Result[]): void {
   console.log(`images=${n} cost=$${usd.toFixed(4)} per-1k=$${((usd / Math.max(n, 1)) * 1000).toFixed(3)}`);
 }
 
+function loadResults(p: string): Result[] {
+  return existsSync(p) ? readFileSync(p, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l) as Result) : [];
+}
+
 function compare(a: string, b: string): void {
-  const load = (p: string) => new Map(readFileSync(p, "utf8").trim().split("\n").map((l) => { const r = JSON.parse(l) as Result; return [`${r.id}/${r.group}`, r]; }));
+  const load = (p: string) => new Map(loadResults(p).map((r) => [`${r.id}/${r.group}`, r]));
   const A = load(a), B = load(b);
   for (const g of CONTENT_GROUPS) {
     let both = 0, agree = 0;
@@ -55,6 +59,20 @@ function compare(a: string, b: string): void {
       both++; if (ra.level === rb.level) agree++;
     }
     console.log(`${g}: agreement with reference ${both ? (100 * agree / both).toFixed(1) : "n/a"}% (${agree}/${both})`);
+  }
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Flickr rate-limits bulk fetches (429): retry 429/5xx/network errors with backoff; 404/410 are really dead. */
+async function fetchImage(url: string): Promise<Response | null> {
+  for (let attempt = 0; ; attempt++) {
+    let res: Response | null = null;
+    try { res = await fetch(url); } catch { res = null; }
+    const retryable = !res || res.status === 429 || res.status >= 500;
+    if (!retryable || attempt >= 5) return res;
+    const retryAfter = Number(res?.headers.get("retry-after"));
+    await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter, 120) * 1000 : Math.min(5000 * 2 ** attempt, 60000));
   }
 }
 
@@ -74,8 +92,11 @@ async function main(): Promise<void> {
   if (!price) throw new Error(`no price table for ${modelId}`);
 
   const out = `eval/results-${modelId}.jsonl`;
-  const done = new Set(existsSync(out) ? readFileSync(out, "utf8").trim().split("\n").filter(Boolean).map((l) => (JSON.parse(l) as Result).id) : []);
-  let usd = 0;
+  const done = new Set(loadResults(out).map((r) => r.id));
+  // Optional hard stop on this run's running cost, in USD.
+  const maxUsd = process.env.EVAL_MAX_USD ? Number(process.env.EVAL_MAX_USD) : Infinity;
+  if (!(maxUsd > 0)) throw new Error("EVAL_MAX_USD must be a positive number");
+  let usd = 0, spent = 0;
   let calls = 0, cacheHits = 0;
   const provider = createAnthropicClassifierFromConfig({
     apiKey, modelId,
@@ -89,38 +110,33 @@ async function main(): Promise<void> {
   const byImage = new Map<string, Row[]>();
   for (const r of rows) byImage.set(r.id, [...(byImage.get(r.id) ?? []), r]);
 
-  // n counts attempts, dead links included, so EVAL_MAX_IMAGES bounds API calls from above.
+  // EVAL_MAX_IMAGES is a prefix of the manifest: a resumed or staged run covers the same images, never more.
   let n = 0, dead = 0, refused = 0;
-  const results: Result[] = [];
-  for (const [id, labels] of byImage) {
+  for (const [id, labels] of [...byImage].slice(0, max)) {
     if (done.has(id)) continue;
-    if (n >= max) break;
+    if (spent >= maxUsd) { console.warn(`stop: spend cap $${maxUsd} reached`); break; }
     n++;
     const first = labels[0];
     if (!first) continue;
-    let res: Response;
-    try {
-      res = await fetch(first.url);
-    } catch {
-      dead++; console.warn(`skip ${id}: fetch failed`); continue;
-    }
+    const res = await fetchImage(first.url);
+    if (!res) { dead++; console.warn(`skip ${id}: fetch failed`); continue; }
     if (!res.ok) { dead++; console.warn(`skip ${id}: HTTP ${res.status}`); continue; }
     const bytes = new Uint8Array(await res.arrayBuffer());
     const contentType = res.headers.get("content-type") ?? "image/jpeg";
     usd = 0;
     const output = await provider.classify({ mediaItemId: id, bytes, contentType });
+    spent += usd;
     if (output.kind === "refused") refused++;
     const outcome = resolveMediaOutcome(output, DEFAULT_THRESHOLDS);
     for (const label of labels) {
       const g = label.group as (typeof CONTENT_GROUPS)[number];
       const v = output.kind === "refused" ? { level: "refused" as const, confidence: 0 } : output.groups[g];
       const r: Result = { id, group: g, expected: label.expected, level: v.level, confidence: v.confidence, outcome: outcome.classification, usd: usd / labels.length };
-      results.push(r);
       appendFileSync(out, JSON.stringify(r) + "\n");
     }
   }
-  report(results);
-  console.log(`attempted=${n} dead-links=${dead} api-calls=${calls} cache-read-hits=${cacheHits} refusals=${refused}`);
+  report(loadResults(out));
+  console.log(`this-run: spent=$${spent.toFixed(4)} attempted=${n} dead-links=${dead} api-calls=${calls} cache-read-hits=${cacheHits} refusals=${refused}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

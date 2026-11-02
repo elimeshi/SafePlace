@@ -1881,3 +1881,110 @@ Open: hosted migrations `20261030100000`, `…100100`, `…100200` not yet
 applied (needs Eli to run the apply script — the agent was not permitted);
 eval run in progress (Task 7, below); rubric wording for Eli after the eval;
 see `open-questions-backlog.md` §K for follow-ups.
+
+### 2026-11-02 — Task 7: eval harness and first Haiku 5.5 measurement
+
+Manifest: 820 images, one row each, Open Images V7 validation + test,
+human-verified image-level labels, CC BY 2.0, assembled from metadata only
+(nobody viewed an image). Cells: sex 1+/0, violence 1+/0, religion 1+/0,
+addictions 0/2 at 100 rows each; addictions 1+ at 20 (no verified `Smoking`
+labels exist). Images fetched from the official Open Images S3 mirror: Flickr's
+CDN rate-limited bulk fetches (HTTP 429 for the IP) after ~130 images. Dead
+links on the mirror: 0. Refusals: 0 (both models). Cache reads on every call
+after the first.
+
+**Haiku 5.5** (`claude-haiku-5-5`, effort low, all 820 images):
+```
+sex: n=200 abstain=19.5% agreement=98.8% (159/161)
+  0→0:91  0→1:2  0→uncertain:7  1+→1:51  1+→2:17  1+→uncertain:32
+violence: n=200 abstain=21.0% agreement=84.2% (133/158)
+  0→0:67  0→1:19  0→uncertain:14  1+→0:6  1+→1:65  1+→2:1  1+→uncertain:28
+religion: n=200 abstain=50.0% agreement=90.0% (90/100)
+  0→0:64  0→1:2  0→uncertain:34  1+→0:8  1+→1:5  1+→2:20  1+→3:1  1+→uncertain:66
+addictions: n=220 abstain=38.2% agreement=93.4% (127/136)
+  0→0:80  0→1:1  0→uncertain:19  1+→1:11  1+→uncertain:9  2→0:8  2→2:36  2→uncertain:56
+images=820 cost=$0.1348 per-1k=$0.164
+```
+Image outcomes: general 403, contains_women 130, pending_review 287 (35 %).
+
+**Sonnet 5.5 reference** (`claude-sonnet-5-5`, first 300 manifest images):
+```
+sex: n=59 abstain=5.1% agreement=100.0% (56/56)
+  0→0:29  1+→1:18  1+→2:9  1+→uncertain:3
+violence: n=85 abstain=2.4% agreement=88.0% (73/83)
+  0→0:52  0→1:3  0→uncertain:1  1+→0:7  1+→1:20  1+→2:1  1+→uncertain:1
+religion: n=78 abstain=1.3% agreement=84.4% (65/77)
+  0→0:44  0→1:1  0→2:3  0→uncertain:1  1+→0:8  1+→1:1  1+→2:16  1+→3:4
+addictions: n=78 abstain=7.7% agreement=88.9% (64/72)
+  0→0:28  0→uncertain:1  1+→1:17  1+→uncertain:3  2→0:8  2→2:19  2→uncertain:2
+images=300 cost=$0.7917 per-1k=$2.639
+```
+On the same 300 images: Haiku sends 102 to review, Sonnet 68.
+
+**Haiku vs Sonnet** (both gave a numeric level): sex 94.0 % (47/50),
+violence 77.8 % (56/72), religion 92.5 % (37/40), addictions 100 % (44/44).
+
+Cost per 1k: Haiku $0.164 (inside the $0.12–0.25 target), Sonnet $2.639
+(16×). Total eval spend: $0.932 (pilot $0.006, Haiku $0.135, Sonnet $0.792).
+
+**Observations and recommendations** (for Eli; rubric and thresholds unchanged):
+
+- *Abstention > 15 % on clearly-labelled cells (Haiku):* sex 1+ 32 %,
+  violence 1+ 28 %, violence 0 (no-weapon subset) 18 %, religion 1+ 66 %,
+  religion 0 34–35 %, addictions 0 (alcohol) 19 %, addictions 1+ 45 %,
+  addictions 2 56 %. Below 15 %: sex 0 (7 %) and violence 0 kitchen-knife
+  (4 %). Sonnet stays ≤ 15 % in every cell. The abstentions are the model
+  answering `"uncertain"`, not the confidence band: only 3 of 555 numeric
+  Haiku answers had confidence < 0.6. Where Haiku said uncertain, Sonnet
+  answered and mostly matched the dataset (religion 1+ 16 of 21 → 2 or 3;
+  sex 1+ 5 of 8 → 1 or 2; addictions 2 9 of 18 → 2, 7 → 0). This is a
+  rubric-wording issue: the closing rule "If you find yourself between a level
+  and "uncertain", choose "uncertain"" is taken literally by Haiku at low
+  effort. **Proposed wording:** "Answer "uncertain" only when the image does
+  not let you decide — too small, blurred, dark, cropped, or the figure itself
+  is ambiguous. If you can see the content but are unsure which of two levels
+  applies, give the higher level and report your actual confidence; a
+  low-confidence answer is still reviewed by a person." This keeps the
+  false-positive direction of 07-moderation-spec §2.1 and lets the existing
+  confidence band do the routing. Must be re-measured (~$0.14 per Haiku run).
+- *Kitchen knife (violence 0):* Haiku answers 1 on 7 of 27, Sonnet 0 on 27 of
+  27; the dataset and the rubric side with Sonnet. Rubric-wording issue: the
+  exception sits after the ladder and level 1 says "a knife as a weapon".
+  **Proposed:** level 0 "…, including kitchen and table knives in a food or
+  cooking context"; level 1 "a weapon is shown (a gun, a club, or a knife held
+  or displayed as a weapon — not a kitchen knife)".
+- *Weapons labelled present but answered 0* (Haiku 6/100, Sonnet 7/29; Haiku
+  1 → Sonnet 0 on 4): dataset noise plus a rubric gap. Open Images
+  `Weapon`/`Sword` covers museum pieces, statues, ceremonial and toy items.
+  **Question for Eli:** does a displayed weapon with nobody holding it
+  (museum, shop, monument) count as violence 1?
+- *Violence 0 (no-weapon subset) answered 1* (Haiku 12/73, Sonnet 3/29;
+  Haiku 1 → Sonnet 0 on 4 of 6): mostly Haiku over-calling, partly dataset
+  noise (the dataset verifies only that specific weapon labels are absent).
+  This is the main source of the 77.8 % Haiku–Sonnet violence agreement.
+- *Religion 1+ answered 0* (Haiku 8, Sonnet 8/29): mostly dataset noise
+  (`Cross`, `Temple` and `Shrine` include generic crosses and ancient ruins).
+  **Question for Eli:** are ruins of ancient temples religious imagery (0, 1
+  or 2)? Sonnet gave **religion 3** to 4 of 29 religion-1+ images (Haiku 1 of
+  100). Level 3 = idolatry, which routes to review as prohibited, so temples
+  with worshipped statues will generate review load. **Question for Eli:** is
+  a temple interior with statues level 3, or level 2 unless worship is shown?
+- *Sex 1 vs 2* (Haiku–Sonnet disagree 3 of 50 on 1↔2): the "tight clothing"
+  line is the fuzzy edge. Both answers filter for a viewer at the default
+  maximum, so no visibility leak. Worth an example in the rubric if level-2
+  viewers are a real audience.
+- *Addictions:* alcohol-present is 0 for both models (Haiku 80/81 numeric,
+  Sonnet 28/28), so the kiddush-wine decision works as written. Gambling
+  labelled present but answered 0 (8 for each model) matches the rubric's
+  "cards with no money are 0": dataset noise, not a rubric fault.
+- *Thresholds:* no change needed for abstention; the band is not the lever.
+  As an option: wrong numeric Haiku answers (vs the dataset, noise included)
+  have mean confidence 0.79, with 15 of 46 below 0.8. Right ones have mean
+  0.91, with 10 of 509 below 0.8. Raising the floor to 0.8 (lowMax 0.1 /
+  highMin 0.9) would route a third of the errors to review at the cost of 2 %
+  of correct answers.
+- *Engineering option (no spec change):* the escalation tier (Task 3)
+  re-asking Haiku-undecided groups of Sonnet would cost about $0.164 + 0.35 ×
+  $2.64 ≈ $1.09 per 1k images, and on these numbers would cut review from
+  ~35 % to ~23 % of images. Raising Haiku's effort from low to medium is a
+  second untested lever.
