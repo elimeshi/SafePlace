@@ -2075,3 +2075,12 @@ from 38/43 to 5/43 still-uncertain, no regressions, agreement 79% with the
 dataset label and 84% with Sonnet on these hardest images. Expected cost
 ~$0.20–0.25 per 1k (retest: $0.0126 / 50 hard images), within 2× of $0.15.
 A full 820-image re-measure was not run (Eli prefers targeted runs).
+
+### 2026-11-04 — hosted migrations applied (Eli)
+
+Eli applied `20261030100000_review_reasons`, `20261030100100_content_levels`
+and `20261030100200_feed_media_levels` to hosted, each in its own transaction,
+recorded in `supabase_migrations.schema_migrations` (18 → 21).
+`pipeline_config`: `model_id = claude-haiku-5-5`, `escalation_model_id` null.
+Still open from §7: a live worker run on a dev upload (levels on the row, the
+general notice on the author's post) — not yet done.
