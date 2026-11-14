@@ -45,6 +45,18 @@ Built in two milestones (§7):
   - reference PNGs go to `docs/design/phase-8-admin/reference/*.png`;
   - implementation must match them pixel by pixel (`scripts/pixel-compare`, at
     1440×900 for console screens and 390×844 for phone screens).
+- **Open design questions for Eli** (lab panel, Q1–Q5; the defaults are shown in every
+  screen until Eli locks them):
+  - Q1 console navigation: side rail / top bar;
+  - Q2 image frame in the review item: dark / light;
+  - Q3 level picker: 0/1/2 segments with a rubric line / level cards with definitions;
+  - Q4 table density: comfortable 52 px / compact 42 px;
+  - Q5 SLA indicator: countdown text / countdown + bar.
+- **State controls** (also in the panel, not design choices): task reason, context,
+  AI-answer mode, penalty-appeal kind, preview zoom.
+- **Phone screens reuse Phase 4.** The 5 phone screens reuse the Phase 4 lab's phone CSS
+  and helpers verbatim, with Eli's locked Phase 4 choices, so they match the shipped
+  feed.
 - **Copy status:**
   - Hebrew copy for staff screens is engineering-drafted. Eli edits it in the lab.
   - Copy users see (the three phone screens, rule names shown to users) is Eli's
@@ -796,4 +808,14 @@ Eli confirms the wording):
   0004/0009/0011/0018/0019, backlog §K, the legal tracker and the moderation
   migrations.
 - 27 forks settled with Eli (§2). Design approved in three sections.
-- Lab: `docs/design/phase-8-admin/admin-lab.html`, waiting for review and lock.
+- Lab built: `docs/design/phase-8-admin/admin-lab.html`, 48 screens (43 console,
+  5 phone).
+  - Every screen was rendered with `?bare=1&screen=<name>` and checked by eye. No
+    unknown screens; layout bugs found were fixed.
+  - **How to render it here:** Playwright's Chromium in WSL fails with `libnspr4.so:
+    cannot open shared object file` (missing system libraries; needs sudo).
+  - **Workaround:** Windows Edge headless works:
+    `msedge.exe --headless=new --window-size=1440,900 --screenshot=<win path>
+    "file://wsl.localhost/...admin-lab.html?bare=1&screen=<name>"`.
+  - Phone screens use 390×844.
+- Waiting for Eli's review and lock of the lab (Q1–Q5) and his answers to §10.

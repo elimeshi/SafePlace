@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Safe·Place — Admin &amp; Review Design Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Assistant:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============================ LAB CHROME (LTR) ============================ */
+:root{--lab-bg:#0c0e13;--lab-panel:#141821;--lab-panel-2:#1b202b;--lab-line:#262c38;--lab-ink:#e7ebf2;--lab-ink-soft:#8b95a6;--lab-accent:#22c3d6}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--lab-bg);color:var(--lab-ink);font-family:Inter,system-ui,sans-serif;font-size:13px;display:flex;overflow:hidden}
+.panel{width:330px;flex:0 0 330px;height:100vh;overflow-y:auto;background:var(--lab-panel);border-inline-end:1px solid var(--lab-line);padding:18px 18px 70px;direction:ltr}
+.brand h1{font-size:14px;font-weight:600;margin:0 0 2px}.brand small{color:var(--lab-ink-soft);font-size:11px}
+.q{margin-top:18px}
+.q .t{display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--lab-ink-soft);font-weight:600;margin-bottom:4px}
+.q .why{color:var(--lab-ink-soft);font-size:11px;line-height:1.45;margin:0 0 8px}
+.seg{display:flex;background:var(--lab-panel-2);border:1px solid var(--lab-line);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{flex:1;border:0;background:transparent;color:var(--lab-ink-soft);font-family:inherit;padding:6px 6px;border-radius:6px;cursor:pointer;font-size:11.5px;min-width:60px}
+.seg button.active{background:var(--lab-accent);color:#06232a;font-weight:600}
+.stage{flex:1;height:100vh;overflow:auto;background:radial-gradient(1200px 600px at 70% -10%,#171c27 0%,transparent 60%),var(--lab-bg)}
+.stage-inner{display:flex;align-items:flex-start;justify-content:center;gap:28px;padding:30px 22px 80px;flex-wrap:wrap}
+.cell{display:flex;flex-direction:column;align-items:center;gap:10px}
+.cell .cap{font-size:12px;color:var(--lab-ink-soft);direction:ltr;max-width:720px;text-align:center}
+.cell .cap b{color:var(--lab-ink)}
+body.bare{background:#fff}
+body.bare .panel{display:none}
+body.bare .stage{background:#fff}
+body.bare .stage-inner{padding:0;gap:0;justify-content:flex-start}
+body.bare .cell .cap{display:none}
+body.bare .phone{border-radius:0;padding:0;background:none;box-shadow:none}
+body.bare .phone .screen{border-radius:0}
+body.bare .stage-inner{align-items:flex-start}
+/* ============================ PHONE + TOKENS ============================ */
+.phone{
+  /* Locked "Indigo Nights" tokens — packages/design-tokens + design-lab/FINAL-SPEC.md */
+  --c-primary:#2E3A8C;--c-primary-dark:#1B2352;--c-primary-500:#4451A6;--c-accent:#22C3D6;--c-accent-700:#157C8A;
+  --c-bg:#F3F5FC;--c-surface:#FFFFFF;--c-ink:#1A2140;--c-ink-700:#2E3760;--c-ink-soft:#5A6488;--c-ink-mute:#8A93B5;
+  --c-border:#DCE1F2;--c-line:#E9ECF7;--c-blue100:#E5E8F7;--c-blue200:#C4CBEC;--c-cyan100:#DBF4F8;
+  --c-amber:#F59E0B;--c-slate:#94A3B8;--c-danger:#C53030;--c-rose:#D24D6B;
+  --u:9.28px;--r:18px;--r-lg:24px;--r-sm:8px;
+  --shadow-soft:0 2px 10px rgba(20,26,60,.07),0 1px 3px rgba(20,26,60,.06);
+  --shadow-cta:0 12px 26px -10px rgba(46,58,140,.6);
+  --like:var(--c-primary);
+  width:390px;flex:0 0 auto;height:844px;border-radius:46px;background:#05070b;padding:11px;position:relative;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.75),0 0 0 1px #1c222d,inset 0 0 0 2px #0b0e14}
+.phone .screen{position:relative;height:100%;width:100%;border-radius:36px;overflow:hidden;background:var(--c-bg);direction:rtl;color:var(--c-ink);font-family:Assistant,sans-serif;font-size:16px;display:flex;flex-direction:column}
+body.bare .phone{width:390px;height:844px}
+.statusbar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 26px 6px;font-size:13px;font-weight:600;color:var(--c-ink);flex:0 0 auto;z-index:6;direction:ltr}
+.statusbar.on-dark{color:#fff}
+.statusbar .sb-r{display:flex;gap:6px;align-items:center;opacity:.85}
+.statusbar .dot{width:16px;height:9px;border-radius:2px;background:currentColor;opacity:.6}
+.statusbar .bat{width:22px;height:11px;border:1.5px solid currentColor;border-radius:3px;opacity:.6;position:relative}
+.statusbar .bat::after{content:"";position:absolute;inset:1.5px;width:60%;background:currentColor;border-radius:1px}
+.scroll{flex:1;overflow:hidden;position:relative}
+svg.i{width:22px;height:22px;flex:0 0 auto;display:block}
+.disp{font-family:Rubik,sans-serif}
+
+/* ground variants */
+.screen.ground-wash{background:linear-gradient(172deg,#DDF1F7 0%,#F3F5FC 26%,#F3F5FC 100%)}
+
+/* app bar */
+.appbar{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 8px;flex:0 0 auto}
+.wordmark{font-family:Rubik,sans-serif;font-weight:700;font-size:25px;color:var(--c-primary);letter-spacing:-.02em;direction:ltr}
+.wordmark .mid{color:var(--c-accent)}
+.iconbtn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--c-ink-700)}
+
+/* statuses rail */
+.stories{display:flex;gap:14px;padding:6px 18px 12px;overflow:hidden}
+.story{display:flex;flex-direction:column;align-items:center;gap:6px;width:66px;flex:0 0 66px}
+.story .lbl{font-size:12px;font-weight:600;color:var(--c-ink-soft);white-space:nowrap}
+.plus-dashed{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:var(--c-surface);border:2px dashed var(--c-blue200);color:var(--c-primary)}
+.plus-grad{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#22C3D6 0%,#2E3A8C 60%,#1B2352 100%);color:#fff;box-shadow:var(--shadow-cta)}
+.stories-empty{display:flex;align-items:center;font-size:13px;color:var(--c-ink-mute);line-height:1.4;max-width:220px;padding-top:14px}
+
+/* section title */
+.sec{display:flex;align-items:baseline;justify-content:space-between;padding:4px 18px 8px}
+.sec h3{margin:0;font-family:Rubik,sans-serif;font-weight:600;font-size:15px;color:var(--c-ink)}
+
+/* spaces rail */
+.spaces{display:flex;gap:12px;padding:0 18px 16px;overflow:hidden}
+.space{width:156px;flex:0 0 156px;border-radius:var(--r);overflow:hidden;background:var(--c-surface);box-shadow:var(--shadow-soft)}
+.space .hd{display:flex;align-items:center;gap:7px;padding:9px 11px}
+.space .hd svg{width:15px;height:15px}
+.space .hd span{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Rubik,sans-serif}
+.space .bd{height:80px;position:relative;overflow:hidden}
+.space .bd.text{padding:9px 11px;font-size:13px;line-height:1.45;color:var(--c-ink-700);background:var(--c-bg)}
+.space .ft{padding:8px 11px;font-size:11.5px;color:var(--c-ink-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* post card */
+.feed{display:flex;flex-direction:column;gap:14px;padding:4px 14px 18px}
+.card{background:var(--c-surface);overflow:hidden}
+.card.soft{border-radius:var(--r-lg);box-shadow:var(--shadow-soft)}
+.card.framed{border-radius:var(--r);border:1px solid var(--c-border);box-shadow:0 1px 2px rgba(20,26,60,.04)}
+.ph{display:flex;align-items:flex-start;gap:11px;padding:15px 16px 10px}
+.ph .who{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.ph .nm{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.ph .nm b{font-family:Rubik,sans-serif;font-weight:600;font-size:15px;color:var(--c-ink)}
+.ph .nm time{font-size:13px;color:var(--c-ink-mute)}
+.ph .more{color:var(--c-ink-mute);margin-top:-4px}
+.av{border-radius:50%;display:grid;place-items:center;flex:0 0 auto;font-family:Rubik,sans-serif;font-weight:600;color:var(--c-primary);background:var(--c-blue100)}
+.av.ring{box-shadow:0 0 0 2.5px var(--c-surface),0 0 0 5px var(--c-accent)}
+.body{padding:0 16px 12px;font-size:16px;line-height:1.62;color:var(--c-ink)}
+.body .more-link{color:var(--c-primary);font-weight:600}
+.loc{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--c-ink-soft);padding:0 16px 10px}
+.loc svg{width:15px;height:15px}
+.media{position:relative;height:230px;overflow:hidden;background:#cfd6ea}
+.media svg.scene{width:100%;height:100%;display:block}
+.ibar{display:flex;align-items:center;gap:4px;padding:6px 10px 8px;border-top:1px solid var(--c-line)}
+.ibar .act{display:flex;align-items:center;gap:6px;padding:8px 8px;border-radius:12px;color:var(--c-ink-soft);font-size:14px;font-weight:600}
+.ibar .act.on{color:var(--like)}
+.ibar .sp{flex:1}
+.ibar .num{font-variant-numeric:tabular-nums}
+
+/* source labels — 01-feed-spec §4.2: ~20px tall, soft tint, rounded, generous padding */
+.lbl{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:600;align-self:flex-start;white-space:nowrap}
+.lbl svg{width:13px;height:13px}
+
+/* filtered / processing placeholders */
+.ph-filter{height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:0 30px}
+.ph-filter.soft{background:linear-gradient(180deg,#EEF1FA,#E5E8F7)}
+.ph-filter.stripes{background:repeating-linear-gradient(135deg,#EEF1FA 0 12px,#E6E9F6 12px 24px)}
+.ph-filter b{font-family:Rubik,sans-serif;font-weight:600;font-size:14.5px;color:var(--c-ink-700)}
+.ph-filter span{font-size:13px;color:var(--c-ink-soft);line-height:1.45}
+.ph-filter .eye{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.75);display:grid;place-items:center;color:var(--c-primary);margin-bottom:2px}
+.state-strip{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13.5px;line-height:1.45}
+.state-strip svg{width:18px;height:18px}
+.state-strip.proc{background:var(--c-cyan100);color:var(--c-accent-700)}
+.state-strip.review{background:#FBF3E2;color:#8A5A12}
+.state-strip.notice{background:var(--c-blue100);color:var(--c-ink-700);align-items:flex-start;flex-direction:column;gap:8px}
+.state-strip .acts{display:flex;gap:8px}
+.mini{border:0;border-radius:12px;font-family:Rubik,sans-serif;font-weight:600;font-size:13px;padding:7px 12px}
+.mini.pri{background:var(--c-primary);color:#fff}
+.mini.sec{background:transparent;color:var(--c-primary);border:1.5px solid #9AA4D8}
+.mini.ghost{background:transparent;color:var(--c-ink-soft);padding:7px 6px}
+
+/* collapsed strip — 01-feed-spec §6.2: avatars on the right, "tap to expand" centre, chevron left */
+.cstrip{display:flex;align-items:center;gap:10px;margin:2px 14px 10px;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.86);box-shadow:var(--shadow-soft);backdrop-filter:blur(8px)}
+.cstrip .avs{display:flex}
+.cstrip .avs .av{margin-inline-start:-8px;box-shadow:0 0 0 2px #fff}
+.cstrip .avs .av:first-child{margin-inline-start:0}
+.cstrip .mid{flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--c-ink-soft)}
+.cstrip svg{width:18px;height:18px;color:var(--c-ink-soft)}
+
+/* follow rail */
+.frail{position:absolute;inset-inline:0;bottom:0;background:rgba(255,255,255,.96);box-shadow:0 -6px 24px -12px rgba(20,26,60,.25);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:12px 0 14px;backdrop-filter:blur(8px)}
+.frail .top{display:flex;align-items:center;justify-content:space-between;padding:0 18px 10px}
+.frail .top h3{margin:0;font-family:Rubik,sans-serif;font-weight:600;font-size:15px}
+.frail .row{display:flex;gap:10px;padding:0 18px;overflow:hidden}
+.fcard{width:132px;flex:0 0 132px;border-radius:var(--r);background:var(--c-bg);padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.fcard b{font-family:Rubik,sans-serif;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.fcard .bio{font-size:12px;color:var(--c-ink-soft);line-height:1.35;height:32px;overflow:hidden}
+.fcard .cnt{font-size:12px;color:var(--c-ink-mute)}
+.fbtn{width:100%;border:0;border-radius:12px;background:var(--c-primary);color:#fff;font-family:Rubik,sans-serif;font-weight:600;font-size:13px;padding:7px 0;margin-top:2px}
+
+/* bottom nav */
+.bnav{flex:0 0 auto;display:flex;align-items:center;justify-content:space-around;padding:8px 24px 22px;background:var(--c-surface);border-top:1px solid var(--c-line);z-index:5}
+.bnav .tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--c-ink-mute);width:70px}
+.bnav .tab.on{color:var(--c-primary)}
+
+/* sheet */
+.scrim{position:absolute;inset:0;background:rgba(16,26,58,.38);z-index:10}
+.sheet{position:absolute;inset-inline:0;bottom:0;background:var(--c-surface);border-radius:var(--r-lg) var(--r-lg) 0 0;z-index:11;padding:8px 0 26px;box-shadow:0 -10px 40px -10px rgba(16,26,58,.35)}
+.sheet .grab{width:40px;height:5px;border-radius:9px;background:var(--c-border);margin:2px auto 10px}
+.sheet h4{margin:0;padding:4px 20px 10px;font-family:Rubik,sans-serif;font-weight:600;font-size:16px}
+.sheet .sub{padding:0 20px 10px;font-size:13.5px;color:var(--c-ink-soft);line-height:1.5}
+.srow{display:flex;align-items:center;gap:13px;padding:13px 20px;font-size:15.5px;color:var(--c-ink)}
+.srow svg{color:var(--c-primary)}
+.srow .tx{flex:1;display:flex;flex-direction:column;gap:2px}
+.srow .tx em{font-style:normal;font-size:12.5px;color:var(--c-ink-mute)}
+.srow.dis{opacity:.45}
+.srow.sel{background:var(--c-bg)}
+.sdiv{height:1px;background:var(--c-line);margin:6px 20px}
+.sgroup{padding:8px 20px 4px;font-size:11.5px;font-weight:700;color:var(--c-ink-mute);letter-spacing:.04em}
+.tg{flex:0 0 auto;width:46px;height:27px;border-radius:999px;background:var(--c-border);position:relative}
+.tg.on{background:var(--c-primary)}
+.tg::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tg.on::after{inset-inline-start:22px}
+.toast{position:absolute;inset-inline:18px;bottom:96px;z-index:12;background:var(--c-primary-dark);color:#fff;border-radius:14px;padding:11px 14px;font-size:14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-cta)}
+
+/* compose */
+.ctop{display:flex;align-items:center;justify-content:space-between;padding:4px 14px 10px;border-bottom:1px solid var(--c-line)}
+.ctop .ttl{font-family:Rubik,sans-serif;font-weight:600;font-size:16.5px}
+.pub{border:0;border-radius:14px;background:var(--c-primary);color:#fff;font-family:Rubik,sans-serif;font-weight:600;font-size:15px;padding:9px 18px;box-shadow:var(--shadow-cta)}
+.pub.dim{opacity:.4;box-shadow:none}
+.cid{display:flex;align-items:flex-start;gap:12px;padding:16px 18px 6px}
+.cid .who{display:flex;flex-direction:column;gap:6px}
+.cid b{font-family:Rubik,sans-serif;font-weight:600;font-size:15.5px}
+.expo{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:var(--c-blue100);color:var(--c-primary);font-size:13px;font-weight:700;align-self:flex-start}
+.expo svg{width:15px;height:15px}
+.expo.locked{background:var(--c-bg);color:var(--c-ink-700);border:1px solid var(--c-border)}
+.expo-help{font-size:12px;color:var(--c-ink-mute);line-height:1.4;max-width:260px}
+.ctext{padding:10px 18px;font-size:17px;line-height:1.65;color:var(--c-ink);min-height:120px}
+.ctext.ph{color:var(--c-ink-mute)}
+.cmedia{margin:4px 18px 12px;border-radius:var(--r);overflow:hidden;position:relative;height:190px}
+.cmedia .x{position:absolute;top:10px;inset-inline-end:10px;width:30px;height:30px;border-radius:50%;background:rgba(16,26,58,.55);color:#fff;display:grid;place-items:center}
+.cmedia .x svg{width:16px;height:16px}
+.cmedia .chip{position:absolute;bottom:10px;inset-inline-start:10px;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.92);color:var(--c-accent-700);font-size:12.5px;font-weight:700}
+.cmedia .chip svg{width:14px;height:14px}
+.cloc{display:inline-flex;align-items:center;gap:6px;margin:0 18px 10px;height:30px;padding:0 10px 0 12px;border-radius:999px;background:var(--c-bg);border:1px solid var(--c-border);font-size:13px;color:var(--c-ink-700);font-weight:600;align-self:flex-start}
+.cloc svg{width:14px;height:14px}
+.abar{display:flex;align-items:center;gap:6px;padding:10px 14px 24px;border-top:1px solid var(--c-line);background:var(--c-surface)}
+.abtn{display:flex;align-items:center;gap:7px;padding:9px 12px;border-radius:12px;color:var(--c-ink-700);font-size:14px;font-weight:600;background:var(--c-bg)}
+.abtn svg{width:19px;height:19px;color:var(--c-primary)}
+.notice{margin:6px 18px 12px;border-radius:var(--r);background:var(--c-surface);border:1px solid var(--c-blue200);padding:14px 14px 12px;display:flex;gap:10px;box-shadow:var(--shadow-soft)}
+.notice svg{color:var(--c-primary);margin-top:1px}
+.notice p{margin:0 0 10px;font-size:14.5px;line-height:1.55;color:var(--c-ink)}
+.notice .acts{display:flex;gap:8px;align-items:center}
+
+/* compose on glass variant */
+.screen.glassy{background:linear-gradient(145deg,#22C3D6 0%,#2E3A8C 52%,#1B2352 100%)}
+.screen.glassy .ctop{border-color:rgba(255,255,255,.18);color:#fff}
+.screen.glassy .ctop .iconbtn{color:#fff}
+.screen.glassy .pub{background:#fff;color:var(--c-primary)}
+.screen.glassy .gcard{margin:8px 14px;border-radius:var(--r-lg);background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);color:#fff;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.screen.glassy .cid b{color:#fff}
+.screen.glassy .ctext{color:#fff}
+.screen.glassy .ctext.ph{color:rgba(255,255,255,.7)}
+.screen.glassy .expo{background:rgba(255,255,255,.92)}
+.screen.glassy .abar{background:transparent;border-color:rgba(255,255,255,.18)}
+.screen.glassy .abtn{background:rgba(255,255,255,.92)}
+.screen.glassy .cloc{background:rgba(255,255,255,.92)}
+
+/* single post */
+.ptop{display:flex;align-items:center;gap:8px;padding:2px 10px 8px;border-bottom:1px solid var(--c-line);background:var(--c-surface)}
+.ptop .ttl{font-family:Rubik,sans-serif;font-weight:600;font-size:16.5px}
+.pbar{display:flex;align-items:center;justify-content:space-around;padding:4px 10px;border-top:1px solid var(--c-line);border-bottom:1px solid var(--c-line)}
+.pbar .act{display:flex;align-items:center;gap:7px;padding:11px 14px;font-size:15px;font-weight:600;color:var(--c-ink-soft);font-family:Rubik,sans-serif}
+.pbar .act.on{color:var(--like)}
+.comments{padding:12px 16px 90px;display:flex;flex-direction:column;gap:14px;background:var(--c-surface)}
+.cmt{display:flex;gap:9px;align-items:flex-start}
+.cmt.l2{margin-inline-start:42px}
+.cmt .bub{background:var(--c-bg);border-radius:16px;padding:8px 12px 9px;display:flex;flex-direction:column;gap:2px;max-width:100%}
+.cmt .bub b{font-family:Rubik,sans-serif;font-weight:600;font-size:13.5px}
+.cmt .bub p{margin:0;font-size:15px;line-height:1.5}
+.cmt .bub .at{color:var(--c-primary);font-weight:700}
+.cmt .meta{display:flex;gap:14px;font-size:12.5px;color:var(--c-ink-mute);padding:4px 12px 0;font-weight:600}
+.cmt .meta .on{color:var(--like)}
+.cmt .cmedia-f{margin-top:6px;height:120px;border-radius:12px;overflow:hidden}
+.more-cmts{align-self:center;font-size:13.5px;font-weight:700;color:var(--c-primary);padding:6px}
+.cbox{position:absolute;inset-inline:0;bottom:0;display:flex;align-items:center;gap:9px;padding:10px 12px 26px;background:var(--c-surface);border-top:1px solid var(--c-line);z-index:5}
+.cbox .field{flex:1;height:42px;border-radius:999px;background:var(--c-bg);border:1.5px solid var(--c-border);display:flex;align-items:center;padding:0 14px;font-size:15px;color:var(--c-ink-mute)}
+.cbox .send{width:40px;height:40px;border-radius:50%;background:var(--c-primary);color:#fff;display:grid;place-items:center}
+.cbox .send svg{width:18px;height:18px}
+
+/* empty / error */
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:40px 34px}
+.empty .ic{width:64px;height:64px;border-radius:50%;background:var(--c-blue100);display:grid;place-items:center;color:var(--c-primary)}
+.empty .ic svg{width:28px;height:28px}
+.empty h3{margin:6px 0 0;font-family:Rubik,sans-serif;font-weight:600;font-size:19px}
+.empty p{margin:0;font-size:15px;line-height:1.6;color:var(--c-ink-soft)}
+.cta{border:0;border-radius:var(--r);background:var(--c-primary);color:#fff;font-family:Rubik,sans-serif;font-weight:600;font-size:16px;padding:14px 26px;box-shadow:var(--shadow-cta);margin-top:8px}
+.cta.secondary{background:transparent;color:var(--c-primary);border:1.5px solid #9AA4D8;box-shadow:none}
+
+/* ---- added 2026-10-19: the nine remaining pieces ---- */
+/* report sheet */
+.radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--c-border);flex:0 0 auto;display:grid;place-items:center}
+.radio.on{border-color:var(--c-primary)}
+.radio.on::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--c-primary)}
+.tarea{margin:6px 20px 12px;min-height:70px;border-radius:var(--r);border:1.5px solid var(--c-border);background:var(--c-surface);padding:12px 14px;font-size:15px;color:var(--c-ink-mute);line-height:1.5}
+.sheet .cta{display:block;width:calc(100% - 40px);margin:4px 20px 0}
+/* quote card */
+.quote{margin:0 16px 14px;border-radius:var(--r);border:1px solid var(--c-border);background:var(--c-bg);overflow:hidden}
+.quote .qh{display:flex;align-items:center;gap:8px;padding:11px 12px 6px}
+.quote .qh b{font-family:Rubik,sans-serif;font-weight:600;font-size:13.5px}
+.quote .qh time{font-size:12px;color:var(--c-ink-mute)}
+.quote .qb{padding:0 12px 10px;font-size:14.5px;line-height:1.55;color:var(--c-ink-700);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.quote .qm{height:120px;overflow:hidden}
+.quote.gone{display:flex;align-items:center;gap:8px;padding:14px;font-size:14px;color:var(--c-ink-soft)}
+.quote.gone svg{width:18px;height:18px;color:var(--c-ink-mute)}
+.shared-by{display:flex;align-items:center;gap:6px;padding:0 16px 8px;font-size:12.5px;color:var(--c-ink-mute);font-weight:600}
+.shared-by svg{width:14px;height:14px}
+/* exposure: space list */
+.sheet .back-row{display:flex;align-items:center;gap:8px;padding:2px 12px 8px}
+.sheet .back-row h4{padding:0}
+.gico{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto}
+.gico svg{width:18px;height:18px}
+.srow .gico svg{color:inherit}
+/* reply mode */
+.cmt.hl .bub{box-shadow:0 0 0 2px var(--c-cyan100);background:#EEF8FA}
+.replybar{position:absolute;inset-inline:0;bottom:78px;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--c-bg);border-top:1px solid var(--c-line);font-size:13px;color:var(--c-ink-soft);z-index:5}
+.replybar b{color:var(--c-ink-700)}
+.cbox .field.active{border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(46,58,140,.14);color:var(--c-ink);gap:6px}
+.atchip{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:999px;background:var(--c-blue100);color:var(--c-primary);font-size:13px;font-weight:700}
+/* skeleton */
+.sk{background:linear-gradient(90deg,#E6E9F5 0%,#EFF1F9 40%,#E6E9F5 80%);background-size:200% 100%;animation:sk 1.4s linear infinite;border-radius:8px}
+@keyframes sk{from{background-position:100% 0}to{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+.skc{background:var(--c-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-soft);padding:15px 16px;display:flex;flex-direction:column;gap:10px}
+/* expanded-from-strip panel */
+.xpanel{position:absolute;inset-inline:0;top:0;z-index:5;background:var(--c-bg);border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:0 14px 30px -14px rgba(16,26,58,.35);padding-top:46px}
+.xpanel .handle{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0 12px;font-size:13px;font-weight:600;color:var(--c-ink-soft)}
+.xpanel .handle svg{width:18px;height:18px}
+/* motion demo (interactive lab only) */
+.mzones{overflow:hidden;transition:max-height 260ms cubic-bezier(.25,.1,.25,1),opacity 220ms cubic-bezier(.25,.1,.25,1);max-height:330px}
+.mstrip{transition:opacity 200ms cubic-bezier(.25,.1,.25,1),transform 200ms cubic-bezier(.25,.1,.25,1);opacity:0;transform:translateY(-8px);height:0;overflow:visible}
+.mdemo.collapsed .mzones{max-height:0;opacity:0}
+.mdemo.collapsed .mstrip{opacity:1;transform:none;height:auto}
+.mdemo.collapsed .mfeed{margin-top:0}
+@media (prefers-reduced-motion:reduce){.mzones{transition:opacity 200ms}.mstrip{transition:opacity 200ms;transform:none}}
+.ck{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--c-border);background:#fff;flex:0 0 auto;display:grid;place-items:center;color:#fff}
+.ck.on{background:var(--c-primary);border-color:var(--c-primary)}
+.ck svg{width:14px;height:14px}
+.srow .ck svg{color:#fff}
+
+/* ============================ DESKTOP CONSOLE (1440×900) ============================ */
+/* Same locked "Indigo Nights" tokens as .phone (packages/design-tokens/src/colors.ts). */
+.desk{
+  --c-primary:#2E3A8C;--c-primary-dark:#1B2352;--c-primary-500:#4451A6;--c-blue900:#101A3A;--c-blue700:#232C6E;--c-blue400:#6B77C2;--c-blue300:#9AA4D8;
+  --c-accent:#22C3D6;--c-accent-700:#157C8A;--c-cyan100:#DBF4F8;
+  --c-bg:#F3F5FC;--c-surface:#FFFFFF;--c-ink:#1A2140;--c-ink-700:#2E3760;--c-ink-soft:#5A6488;--c-ink-mute:#8A93B5;--c-ink-300:#B9C0DB;
+  --c-border:#DCE1F2;--c-line:#E9ECF7;--c-blue100:#E5E8F7;--c-blue200:#C4CBEC;
+  --c-success:#2F855A;--c-success-soft:#EAF5EF;--c-warning:#B7791F;--c-warning-soft:#FBF3E2;--c-danger:#C53030;--c-danger-soft:#FBEAEA;
+  --c-plum:#7C6A9C;--c-plum-soft:#EFEBF6;
+  --r:14px;--r-lg:18px;--r-sm:8px;
+  --shadow-soft:0 2px 10px rgba(20,26,60,.07),0 1px 3px rgba(20,26,60,.06);
+  --shadow-pop:0 24px 60px -18px rgba(16,26,58,.45),0 2px 8px rgba(16,26,58,.12);
+  --row:52px;
+  width:1440px;height:900px;flex:0 0 auto;position:relative;overflow:hidden;direction:rtl;
+  background:var(--c-bg);color:var(--c-ink);font-family:Assistant,sans-serif;font-size:15px;
+  display:flex;flex-direction:column;border-radius:14px;box-shadow:0 40px 90px -30px rgba(0,0,0,.75),0 0 0 1px #1c222d}
+.desk.compact{--row:42px;font-size:14px}
+body.bare .desk{border-radius:0;box-shadow:none}
+.zoomwrap{zoom:var(--z,.5)}
+body.bare .zoomwrap{zoom:1}
+.desk svg.i{width:18px;height:18px}
+.desk .disp{font-family:Rubik,sans-serif}
+
+/* frame */
+.c-wrap{flex:1;display:flex;min-height:0}
+.desk.top .c-wrap{flex-direction:column}
+.c-side{width:248px;flex:0 0 248px;background:var(--c-primary-dark);color:#C9CFEA;display:flex;flex-direction:column;padding:20px 14px 16px}
+.c-brand{display:flex;flex-direction:column;gap:2px;padding:2px 10px 22px}
+.c-brand .wm{font-family:Rubik,sans-serif;font-weight:700;font-size:22px;color:#fff;letter-spacing:-.02em;direction:ltr;text-align:right}
+.c-brand .wm .mid{color:var(--c-accent)}
+.c-brand small{font-size:12.5px;color:#9AA4D8;font-weight:600}
+.c-nav{display:flex;flex-direction:column;gap:2px}
+.c-nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:14.5px;font-weight:600;color:#C9CFEA;text-decoration:none}
+.c-nav a.on{background:rgba(255,255,255,.1);color:#fff}
+.c-nav a .ct{margin-inline-start:auto;background:rgba(255,255,255,.14);color:#fff;font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;font-family:Rubik,sans-serif}
+.c-nav a .ct.hot{background:var(--c-danger)}
+.c-nav a .tag{margin-inline-start:auto;font-size:10.5px;color:#9AA4D8;border:1px solid rgba(154,164,216,.4);border-radius:6px;padding:0 5px;direction:ltr}
+.c-nav .sep{height:1px;background:rgba(255,255,255,.1);margin:10px 6px}
+.c-side .foot{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.c-side .gate{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(245,158,11,.14);color:#F7C76B;font-weight:600;font-size:14px}
+.c-me{display:flex;align-items:center;gap:10px;padding:10px 10px 2px;border-top:1px solid rgba(255,255,255,.1)}
+.c-me .c-av{background:rgba(255,255,255,.14);color:#fff}
+.c-me b{display:block;color:#fff;font-size:14px}
+.c-me span{font-size:12px;color:#9AA4D8}
+.c-me .out{margin-inline-start:auto;color:#9AA4D8}
+/* top-nav variant */
+.desk.top .c-side{width:auto;flex:0 0 60px;flex-direction:row;align-items:center;padding:0 22px;gap:26px}
+.desk.top .c-brand{flex-direction:row;align-items:baseline;gap:10px;padding:0}
+.desk.top .c-nav{flex-direction:row}
+.desk.top .c-nav .sep{display:none}
+.desk.top .c-nav a{padding:8px 11px}
+.desk.top .c-nav a .ct,.desk.top .c-nav a .tag{margin-inline-start:4px}
+.desk.top .c-side .foot{margin:0;margin-inline-start:auto;flex-direction:row;align-items:center}
+.desk.top .c-me{border:0;padding:0}
+.desk.top .c-me div{display:none}
+
+.c-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.c-top{height:64px;flex:0 0 64px;display:flex;align-items:center;gap:16px;padding:0 28px;background:var(--c-surface);border-bottom:1px solid var(--c-line)}
+.c-top h1{font-family:Rubik,sans-serif;font-size:20px;font-weight:600;margin:0;color:var(--c-ink)}
+.c-top .crumb{font-size:14px;color:var(--c-ink-mute);display:flex;align-items:center;gap:6px}
+.c-top .crumb b{color:var(--c-ink);font-family:Rubik,sans-serif;font-weight:600;font-size:18px}
+.c-top .sp{flex:1}
+.c-search{display:flex;align-items:center;gap:8px;width:340px;height:38px;border:1px solid var(--c-border);border-radius:10px;padding:0 12px;color:var(--c-ink-mute);font-size:14px;background:var(--c-bg)}
+.c-body{flex:1;overflow:hidden;padding:24px 28px;display:flex;flex-direction:column;gap:18px;min-height:0}
+.c-body.split{flex-direction:row;align-items:stretch}
+
+/* banners */
+.c-banner{display:flex;align-items:center;gap:12px;padding:10px 28px;font-size:14.5px;font-weight:600}
+.c-banner.amber{background:#FDF0D5;color:#8A5A0B;border-bottom:1px solid #F3D9A4}
+.c-banner.red{background:var(--c-danger-soft);color:var(--c-danger);border-radius:var(--r);padding:12px 16px}
+.c-banner .sp{flex:1}
+.c-banner a{color:inherit;text-decoration:underline;font-weight:700}
+
+/* primitives */
+.c-card{background:var(--c-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-soft);padding:20px}
+.c-card h3{font-family:Rubik,sans-serif;font-weight:600;font-size:15.5px;margin:0 0 12px;display:flex;align-items:center;gap:8px;color:var(--c-ink)}
+.c-card h3 .sp{flex:1}
+.c-card h3 small{font-family:Assistant,sans-serif;font-weight:600;font-size:13px;color:var(--c-ink-mute)}
+.c-muted{color:var(--c-ink-soft);font-size:13.5px;line-height:1.5}
+.c-mute{color:var(--c-ink-mute)}
+.c-pill{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.c-pill svg.i{width:14px;height:14px}
+.c-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 18px;border-radius:10px;font-family:Rubik,sans-serif;font-weight:600;font-size:14.5px;border:1px solid transparent;white-space:nowrap}
+.c-btn.pri{background:var(--c-primary);color:#fff;box-shadow:0 8px 18px -10px rgba(46,58,140,.7)}
+.c-btn.sec{background:var(--c-surface);color:var(--c-ink-700);border-color:var(--c-border)}
+.c-btn.ghost{background:transparent;color:var(--c-ink-soft)}
+.c-btn.dng{background:var(--c-danger);color:#fff}
+.c-btn.dng-o{background:var(--c-surface);color:var(--c-danger);border-color:#F0C2C2}
+.c-btn.sm{height:32px;padding:0 12px;font-size:13.5px}
+.c-btn.dis{opacity:.45}
+.c-btn kbd,.c-kbd{font-family:Inter,sans-serif;font-size:11px;font-weight:600;border:1px solid currentColor;border-radius:5px;padding:0 5px;opacity:.7;line-height:16px}
+.c-av{border-radius:50%;display:grid;place-items:center;flex:0 0 auto;font-family:Rubik,sans-serif;font-weight:600;color:var(--c-primary);background:var(--c-blue100)}
+.c-field{display:flex;flex-direction:column;gap:6px}
+.c-field label{font-size:13.5px;font-weight:700;color:var(--c-ink-700)}
+.c-input{height:42px;border:1px solid var(--c-border);border-radius:10px;padding:0 12px;display:flex;align-items:center;font-size:14.5px;color:var(--c-ink);background:var(--c-surface)}
+.c-input.ph{color:var(--c-ink-mute)}
+.c-input.focus{border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(46,58,140,.14)}
+.c-input.area{height:auto;min-height:92px;align-items:flex-start;padding:10px 12px;line-height:1.5}
+.c-input .caret{display:inline-block;width:1.5px;height:18px;background:var(--c-primary);margin-inline-start:1px}
+.c-hint{font-size:12.5px;color:var(--c-ink-mute)}
+.c-check{display:flex;align-items:flex-start;gap:10px;font-size:14.5px;color:var(--c-ink-700);line-height:1.45}
+.c-check .bx{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--c-border);background:#fff;flex:0 0 auto;display:grid;place-items:center;color:#fff;margin-top:1px}
+.c-check .bx.on{background:var(--c-primary);border-color:var(--c-primary)}
+.c-check .bx svg.i{width:13px;height:13px}
+.c-radio{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--c-border);border-radius:12px;font-size:14.5px;color:var(--c-ink-700);line-height:1.4}
+.c-radio .dot{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--c-border);flex:0 0 auto;margin-top:1px;display:grid;place-items:center}
+.c-radio.on{border-color:var(--c-primary);background:#F7F8FD}
+.c-radio.on .dot{border-color:var(--c-primary)}
+.c-radio.on .dot::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--c-primary)}
+.c-radio.dng.on{border-color:var(--c-danger);background:#FFF8F8}
+.c-radio.dng.on .dot{border-color:var(--c-danger)}
+.c-radio.dng.on .dot::after{background:var(--c-danger)}
+.c-radio b{display:block;color:var(--c-ink);font-weight:700}
+.c-radio em{display:block;font-style:normal;font-size:13px;color:var(--c-ink-soft);margin-top:2px}
+
+/* tabs, filters */
+.c-tabs{display:flex;gap:6px;border-bottom:1px solid var(--c-line)}
+.c-tabs > span{display:flex;align-items:center;gap:8px;padding:10px 14px;font-weight:700;font-size:14.5px;color:var(--c-ink-soft);border-bottom:2.5px solid transparent;margin-bottom:-1px}
+.c-tabs > span.on{color:var(--c-primary);border-color:var(--c-primary)}
+.c-tabs .n{font-family:Rubik,sans-serif;font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;background:var(--c-blue100);color:var(--c-primary)}
+.c-tabs .n.hot{background:var(--c-danger);color:#fff}
+.c-tabs .end{margin-inline-start:auto;border:0;font-weight:600;font-size:13.5px}
+.c-chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.c-chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--c-border);background:var(--c-surface);font-size:13.5px;font-weight:600;color:var(--c-ink-700)}
+.c-chip.on{background:var(--c-primary);border-color:var(--c-primary);color:#fff}
+.c-chip svg.i{width:15px;height:15px}
+
+/* tables */
+.c-table{width:100%;border-collapse:collapse;font-size:14px}
+.c-table th{text-align:start;font-size:12.5px;font-weight:700;color:var(--c-ink-mute);padding:0 14px 10px;border-bottom:1px solid var(--c-line);white-space:nowrap}
+.c-table td{height:var(--row);padding:0 14px;border-bottom:1px solid var(--c-line);color:var(--c-ink-700);white-space:nowrap}
+.c-table tr.hl td{background:#F7F8FD}
+.c-table tr.mine td{background:#F2FBFC}
+.c-table td b{color:var(--c-ink);font-weight:700}
+.c-table td.num{font-family:Rubik,sans-serif;font-variant-numeric:tabular-nums}
+.c-table td .sub{display:block;font-size:12.5px;color:var(--c-ink-mute);margin-top:1px}
+.c-table .trunc{max-width:340px;overflow:hidden;text-overflow:ellipsis;display:block}
+.c-tablecard{background:var(--c-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-soft);padding:16px 6px 4px;flex:1;min-height:0;overflow:hidden}
+
+/* SLA */
+.c-sla{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;font-family:Rubik,sans-serif;white-space:nowrap}
+.c-sla.ok{color:var(--c-ink-soft)}.c-sla.risk{color:var(--c-warning)}.c-sla.late{color:var(--c-danger)}
+.c-sla svg.i{width:15px;height:15px}
+.c-slabar{display:inline-flex;flex-direction:column;gap:4px;width:108px;font-size:12px;font-weight:700;font-family:Rubik,sans-serif}
+.c-slabar i{display:block;height:5px;border-radius:3px;background:var(--c-line);overflow:hidden;position:relative}
+.c-slabar i::after{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:var(--p);border-radius:3px;background:currentColor}
+.c-slabar.ok{color:var(--c-ink-soft)}.c-slabar.risk{color:var(--c-warning)}.c-slabar.late{color:var(--c-danger)}
+
+/* review item */
+.c-task{flex:1;display:flex;gap:20px;min-height:0}
+.c-dec{width:448px;flex:0 0 448px;display:flex;flex-direction:column;gap:14px;min-height:0;overflow:hidden}
+.c-mediaPane{flex:1;display:flex;flex-direction:column;gap:12px;min-width:0}
+.c-frame{flex:1;border-radius:var(--r-lg);background:#0F1430;position:relative;overflow:hidden;display:grid;place-items:center}
+.c-frame.light{background:#E5E8F7}
+.c-frame.light .veil{color:var(--c-ink)}
+.c-frame.light .veil span{color:var(--c-ink-soft)}
+.c-frame.light .veil .ring{background:rgba(255,255,255,.7)}
+.c-frame.light .stamp .c-pill{background:rgba(26,33,64,.55)!important}
+.c-frame .img{width:78%;height:82%;border-radius:8px;overflow:hidden;transition:filter 160ms}
+.c-frame .img svg{width:100%;height:100%;display:block}
+.c-frame .img.blur{filter:blur(28px) grayscale(1)}
+.c-frame .img.gray{filter:grayscale(1)}
+.c-frame .veil{position:absolute;inset:0;background:rgba(15,20,48,.38);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;text-align:center;pointer-events:none}
+.c-frame .veil .ring{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;place-items:center}
+.c-frame .veil b{font-family:Rubik,sans-serif;font-weight:600;font-size:16px}
+.c-frame .veil span{font-size:13.5px;color:#C9CFEA}
+.c-frame .stamp{position:absolute;bottom:14px;inset-inline-start:14px;display:flex;gap:8px}
+.c-frame .stamp .c-pill{background:rgba(255,255,255,.12);color:#fff}
+.c-frame .graphic{position:absolute;inset-inline:0;top:0;padding:10px 16px;background:repeating-linear-gradient(135deg,#7A1F1F 0 14px,#8C2626 14px 28px);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;gap:10px}
+.c-tools{display:flex;align-items:center;gap:10px}
+.c-tools .sp{flex:1}
+.c-thumbs{display:flex;gap:8px}
+.c-thumbs span{width:64px;height:48px;border-radius:8px;background:#1B2352;border:2px solid transparent;display:grid;place-items:center;color:#9AA4D8;font-size:12px;font-weight:700;font-family:Rubik,sans-serif}
+.c-thumbs span.on{border-color:var(--c-accent)}
+.c-thumbs span.done{background:#203060;color:#5AD5E3}
+.c-ctx{display:flex;flex-direction:column;gap:10px;font-size:14px}
+.c-ctx .row{display:flex;gap:10px;align-items:baseline}
+.c-ctx .k{width:92px;flex:0 0 92px;color:var(--c-ink-mute);font-weight:600;font-size:13px}
+.c-ctx .v{color:var(--c-ink-700);line-height:1.5}
+.c-quote{border-inline-start:3px solid var(--c-blue200);padding:2px 12px;color:var(--c-ink-700);line-height:1.55;font-size:14.5px}
+.c-lv{display:flex;flex-direction:column;gap:12px}
+.c-lvrow{display:flex;flex-direction:column;gap:6px}
+.c-lvrow .top{display:flex;align-items:center;gap:10px}
+.c-lvrow .gname{font-weight:700;font-size:14.5px;color:var(--c-ink);width:96px}
+.c-lvrow.focus .gname{color:var(--c-primary)}
+.c-seg{display:flex;flex:1;background:var(--c-bg);border:1px solid var(--c-border);border-radius:10px;padding:3px;gap:3px}
+.c-seg span{flex:1;height:30px;border-radius:7px;display:grid;place-items:center;font-family:Rubik,sans-serif;font-weight:600;font-size:14px;color:var(--c-ink-soft)}
+.c-seg span.on{background:var(--c-primary);color:#fff;box-shadow:0 4px 10px -6px rgba(46,58,140,.8)}
+.c-seg span.x{color:var(--c-ink-300)}
+.c-lvrow .desc{font-size:12.5px;color:var(--c-ink-soft);padding-inline-start:106px;min-height:17px}
+.c-lvrow.focus .c-seg{border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(46,58,140,.12)}
+.c-lvcards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1}
+.c-lvcards span{border:1px solid var(--c-border);border-radius:9px;padding:6px 8px;font-size:11.5px;line-height:1.3;color:var(--c-ink-soft);background:var(--c-surface);min-height:44px}
+.c-lvcards span b{display:block;font-family:Rubik,sans-serif;font-size:13px;color:var(--c-ink-700)}
+.c-lvcards span.on{border-color:var(--c-primary);background:#EEF0FA;color:var(--c-ink-700)}
+.c-lvcards span.on b{color:var(--c-primary)}
+.c-rule{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--c-ink-soft);background:var(--c-bg);border-radius:10px;padding:8px 12px}
+.c-actions{display:flex;gap:10px;align-items:center}
+.c-actions .sp{flex:1}
+.c-timer{display:inline-flex;align-items:center;gap:6px;font-family:Rubik,sans-serif;font-weight:600;font-size:13.5px;color:var(--c-accent-700);background:var(--c-cyan100);border-radius:999px;height:28px;padding:0 12px}
+.c-timer.late{color:var(--c-danger);background:var(--c-danger-soft)}
+.c-ai{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.c-ai span{background:var(--c-bg);border-radius:10px;padding:8px 10px;font-size:12.5px;color:var(--c-ink-soft)}
+.c-ai span b{display:block;font-family:Rubik,sans-serif;font-size:16px;color:var(--c-ink)}
+.c-ai span.q b{color:var(--c-warning)}
+
+/* overlays */
+.c-scrim{position:absolute;inset:0;background:rgba(16,26,58,.42);z-index:20;display:grid;place-items:center}
+.c-dialog{width:560px;background:var(--c-surface);border-radius:20px;box-shadow:var(--shadow-pop);padding:26px 28px 22px;display:flex;flex-direction:column;gap:16px}
+.c-dialog.wide{width:860px}
+.c-dialog h2{font-family:Rubik,sans-serif;font-weight:600;font-size:20px;margin:0;display:flex;align-items:center;gap:10px}
+.c-dialog h2 .ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--c-blue100);color:var(--c-primary)}
+.c-dialog h2 .ic.dng{background:var(--c-danger-soft);color:var(--c-danger)}
+.c-dialog h2 .ic.amb{background:var(--c-warning-soft);color:var(--c-warning)}
+.c-dialog p{margin:0;color:var(--c-ink-soft);line-height:1.55;font-size:14.5px}
+.c-dialog .foot{display:flex;gap:10px;justify-content:flex-end;padding-top:4px}
+.c-drawer{position:absolute;top:0;bottom:0;inset-inline-end:0;width:480px;background:var(--c-surface);box-shadow:var(--shadow-pop);z-index:21;padding:24px 26px;display:flex;flex-direction:column;gap:16px}
+.c-drawer h2{font-family:Rubik,sans-serif;font-weight:600;font-size:18px;margin:0;display:flex;align-items:center;gap:10px}
+.c-drawer h2 .x{margin-inline-start:auto;color:var(--c-ink-mute)}
+.c-toastc{position:absolute;bottom:28px;inset-inline-start:50%;transform:translateX(50%);background:var(--c-primary-dark);color:#fff;border-radius:14px;padding:12px 18px;display:flex;align-items:center;gap:12px;font-weight:600;z-index:22;box-shadow:var(--shadow-pop)}
+
+/* empty / skeleton / center states */
+.c-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:40px}
+.c-empty .ic{width:64px;height:64px;border-radius:50%;background:var(--c-blue100);color:var(--c-primary);display:grid;place-items:center;margin-bottom:6px}
+.c-empty .ic.dng{background:var(--c-danger-soft);color:var(--c-danger)}
+.c-empty .ic.ok{background:var(--c-success-soft);color:var(--c-success)}
+.c-empty .ic svg.i{width:28px;height:28px}
+.c-empty h3{font-family:Rubik,sans-serif;font-weight:600;font-size:20px;margin:0;color:var(--c-ink)}
+.c-empty p{margin:0;color:var(--c-ink-soft);max-width:440px;line-height:1.55}
+.c-sk{background:linear-gradient(90deg,#E9ECF7 0%,#F3F5FC 50%,#E9ECF7 100%);background-size:200% 100%;border-radius:8px;animation:csk 1.4s linear infinite;display:block}
+@keyframes csk{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.c-sk{animation:none}.c-frame .img{transition:none}}
+
+/* auth */
+.c-auth{flex:1;display:grid;place-items:center;background:linear-gradient(150deg,#22C3D6 0%,#2E3A8C 48%,#1B2352 100%)}
+.c-authcard{width:440px;background:var(--c-surface);border-radius:24px;box-shadow:var(--shadow-pop);padding:34px 36px 28px;display:flex;flex-direction:column;gap:16px}
+.c-authcard .wm{font-family:Rubik,sans-serif;font-weight:700;font-size:26px;color:var(--c-primary);letter-spacing:-.02em;direction:ltr;text-align:right}
+.c-authcard .wm .mid{color:var(--c-accent)}
+.c-authcard h2{font-family:Rubik,sans-serif;font-weight:600;font-size:21px;margin:0}
+.c-authcard p{margin:0;color:var(--c-ink-soft);line-height:1.5;font-size:14.5px}
+.c-otp{display:flex;gap:10px;direction:ltr;justify-content:center}
+.c-otp span{width:48px;height:56px;border:1px solid var(--c-border);border-radius:12px;display:grid;place-items:center;font-family:Rubik,sans-serif;font-size:24px;font-weight:600;color:var(--c-ink)}
+.c-otp span.focus{border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(46,58,140,.14)}
+.c-qr{width:168px;height:168px;margin:0 auto;border-radius:12px;background:#fff;border:1px solid var(--c-border);padding:10px;display:grid;grid-template-columns:repeat(21,1fr);gap:0}
+.c-qr i{display:block}
+.c-qr i.b{background:var(--c-ink)}
+
+/* case + user */
+.c-cols{flex:1;display:flex;gap:20px;min-height:0}
+.c-colmain{flex:1;display:flex;flex-direction:column;gap:16px;min-width:0;overflow:hidden}
+.c-colside{width:340px;flex:0 0 340px;display:flex;flex-direction:column;gap:16px;overflow:hidden}
+.c-kv{display:grid;grid-template-columns:120px 1fr;gap:8px 12px;font-size:14px}
+.c-kv dt{color:var(--c-ink-mute);font-weight:600;font-size:13px}
+.c-kv dd{margin:0;color:var(--c-ink-700)}
+.c-mchip{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:10px;background:var(--c-bg);border:1px dashed var(--c-blue200);font-size:13px;font-weight:600;color:var(--c-ink-soft)}
+.c-decbar{display:flex;gap:8px;align-items:center;background:var(--c-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-soft);padding:14px 16px}
+.c-decbar .sp{flex:1}
+.c-strike{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--c-line);font-size:14px}
+.c-strike:last-child{border-bottom:0}
+.c-strike .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:Rubik,sans-serif;font-weight:700;font-size:13px;background:var(--c-warning-soft);color:var(--c-warning)}
+.c-strike .n.off{background:var(--c-line);color:var(--c-ink-mute)}
+.c-strike .sp{flex:1}
+.c-ladder{display:flex;gap:6px}
+.c-ladder span{flex:1;border-radius:10px;padding:8px 10px;background:var(--c-bg);font-size:12.5px;color:var(--c-ink-mute);text-align:center;font-weight:600}
+.c-ladder span b{display:block;font-family:Rubik,sans-serif;font-size:13.5px;color:var(--c-ink-soft)}
+.c-ladder span.past{background:var(--c-warning-soft);color:var(--c-warning)}
+.c-ladder span.past b{color:var(--c-warning)}
+.c-ladder span.next{background:var(--c-primary);color:#DDE2F7}
+.c-ladder span.next b{color:#fff}
+.c-chat{display:flex;flex-direction:column;gap:8px;padding:6px 4px}
+.c-msg{max-width:62%;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.45;background:var(--c-bg);color:var(--c-ink-700);align-self:flex-start}
+.c-msg.them{align-self:flex-end;background:#EEF0FA}
+.c-msg small{display:block;font-size:11.5px;color:var(--c-ink-mute);margin-top:3px}
+.c-msg.rep{background:var(--c-danger-soft);box-shadow:0 0 0 2px #F0C2C2;color:var(--c-ink)}
+.c-who{font-size:12px;font-weight:700;color:var(--c-ink-mute);align-self:flex-start;margin-top:4px}
+.c-who.them{align-self:flex-end}
+.c-tiles{display:grid;gap:14px}
+.c-tile{background:var(--c-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-soft);padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.c-tile span{font-size:13px;font-weight:600;color:var(--c-ink-mute)}
+.c-tile b{font-family:Rubik,sans-serif;font-size:28px;font-weight:600;color:var(--c-ink);font-variant-numeric:tabular-nums}
+.c-tile em{font-style:normal;font-size:12.5px;color:var(--c-ink-soft)}
+.c-tile.dng b{color:var(--c-danger)}.c-tile.amb b{color:var(--c-warning)}
+.c-legend{display:flex;gap:14px;font-size:12.5px;color:var(--c-ink-soft)}
+.c-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:-1px}
+.c-lock{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:var(--c-bg);border:1px dashed var(--c-blue200);color:var(--c-ink-soft);font-size:14px}
+.c-lock b{color:var(--c-ink-700)}
+.c-settingrow{display:grid;grid-template-columns:260px 1fr 180px;gap:18px;align-items:center;padding:14px 0;border-bottom:1px solid var(--c-line)}
+.c-settingrow:last-child{border-bottom:0}
+.c-settingrow .lbl2 b{display:block;font-size:14.5px;color:var(--c-ink)}
+.c-settingrow .lbl2 span{font-size:12.5px;color:var(--c-ink-mute)}
+.c-settingrow .now{font-size:12.5px;color:var(--c-ink-mute);text-align:end}
+.c-slider{height:6px;border-radius:3px;background:var(--c-line);position:relative}
+.c-slider i{position:absolute;top:50%;width:18px;height:18px;margin-top:-9px;margin-inline-start:-9px;border-radius:50%;background:#fff;border:2px solid var(--c-primary);box-shadow:var(--shadow-soft)}
+.c-slider b{position:absolute;inset-block:0;border-radius:3px;background:var(--c-blue200)}
+.c-diff{display:flex;align-items:center;gap:10px;font-family:Rubik,sans-serif;font-size:15px;direction:ltr;justify-content:flex-end}
+.c-diff s{color:var(--c-ink-mute)}
+.c-diff b{color:var(--c-primary)}
+.c-link{background:var(--c-bg);border:1px solid var(--c-border);border-radius:10px;padding:10px 12px;font-family:Inter,monospace;font-size:13px;direction:ltr;color:var(--c-ink-700);display:flex;align-items:center;gap:10px}
+.c-link > span:first-child{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c-mini{width:300px;border-radius:20px;background:#fff;border:1px solid var(--c-line);box-shadow:var(--shadow-soft);padding:14px 16px;font-size:13px;line-height:1.45;color:var(--c-ink-700);display:flex;flex-direction:column;gap:6px}
+.c-mini b{font-family:Rubik,sans-serif;font-size:14.5px;color:var(--c-ink)}
+.c-frame.light .veil{background:rgba(255,255,255,.4)}
+</style>
+</head>
+<body>
+<aside class="panel" id="panel"></aside>
+<main class="stage"><div class="stage-inner" id="stage"></div></main>
+<script>
+/* ============================ ICONS (Lucide, ISC) ============================ */
+const G = {
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  more:'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  comment:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',
+  bookmark:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/>',
+  down:'<path d="m6 9 6 6 6-6"/>', up:'<path d="m18 15-6-6-6 6"/>',
+  back:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>',
+  pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  eye:'<path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  send:'<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+  mute:'<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>',
+  flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
+  userx:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>',
+  help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  globe:'<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  thumbdown:'<path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>',
+  shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  wifi:'<path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><path d="m2 2 20 20"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  family:'<path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+};
+const ic = (n, o = {}) => `<svg class="i" viewBox="0 0 24 24" fill="${o.fill ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="${o.sw || 2}" stroke-linecap="round" stroke-linejoin="round" style="${o.size ? `width:${o.size}px;height:${o.size}px;` : ''}${o.color ? `color:${o.color};` : ''}">${G[n]}</svg>`;
+
+/* Abstract photo stand-ins — never stock photos (master spec §6.3.5). */
+const scene = (k) => {
+  const S = {
+    street: ['#BFD3EA', '#8FA9CC', '#6E85AC', '#E9D9B8'],
+    hills: ['#CFE6EE', '#9CC6B5', '#6FA48F', '#F5E7C8'],
+    books: ['#E6E0F2', '#B8AED6', '#7C6A9C', '#F3EBDD'],
+    table: ['#F1E4D3', '#D9B996', '#B08968', '#FFF6E8'],
+  }[k];
+  return `<svg class="scene" viewBox="0 0 390 230" preserveAspectRatio="xMidYMid slice"><rect width="390" height="230" fill="${S[0]}"/><circle cx="300" cy="60" r="26" fill="${S[3]}" opacity=".9"/><path d="M0 170 Q90 110 180 150 T390 130 V230 H0Z" fill="${S[1]}"/><path d="M0 200 Q120 150 240 185 T390 175 V230 H0Z" fill="${S[2]}"/></svg>`;
+};
+
+const av = (name, size = 42, extra = '') => `<span class="av ${extra}" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.42)}px">${name.trim()[0]}</span>`;
+
+const GROUP = { ramot: { name: 'שכונת רמות', color: '#2E3A8C', icon: 'home' }, sfarim: { name: 'גמ״ח ספרים', color: '#5B8C5A', icon: 'users' } };
+const statusbar = (dark) => `<div class="statusbar ${dark ? 'on-dark' : ''}"><span>9:41</span><span class="sb-r"><i class="dot"></i><i class="bat"></i></span></div>`;
+const tint = (hex, a) => { const n = parseInt(hex.slice(1), 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; const m = (c) => Math.round(c * a + 255 * (1 - a)); return `rgb(${m(r)},${m(g)},${m(b)})`; };
+
+function sourceLabel(src) {
+  if (src.kind === 'group') return `<span class="lbl" style="background:${tint(src.color, .14)};color:${src.color}">${ic(src.icon)}${src.name}</span>`;
+  if (src.kind === 'public') return `<span class="lbl" style="background:#EEF1F6;color:#5B6B85">פוסט ציבורי</span>`;
+  if (src.kind === 'followers') return `<span class="lbl" style="background:#EEF1F6;color:#5B6B85">לעוקבים</span>`;
+  if (src.kind === 'suggested') return `<span class="lbl" style="background:#FEF3DC;color:#A8650A">מוצע עבורך</span>`;
+  return '';
+}
+function filteredPh(h = 200) {
+  return `<div class="ph-filter ${V.filter}" style="height:${h}px"><span class="eye">${ic('eye', { size: 20 })}</span><b>מדיה מסוננת לפי ההעדפות שלך</b><span>ניתן לשנות את העדפות הצריכה באזור האישי בכל עת.</span></div>`;
+}
+function ibar(p) {
+  return `<div class="ibar"><span class="act ${p.liked ? 'on' : ''}">${ic('heart', { fill: p.liked })}<span class="num">${p.likes}</span></span><span class="act">${ic('comment')}<span class="num">${p.comments}</span></span><span class="act">${ic('share')}</span><span class="sp"></span><span class="act">${ic('bookmark', { fill: p.saved })}</span></div>`;
+}
+function card(p) {
+  let media = '';
+  if (p.media === 'filtered') media = filteredPh();
+  else if (p.media) media = `<div class="media">${scene(p.media)}</div>`;
+  const strip = p.state === 'processing' ? `<div class="state-strip proc">${ic('clock')}המדיה בעיבוד ותוצג בקרוב.</div>` : '';
+  return `<article class="card ${V.card}">
+    <div class="ph">${av(p.author, 42)}<div class="who"><div class="nm"><b>${p.author}</b><time>${p.time}</time></div>${sourceLabel(p.source)}</div><span class="more">${ic('more')}</span></div>
+    ${p.body ? `<div class="body">${p.body}</div>` : ''}
+    ${p.loc ? `<span class="loc">${ic('pin')}${p.loc}</span>` : ''}
+    ${media}${strip}
+    ${ibar(p)}
+  </article>`;
+}
+const POSTS = [
+  { author: 'משה רוזנברג', time: 'לפני שעתיים', source: { kind: 'group', ...GROUP.ramot }, body: 'תודה ענקית לכל המתנדבים שהגיעו אתמול לחלוקת החבילות לקראת החג. הקהילה שלנו פשוט מדהימה 💙', media: 'street', likes: 42, comments: 8, liked: true },
+  { author: 'הרב אליהו כהן', time: 'לפני 4 שעות', source: { kind: 'public' }, body: 'מחשבה קצרה לפרשת השבוע: לפעמים הדבר הגדול ביותר שאפשר לתת לזולת הוא פשוט להקשיב. שבת שלום לכולם.', likes: 128, comments: 23 },
+  { author: 'יעקב פרידמן', time: 'לפני 6 שעות', source: { kind: 'suggested' }, body: 'נפתח מסלול הליכה חדש בפארק השכונתי — מומלץ לבוא בשעות הבוקר.', media: 'filtered', likes: 15, comments: 3 },
+  { author: 'דוד לוינסון', time: 'אתמול', source: { kind: 'followers' }, body: 'הספרייה הביתית סוף סוף מסודרת. מי שצריך ספר — מוזמן לבקש.', media: 'books', likes: 9, comments: 2, saved: true },
+  { author: 'אבי מזרחי', time: 'עכשיו', source: { kind: 'public' }, body: 'בוקר טוב מהטיול המשפחתי 🙏', media: 'hills', state: 'processing', likes: 0, comments: 0, loc: 'נחל שורק' },
+];
+
+function bnav() {
+  if (V.nav !== 'tabs') return '';
+  return `<nav class="bnav"><span class="tab on">${ic('home', { sw: 2.4 })}בית</span><span class="tab">${ic('search')}חיפוש</span><span class="tab">${ic('user')}פרופיל</span></nav>`;
+}
+function screen(inner, cls = '') { return `<div class="screen ${cls}">${inner}</div>`; }
+
+const SCREENS = {};
+/* extra Lucide glyphs (ISC) for the console */
+Object.assign(G, {
+  up:'<path d="m18 15-6-6-6 6"/>',
+  dashboard:'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  briefcase:'<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>',
+  list:'<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
+  sliders:'<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
+  cpu:'<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+  alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  eyeoff:'<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
+  palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/>',
+  skip:'<polygon points="19 20 9 12 19 4 19 20"/><line x1="5" x2="5" y1="19" y2="5"/>',
+  ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  gavel:'<path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/>',
+  timer:'<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
+  chevl:'<path d="m15 18-6-6 6-6"/>',
+  filter:'<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>',
+  copy:'<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  key:'<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>',
+  msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  history:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  external:'<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  keyboard:'<path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/>',
+  file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+});
+
+/* ============================ VARIANTS ============================ */
+const Q = [
+  { k: 'cnav', t: 'Q1 · Console navigation', why: 'Both areas share one shell. A side rail fits many admin sections; a top bar gives the review image more width.', opts: [['side', 'Side rail (start)'], ['top', 'Top bar']] },
+  { k: 'frame', t: 'Q2 · Image frame in the review item', why: 'Reviewers look at flagged images for hours. A dark frame cuts glare around a blurred or revealed image.', opts: [['dark', 'Dark frame'], ['light', 'Light frame']] },
+  { k: 'picker', t: 'Q3 · Level picker', why: 'Four groups × levels 0–2 on every image. Segments are fastest with the keyboard; cards keep every definition in view.', opts: [['seg', '0/1/2 segments + rubric line'], ['cards', 'Level cards with definitions']] },
+  { k: 'density', t: 'Q4 · Table density', why: 'Queue, cases and audit tables.', opts: [['comfy', 'Comfortable 52px'], ['compact', 'Compact 42px']] },
+  { k: 'sla', t: 'Q5 · SLA indicator', why: 'Lanes: urgent 1h, images 4h, standard 24h, appeals 72h. At risk at 75%.', opts: [['text', 'Countdown text'], ['bar', 'Countdown + bar']] },
+];
+const STATE = [
+  { k: 'reason', t: 'Review item · task reason', opts: [['ai_medium_confidence', 'AI unsure'], ['ai_refusal', 'AI refusal'], ['ai_prohibited_content', 'Suspected prohibited'], ['classification_failed', 'Failed'], ['user_report', 'User report'], ['ai_classification_appeal', 'Appeal']] },
+  { k: 'ctx', t: 'Review item · context', opts: [['public', 'Public post'], ['group', 'Group'], ['family', 'Family Space'], ['message', 'Message'], ['profile', 'Profile photo'], ['comment', 'Comment']] },
+  { k: 'ai', t: 'AI-answer mode (senior setting)', opts: [['blind', 'Blind'], ['blind_then_feedback', 'Blind + feedback'], ['shown', 'Shown']] },
+  { k: 'appeal', t: 'Penalty appeal kind', opts: [['suspension', '7-day suspension'], ['ban', 'Permanent ban']] },
+  { k: 'z', t: 'Desktop preview zoom (lab only)', opts: [['.4', '40%'], ['.5', '50%'], ['.65', '65%'], ['1', '100%']] },
+];
+const params = new URLSearchParams(location.search);
+const DEFAULTS = { cnav: 'side', frame: 'dark', picker: 'seg', density: 'comfy', sla: 'text', reason: 'ai_medium_confidence', ctx: 'public', ai: 'blind_then_feedback', appeal: 'suspension', z: '.5' };
+// Phone screens reuse the Phase 4 helpers with the choices Eli locked on 2026-10-19.
+const PHONE_LOCKED = { nav: 'tabs', card: 'soft', like: 'primary', shd: 'solid', fam: 'grad', plus: 'grad', ground: 'flat', compose: 'white', filter: 'soft' };
+const V = Object.assign({}, PHONE_LOCKED, Object.fromEntries(Object.keys(DEFAULTS).map(k => [k, params.get(k) || DEFAULTS[k]])));
+
+function seg(list, title) {
+  return list.map(q => `<div class="q"><span class="t">${q.t}</span>${q.why ? `<p class="why">${q.why}</p>` : ''}<div class="seg">${q.opts.map(([v, l]) => `<button class="${V[q.k] === v ? 'active' : ''}" onclick="setV('${q.k}','${v}')">${l}</button>`).join('')}</div></div>`).join('');
+}
+function renderPanel() {
+  const p = document.getElementById('panel');
+  p.innerHTML = `<div class="brand"><h1>Safe·Place — Admin &amp; review lab</h1><small>Phase 8 · staff console (1440×900) + 5 phone surfaces (390×844) · "Indigo Nights" tokens · images are placeholders only</small></div>` +
+    `<div class="q"><span class="t">Open design questions</span></div>` + seg(Q) +
+    `<div class="q"><span class="t" style="margin-top:10px">State controls (not design choices)</span></div>` + seg(STATE) +
+    `<div class="q"><span class="t">Screens</span><p class="why">${ORDER.map(k => `<a href="?bare=1&screen=${k}" style="color:#22c3d6">${k}</a>`).join(' · ')}</p></div>`;
+}
+function setV(k, v) { V[k] = v; const u = new URL(location); u.searchParams.set(k, v); history.replaceState(null, '', u); renderAll(); }
+
+/* ============================ DATA (fictional) ============================ */
+const LANE = {
+  urgent: { he: 'דחוף', c: '#C53030', bg: '#FBEAEA' },
+  images: { he: 'תמונות', c: '#157C8A', bg: '#DBF4F8' },
+  standard: { he: 'רגיל', c: '#2E3A8C', bg: '#E5E8F7' },
+  appeals: { he: 'ערעורים', c: '#7C6A9C', bg: '#EFEBF6' },
+  patterns: { he: 'דפוסים', c: '#B7791F', bg: '#FBF3E2' },
+};
+const REASON = {
+  ai_medium_confidence: { he: 'ה-AI לא בטוח', why: 'ה-AI לא היה בטוח בתשובה.' },
+  ai_refusal: { he: 'ה-AI סירב לתאר', why: 'ה-AI סירב לתאר את התמונה. לפעמים זה סימן לתוכן קשה.' },
+  ai_prohibited_content: { he: 'חשד לתוכן אסור', why: 'ה-AI סימן חשד לתוכן אסור (רמה 3).' },
+  classification_failed: { he: 'הסיווג נכשל', why: 'הסיווג האוטומטי נכשל אחרי כמה ניסיונות.' },
+  user_report: { he: 'דיווח משתמש', why: 'משתמש דיווח על התוכן.' },
+  ai_classification_appeal: { he: 'ערעור על סיווג', why: 'המעלה ערער על הסיווג של התמונה.' },
+  admin_request: { he: 'נשלח מתיק', why: 'מנהל ביקש סיווג של התמונה במסגרת תיק.' },
+};
+const CTX = {
+  public: { he: 'פוסט ציבורי', text: 'בוקר טוב מהטיול המשפחתי בנחל 🙏 מזג אוויר מושלם', icon: 'globe' },
+  group: { he: 'קבוצה · שכונת רמות', text: 'תמונות מהכנס אתמול בערב, תודה לכל מי שהגיע', icon: 'users' },
+  family: { he: 'מרחב משפחתי פרטי', text: 'מהשמחה אתמול', icon: 'family' },
+  message: { he: 'הודעה פרטית', text: '', icon: 'msg' },
+  profile: { he: 'תמונת פרופיל', text: '', icon: 'user' },
+  comment: { he: 'תגובה לפוסט ציבורי', text: 'הנה התמונה שדיברנו עליה', icon: 'comment' },
+};
+const GROUPS = [
+  { k: 'sex', he: 'נשים', lv: ['לא מופיעה אישה', 'אישה בוגרת בלבוש צנוע', 'לבוש לא צנוע או תנוחה מרמזת'], p: 'עירום או מעשה מיני' },
+  { k: 'violence', he: 'אלימות', lv: ['אין אלימות', 'נשק, ספורט קרב, תגרה קלה', 'קטטה, דם, פציעה גלויה'], p: 'זוועה, מוות גרפי, פגיעה עצמית' },
+  { k: 'religion', he: 'סמלים דתיים', lv: ['אין סמל דתי', 'סמל לא-יהודי אגבי (כנסייה בקו הרקיע)', 'סמל בולט, טקס, אנשי דת'], p: 'עבודה זרה, תוכן מיסיונרי, לעג ליהדות' },
+  { k: 'addictions', he: 'התמכרויות', lv: ['אין', 'שכרות, עישון, קנאביס', 'סמים קשים, הימורים'], p: null },
+];
+const KIND = {
+  report: { he: 'דיווח', c: '#2E3A8C', bg: '#E5E8F7', icon: 'flag' },
+  prohibited: { he: 'תוכן אסור', c: '#C53030', bg: '#FBEAEA', icon: 'ban' },
+  pattern: { he: 'דפוס חשוד', c: '#B7791F', bg: '#FBF3E2', icon: 'alert' },
+  appeal: { he: 'ערעור על עונש', c: '#7C6A9C', bg: '#EFEBF6', icon: 'gavel' },
+};
+const ME = { reviewer: { name: 'רחל אדלר', role: 'סוקר' }, admin: { name: 'שמואל טל', role: 'מנהל' }, senior: { name: 'אלי מ.', role: 'מנהל בכיר' } };
+
+/* ============================ CONSOLE PIECES ============================ */
+const cav = (name, size = 36) => `<span class="c-av" style="width:${size}px;height:${size}px;font-size:${Math.round(size * .42)}px">${name.trim()[0]}</span>`;
+const pill = (t, c, bg, icon) => `<span class="c-pill" style="color:${c};background:${bg}">${icon ? ic(icon) : ''}${t}</span>`;
+const lane = (l) => pill(LANE[l].he, LANE[l].c, LANE[l].bg);
+const kind = (k) => pill(KIND[k].he, KIND[k].c, KIND[k].bg, KIND[k].icon);
+const statusPill = (s) => ({ active: pill('פעיל', '#2F855A', '#EAF5EF'), suspended: pill('מושעה עד 16.11, 14:30', '#B7791F', '#FBF3E2', 'clock'), banned: pill('חסום', '#C53030', '#FBEAEA', 'ban') })[s];
+function sla(state, text, pct) {
+  if (V.sla === 'bar') return `<span class="c-slabar ${state}" style="--p:${pct}%">${text}<i></i></span>`;
+  return `<span class="c-sla ${state}">${ic(state === 'late' ? 'alert' : 'clock')}${text}</span>`;
+}
+const btn = (t, cls = 'sec', icon, key) => `<span class="c-btn ${cls}">${icon ? ic(icon) : ''}${t}${key ? `<kbd>${key}</kbd>` : ''}</span>`;
+const field = (label, value, o = {}) => `<div class="c-field">${label ? `<label>${label}</label>` : ''}<span class="c-input ${o.ph ? 'ph' : ''} ${o.focus ? 'focus' : ''} ${o.area ? 'area' : ''}">${value}${o.focus ? '<i class="caret"></i>' : ''}</span>${o.hint ? `<span class="c-hint">${o.hint}</span>` : ''}</div>`;
+const check = (t, on) => `<div class="c-check"><span class="bx ${on ? 'on' : ''}">${on ? ic('check', { sw: 3 }) : ''}</span><span>${t}</span></div>`;
+const radio = (b, em, on, cls = '') => `<div class="c-radio ${on ? 'on' : ''} ${cls}"><span class="dot"></span><span><b>${b}</b>${em ? `<em>${em}</em>` : ''}</span></div>`;
+const tabs = (items, end = '') => `<div class="c-tabs">${items.map(([t, n, on, hot]) => `<span class="${on ? 'on' : ''}">${t}${n !== undefined ? `<i class="n ${hot ? 'hot' : ''}" style="font-style:normal">${n}</i>` : ''}</span>`).join('')}${end ? `<span class="end">${end}</span>` : ''}</div>`;
+
+const NAV = {
+  admin: [['dash', 'dashboard', 'לוח בקרה'], ['cases', 'briefcase', 'תיקים', 20, true], ['users', 'user', 'משתמשים'], ['audit', 'list', 'יומן פעולות'], '-', ['reviewers', 'users', 'צוות הסיווג'], ['classifier', 'cpu', 'מסווג ה-AI'], ['settings', 'sliders', 'הגדרות'], ['staff', 'key', 'אנשי צוות']],
+  review: [['tasks', 'image', 'משימות', 20], ['history', 'history', 'ההיסטוריה שלי'], ['rubric', 'help', 'מדריך הסיווג']],
+};
+function side(o) {
+  const items = NAV[o.area].map(n => n === '-' ? '<i class="sep"></i>' : `<a class="${o.nav === n[0] ? 'on' : ''}">${ic(n[1])}<span>${n[2]}</span>${n[3] ? `<span class="ct ${n[4] ? 'hot' : ''}">${n[3]}</span>` : ''}</a>`).join('');
+  const who = o.me || (o.area === 'admin' ? ME.senior : ME.reviewer);
+  let gate = '';
+  if (o.area === 'admin') gate = `<a class="gate">${ic('alert')}<span>מעבר לאזור המדיה</span></a>`;
+  if (o.asAdmin) gate = `<a class="gate" style="background:rgba(255,255,255,.08);color:#C9CFEA">${ic('chevl')}<span>חזרה לניהול</span></a>`;
+  return `<aside class="c-side"><div class="c-brand"><span class="wm">Safe<span class="mid">·</span>Place</span><small>${o.area === 'admin' ? 'ניהול' : 'סיווג מדיה'}</small></div>
+    <nav class="c-nav">${items}</nav>
+    <div class="foot">${gate}<div class="c-me">${cav(who.name, 34)}<div><b>${who.name}</b><span>${who.role}</span></div><span class="out">${ic('logout')}</span></div></div></aside>`;
+}
+function desk(o) {
+  const top = `<header class="c-top">${o.crumb ? `<span class="crumb">${o.crumb}</span>` : `<h1>${o.title}</h1>`}<span class="sp"></span>${o.topRight !== undefined ? o.topRight : (o.area === 'admin' ? `<span class="c-search">${ic('search')}חיפוש משתמש לפי שם, מזהה או מזהה תוכן</span>` : '')}</header>`;
+  return `<div class="desk ${V.cnav} ${V.density}">${o.banner || ''}<div class="c-wrap">${side(o)}<div class="c-main">${top}<div class="c-body ${o.bodyCls || ''}">${o.body}</div></div></div>${o.overlay || ''}</div>`;
+}
+const adminBanner = `<div class="c-banner amber">${ic('alert')}<span>אתה באזור המדיה. התמונות כאן עלולות להיות לא ראויות. כל פתיחה של תמונה נרשמת ביומן.</span><span class="sp"></span><a>יציאה לניהול</a></div>`;
+
+/* image placeholder: abstract scene (never a photo, never a person) */
+function img(state = 'blur', k = 'street') {
+  const cls = state === 'blur' ? 'blur' : state === 'gray' ? 'gray' : '';
+  return `<div class="c-frame ${V.frame}"><div class="img ${cls}">${scene(k)}</div>`;
+}
+
+/* ============================ REVIEW AREA ============================ */
+const QROWS = [
+  ['urgent', 'user_report', 'group', 2, 'לפני 66 דק׳', ['late', 'באיחור 6 דק׳', 100], '', 'תוכן מסוכן'],
+  ['urgent', 'ai_refusal', 'comment', 1, 'לפני 51 דק׳', ['risk', 'נותרו 9 דק׳', 85]],
+  ['urgent', 'ai_prohibited_content', 'public', 1, 'לפני 18 דק׳', ['ok', 'נותרו 42 דק׳', 30]],
+  ['images', 'ai_medium_confidence', 'public', 1, 'לפני 3 ש׳ 10 דק׳', ['risk', 'נותרו 50 דק׳', 79], 'mine'],
+  ['images', 'ai_classification_appeal', 'group', 1, 'לפני שעתיים', ['ok', 'נותרו 2 ש׳', 50]],
+  ['images', 'user_report', 'public', 3, 'לפני 1 ש׳ 40 דק׳', ['ok', 'נותרו 2 ש׳ 20 דק׳', 42], '', 'תוכן הכולל נשים'],
+  ['images', 'ai_medium_confidence', 'family', 1, 'לפני 55 דק׳', ['ok', 'נותרו 3 ש׳ 5 דק׳', 23], 'stuck'],
+  ['images', 'classification_failed', 'message', 1, 'לפני 40 דק׳', ['ok', 'נותרו 3 ש׳ 20 דק׳', 17], 'other'],
+  ['images', 'ai_medium_confidence', 'profile', 1, 'לפני 22 דק׳', ['ok', 'נותרו 3 ש׳ 38 דק׳', 9]],
+  ['images', 'ai_medium_confidence', 'public', 1, 'לפני 9 דק׳', ['ok', 'נותרו 3 ש׳ 51 דק׳', 4]],
+];
+function queueTable(rows) {
+  return `<div class="c-tablecard"><table class="c-table"><thead><tr><th>נתיב</th><th>סיבה</th><th>הקשר</th><th>מדיה</th><th>התקבלה</th><th>יעד טיפול</th><th></th></tr></thead><tbody>
+  ${rows.map(r => `<tr class="${r[6] === 'mine' ? 'mine' : ''}"><td>${lane(r[0])}</td><td><b>${REASON[r[1]].he}</b>${r[7] ? `<span class="sub">${r[7]}</span>` : ''}${r[6] === 'stuck' ? `<span class="sub" style="color:#B7791F">תקועה · 2 דילוגים</span>` : ''}</td>
+    <td><span style="display:inline-flex;gap:7px;align-items:center">${ic(CTX[r[2]].icon)}${CTX[r[2]].he}</span></td><td class="num">${r[3]}</td><td>${r[4]}</td><td>${sla(...r[5])}</td>
+    <td style="text-align:end">${r[6] === 'mine' ? btn('המשך', 'pri sm') : r[6] === 'other' ? `<span class="c-mute" style="font-size:13px">תפוסה · מרים ש.</span>` : btn('תפיסה', 'sec sm')}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+const qTabs = () => tabs([['הכול', 20, true], ['דחוף', 3, false, true], ['תמונות', 17]], check('הצגת משימות תקועות (1)', true));
+const queueBody = (rows = QROWS) => `
+  <div class="c-card" style="display:flex;align-items:center;gap:14px;padding:14px 18px">${ic('timer', { color: '#157C8A' })}<span style="flex:1"><b>יש לך משימה תפוסה:</b> ה-AI לא בטוח · פוסט ציבורי</span><span class="c-timer">${ic('clock')}7:12</span>${btn('המשך למשימה', 'pri sm')}</div>
+  ${qTabs()}${queueTable(rows)}`;
+
+SCREENS.rQueue = { cap: '<b>Review · task list</b> (fork 13) — browsable list + claim. No text, no thumbnails. Sorted by SLA; urgent first. A claimed task is locked for 10 min. Stuck = 2 skips.', html: () => desk({ area: 'review', nav: 'tasks', title: 'משימות סיווג', topRight: `<span class="c-muted">משימה תפוסה ננעלת עבורך ל-10 דקות</span>`, body: queueBody() }) };
+SCREENS.rQueueEmpty = { cap: '<b>Review · empty</b> — nothing waiting in any lane.', html: () => desk({ area: 'review', nav: 'tasks', title: 'משימות סיווג', topRight: '', body: `${tabs([['הכול', 0, true], ['דחוף', 0], ['תמונות', 0]])}<div class="c-empty"><span class="ic ok">${ic('check')}</span><h3>אין משימות כרגע</h3><p>כל התמונות שהגיעו לבדיקה טופלו. הרשימה מתעדכנת מעצמה כשמגיעה משימה חדשה.</p></div>` }) };
+SCREENS.rLoading = { cap: '<b>Review · loading</b> — skeleton; static under reduced motion.', html: () => desk({ area: 'review', nav: 'tasks', title: 'משימות סיווג', topRight: '', body: `${tabs([['הכול', '·', true], ['דחוף', '·'], ['תמונות', '·']])}<div class="c-tablecard" style="padding:20px;display:flex;flex-direction:column;gap:18px">${Array.from({ length: 8 }, () => `<div style="display:flex;gap:24px;align-items:center"><span class="c-sk" style="width:64px;height:22px;border-radius:999px"></span><span class="c-sk" style="width:180px;height:14px"></span><span class="c-sk" style="width:150px;height:14px"></span><span class="c-sk" style="width:30px;height:14px"></span><span class="c-sk" style="width:110px;height:14px"></span><span class="c-sk" style="width:120px;height:14px"></span></div>`).join('')}</div>` }) };
+
+function levelPicker(sel = { sex: 1, violence: 0, religion: 0, addictions: 0 }, focus = 'sex') {
+  return `<div class="c-lv">${GROUPS.map(g => {
+    const on = sel[g.k];
+    const ctrl = V.picker === 'cards'
+      ? `<span class="c-lvcards">${g.lv.map((d, i) => `<span class="${on === i ? 'on' : ''}"><b>${i}</b>${d}</span>`).join('')}</span>`
+      : `<span class="c-seg">${[0, 1, 2].map(i => `<span class="${on === i ? 'on' : ''}">${i}</span>`).join('')}</span>`;
+    return `<div class="c-lvrow ${focus === g.k ? 'focus' : ''}"><div class="top"><span class="gname">${g.he}</span>${ctrl}</div>${V.picker === 'seg' ? `<div class="desc">${on === undefined ? '' : g.lv[on]}</div>` : ''}</div>`;
+  }).join('')}</div>`;
+}
+function aiCard() {
+  if (V.ai !== 'shown') return '';
+  return `<div class="c-card" style="padding:16px 18px"><h3>${ic('cpu')}תשובת ה-AI<span class="sp"></span><small>מוצג לפי הגדרת מנהל בכיר</small></h3><div class="c-ai"><span><b>1</b>נשים</span><span class="q"><b>?</b>אלימות · לא בטוח</span><span><b>0</b>סמלים דתיים</span><span><b>0</b>התמכרויות</span></div></div>`;
+}
+function ctxCard(reason, ctx) {
+  const c = CTX[ctx];
+  const rows = [];
+  rows.push(`<div class="row"><span class="k">פורסם ב</span><span class="v" style="display:inline-flex;gap:7px;align-items:center">${ic(c.icon)}${c.he}${ctx === 'family' || ctx === 'message' ? pill('הקשר פרטי', '#5A6488', '#E9ECF7', 'lock') : ''}</span></div>`);
+  rows.push(`<div class="row"><span class="k">המעלה</span><span class="v">משתמש א</span></div>`);
+  if (c.text) rows.push(`<div class="row"><span class="k">${ctx === 'comment' ? 'טקסט התגובה' : 'טקסט הפוסט'}</span><span class="v c-quote">${c.text}</span></div>`);
+  else rows.push(`<div class="row"><span class="k">טקסט</span><span class="v c-mute">אין טקסט</span></div>`);
+  if (reason === 'user_report') {
+    rows.push(`<div class="row"><span class="k">קטגוריה</span><span class="v"><b>תוכן הכולל נשים</b></span></div>`);
+    rows.push(`<div class="row"><span class="k">הערת המדווח</span><span class="v c-quote">"יש בתמונה ברקע אישה, למה זה לא מסונן?" <span class="c-mute">— משתמש ב</span></span></div>`);
+  }
+  if (reason === 'ai_classification_appeal') {
+    rows.push(`<div class="row"><span class="k">הערת המעלה</span><span class="v c-quote">"זו בובת ראווה בחלון של חנות, לא אישה."</span></div>`);
+    rows.push(`<div class="row"><span class="k">הסיווג הנוכחי</span><span class="v">${V.ai === 'shown' ? 'נשים 1 · החלטת AI' : '<span class="c-mute">יוצג אחרי ההחלטה שלך</span>'}</span></div>`);
+  }
+  return `<div class="c-card" style="padding:18px 20px"><h3>${lane(['ai_refusal', 'ai_prohibited_content'].includes(reason) ? 'urgent' : 'images')}<span>${REASON[reason].he}</span><span class="sp"></span>${sla('ok', 'נותרו 2 ש׳ 50 דק׳', 30)}</h3>
+    <p class="c-muted" style="margin:0 0 12px">${REASON[reason].why}</p><div class="c-ctx">${rows.join('')}</div></div>`;
+}
+function taskScreen(o = {}) {
+  const reason = o.reason || V.reason, ctx = o.ctx || V.ctx;
+  const graphic = o.graphic || ['ai_refusal', 'ai_prohibited_content'].includes(reason);
+  const state = o.revealed ? 'shown' : 'blur';
+  const veil = o.revealed ? '' : `<div class="veil"><span class="ring">${ic('eyeoff', { size: 26 })}</span><b>התמונה מטושטשת</b><span>${graphic ? 'לחיצה ארוכה על ״חשיפה״ מציגה אותה' : 'אפשר להחליט מהתצוגה המטושטשת כשהתשובה ברורה'}</span></div>`;
+  const media = `<div class="c-mediaPane">
+    ${o.multi ? `<div class="c-tools"><span style="font-weight:700">תמונה 2 מתוך 3</span><span class="sp"></span><span class="c-thumbs"><span class="done">${ic('check', { size: 16 })}</span><span class="on">2</span><span>3</span></span></div>` : ''}
+    ${img(state, o.scene || 'street')}${graphic ? `<div class="graphic">${ic('alert')}ייתכן שהתמונה קשה לצפייה</div>` : ''}<div class="stamp">${pill(o.revealed ? (o.color ? 'גלוי · צבע' : 'גלוי · שחור-לבן') : 'מטושטש', '#fff', 'rgba(255,255,255,.12)')}</div>${veil}</div>
+    <div class="c-tools">${btn(o.revealed ? 'טשטוש' : 'חשיפה', o.revealed ? 'sec' : 'pri', o.revealed ? 'eyeoff' : 'eye', 'R')}${btn('צבע', 'sec', 'palette', 'C')}<span class="sp"></span><span class="c-muted" style="display:inline-flex;gap:6px;align-items:center">${ic('keyboard')}0/1/2 רמה · Tab קבוצה · Enter שמירה · S דילוג · P אסור</span></div></div>`;
+  const dec = `<div class="c-dec">${o.lockExpired ? `<div class="c-banner red">${ic('timer')}<span>הנעילה שלך פגה. ייתכן שסוקר אחר תפס את המשימה.</span><span class="sp"></span>${btn('תפיסה מחדש', 'pri sm')}</div>` : ''}
+    ${ctxCard(reason, ctx)}${aiCard()}
+    <div class="c-card" style="padding:18px 20px;${o.lockExpired ? 'opacity:.5' : ''}"><h3>${ic('sliders')}החלטה${o.multi ? ' לתמונה 2' : ''}</h3>${levelPicker(o.sel, o.focus)}
+      <div class="c-rule" style="margin-top:14px">${ic('info')}כשמתלבטים בין שתי רמות, בוחרים את המחמירה.</div></div>
+    <div class="c-actions" style="${o.lockExpired ? 'opacity:.5' : ''}">${btn('שמירת ההחלטה', 'pri', 'check', '↵')}${btn('תוכן אסור', 'dng-o', 'ban', 'P')}<span class="sp"></span>${btn('דילוג', 'ghost', 'skip', 'S')}</div></div>`;
+  return desk({ area: 'review', nav: 'tasks', asAdmin: o.asAdmin, me: o.asAdmin ? ME.senior : null, banner: o.asAdmin ? adminBanner : '', crumb: `${ic('chevl')}משימות <b>· ${REASON[reason].he}</b>`, topRight: `<span class="c-timer ${o.lockExpired ? 'late' : ''}">${ic('clock')}${o.lockExpired ? 'הנעילה פגה' : 'תפוסה עבורך · 8:41'}</span>${btn('שחרור', 'ghost sm')}`, body: `<div class="c-task">${dec}${media}</div>`, overlay: o.overlay });
+}
+SCREENS.rTask = { cap: '<b>Review · item (blurred)</b> (forks 8–12) — context: reason, where posted, text; uploader/reporter anonymous. Image blurred + grayscale until revealed. Picker: 4 groups × 0/1/2; stricter-when-torn rule. Use the panel to switch reason, context and AI-answer mode.', html: () => taskScreen() };
+SCREENS.rTaskRevealed = { cap: '<b>Review · item revealed, in colour</b> — reveal (R) and colour (C) are separate toggles; each is audit-logged. The blur is a wellbeing measure; access control is the claim.', html: () => taskScreen({ revealed: true, color: true, scene: 'hills' }) };
+SCREENS.rTaskGraphic = { cap: '<b>Review · possibly graphic</b> — AI refusal or suspected level 3: red striped strip; reveal needs a long press. Lane urgent (1h).', html: () => taskScreen({ reason: 'ai_prohibited_content', graphic: true }) };
+SCREENS.rTaskMulti = { cap: '<b>Review · post with 3 images</b> — one decision per image; thumbnails show progress. Thumbnails are numbers, never previews.', html: () => taskScreen({ multi: true, sel: { sex: 0, violence: 0, religion: 1 }, focus: 'addictions' }) };
+SCREENS.rProhibited = { cap: '<b>Review · mark prohibited</b> (fork 11) — one reviewer is enough. Removes the media everywhere incl. identical copies (fork 19) and opens a conduct case for an admin.', html: () => taskScreen({ reason: 'ai_prohibited_content', overlay: `<div class="c-scrim"><div class="c-dialog"><h2><span class="ic dng">${ic('ban')}</span>סימון כתוכן אסור</h2>
+  <p>המדיה תוסר מכל מקום שבו היא מופיעה, כולל עותקים זהים, וייפתח תיק למנהל לגבי המעלה. המעלה יכול לערער, והערעור ייבדק על ידי סוקר אחר.</p>
+  <div style="display:flex;flex-direction:column;gap:8px">${GROUPS.filter(g => g.p).map((g, i) => radio(`${g.he} · רמה 3`, g.p, i === 1, 'dng')).join('')}</div>
+  <div class="foot">${btn('ביטול', 'ghost')}${btn('סימון כאסור', 'dng', 'ban')}</div></div></div>` }) };
+SCREENS.rSkip = { cap: '<b>Review · skip</b> (fork 12) — reason required; the task returns to the pool for another reviewer and is hidden from you. After 2 skips it is marked stuck.', html: () => taskScreen({ overlay: `<div class="c-scrim"><div class="c-dialog"><h2><span class="ic">${ic('skip')}</span>דילוג על המשימה</h2>
+  <p>המשימה תחזור לרשימה עבור סוקר אחר ולא תוצג לך שוב.</p>
+  <div style="display:flex;flex-direction:column;gap:8px">${radio('צריך דעה נוספת', 'לא בטוח בהחלטה גם אחרי הכלל המחמיר', true)}${radio('ניגוד עניינים אישי', 'למשל, אני מכיר את ההקשר או את המעלה')}${radio('לא מסוגל לצפות בתמונה הזו', '')}</div>
+  <div class="foot">${btn('ביטול', 'ghost')}${btn('דילוג', 'pri', 'skip')}</div></div></div>` }) };
+SCREENS.rFeedback = { cap: '<b>Review · after submit, blind + feedback mode</b> (fork 9) — the AI answer appears only after saving, then auto-advance. Feeds reviewer stats; no score shown to the reviewer.', html: () => taskScreen({ revealed: true, overlay: `<div class="c-scrim" style="background:rgba(16,26,58,.25)"><div class="c-dialog"><h2><span class="ic" style="background:#EAF5EF;color:#2F855A">${ic('check')}</span>ההחלטה נשמרה</h2>
+  <table class="c-table"><thead><tr><th>קבוצה</th><th>ההחלטה שלך</th><th>ה-AI</th></tr></thead><tbody>
+  <tr><td><b>נשים</b></td><td class="num">1</td><td class="num">1</td></tr><tr><td><b>אלימות</b></td><td class="num">0</td><td class="num" style="color:#B7791F">לא בטוח</td></tr><tr><td><b>סמלים דתיים</b></td><td class="num">0</td><td class="num">0</td></tr><tr><td><b>התמכרויות</b></td><td class="num">0</td><td class="num">0</td></tr></tbody></table>
+  <p style="font-size:13.5px">ההחלטה הוחלה גם על 2 עותקים זהים של התמונה.</p>
+  <div class="foot" style="justify-content:space-between"><span class="c-muted">המשימה הבאה בעוד 4 שניות</span>${btn('חזרה לרשימה עכשיו', 'sec')}</div></div></div>` }) };
+SCREENS.rLockExpired = { cap: '<b>Review · claim expired</b> — after 10 min the lock lapses (derived, no cron). Decision controls disabled until re-claimed.', html: () => taskScreen({ lockExpired: true }) };
+SCREENS.rHistory = { cap: '<b>Review · my history</b> — own decisions only (fork 23). Shows when an appeal changed a decision (input for stats, fork 26).', html: () => desk({ area: 'review', nav: 'history', title: 'ההיסטוריה שלי', topRight: `<span class="c-chips"><span class="c-chip on">7 ימים</span><span class="c-chip">30 יום</span></span>`, body: `
+  <div class="c-tiles" style="grid-template-columns:repeat(4,1fr)"><div class="c-tile"><span>החלטות</span><b>214</b><em>ב-7 הימים האחרונים</em></div><div class="c-tile"><span>דילוגים</span><b>6</b></div><div class="c-tile"><span>סומנו כאסורים</span><b>3</b></div><div class="c-tile"><span>שונו בערעור</span><b>2</b></div></div>
+  <div class="c-tablecard"><table class="c-table"><thead><tr><th>זמן</th><th>סיבה</th><th>הקשר</th><th>ההחלטה שלך</th><th>מצב</th></tr></thead><tbody>
+  ${[['היום 11:02', 'ai_medium_confidence', 'public', 'נשים 1 · אלימות 0 · סמלים 0 · התמכרויות 0', ''], ['היום 10:57', 'user_report', 'group', 'נשים 2 · אלימות 0 · סמלים 0 · התמכרויות 0', ''], ['היום 10:42', 'ai_prohibited_content', 'public', 'תוכן אסור · אלימות', pill('ערעור ממתין', '#7C6A9C', '#EFEBF6')], ['אתמול 16:20', 'ai_classification_appeal', 'comment', 'נשים 0 · אלימות 0 · סמלים 0 · התמכרויות 0', ''], ['אתמול 15:48', 'ai_medium_confidence', 'family', 'נשים 1 · אלימות 0 · סמלים 1 · התמכרויות 0', pill('שונה בערעור', '#B7791F', '#FBF3E2')], ['אתמול 15:31', 'ai_refusal', 'message', 'נשים 0 · אלימות 1 · סמלים 0 · התמכרויות 0', ''], ['אתמול 15:12', 'classification_failed', 'profile', 'נשים 0 · אלימות 0 · סמלים 0 · התמכרויות 0', ''], ['12.11 09:40', 'ai_medium_confidence', 'public', 'דילוג · צריך דעה נוספת', '']].map(r => `<tr><td>${r[0]}</td><td><b>${REASON[r[1]].he}</b></td><td>${CTX[r[2]].he}</td><td>${r[3]}</td><td>${r[4] || '<span class="c-mute">—</span>'}</td></tr>`).join('')}
+  </tbody></table></div>` }) };
+SCREENS.rError = { cap: '<b>Review · failed to load</b> — task or media fetch failed (network, or already decided).', html: () => desk({ area: 'review', nav: 'tasks', crumb: `${ic('chevl')}משימות <b>· משימה</b>`, topRight: '', body: `<div class="c-empty"><span class="ic dng">${ic('wifi')}</span><h3>לא הצלחנו לטעון את המשימה</h3><p>ייתכן שהחיבור נקטע, או שהמשימה כבר הוכרעה על ידי סוקר אחר.</p><div style="display:flex;gap:10px;margin-top:6px">${btn('ניסיון נוסף', 'pri', 'refresh')}${btn('חזרה לרשימה', 'sec')}</div></div>` }) };
+SCREENS.rAsAdmin = { cap: '<b>Review · an admin inside the media area</b> (fork 1) — persistent amber banner, exit back to admin. Entry is per session and audit-logged.', html: () => desk({ area: 'review', nav: 'tasks', asAdmin: true, me: ME.senior, banner: adminBanner, title: 'משימות סיווג', topRight: '', body: queueBody(QROWS.slice(0, 8)) }) };
+
+/* ============================ SIGN-IN ============================ */
+const auth = (inner) => `<div class="desk ${V.density}"><div class="c-auth"><div class="c-authcard"><span class="wm">Safe<span class="mid">·</span>Place</span>${inner}</div></div></div>`;
+SCREENS.login = { cap: '<b>Sign-in</b> (fork 5) — staff accounts only; app accounts cannot sign in here.', html: () => auth(`<h2>כניסה לצוות</h2><p>הכניסה לאנשי צוות בלבד. חשבונות של משתמשי האפליקציה אינם פועלים כאן.</p>${field('אימייל עבודה', 'rachel@team.safeplace', { focus: true })}${field('סיסמה', '••••••••••')}<span class="c-btn pri" style="height:46px">כניסה</span><span class="c-hint" style="text-align:center">שכחת סיסמה? פנה למנהל בכיר.</span>`) };
+SCREENS.mfa = { cap: '<b>2FA code</b> — TOTP required; the database rejects staff calls without aal2.', html: () => auth(`<h2>אימות דו-שלבי</h2><p>הזן את הקוד בן 6 הספרות מאפליקציית האימות שלך.</p><div class="c-otp"><span>4</span><span>8</span><span>1</span><span class="focus"></span><span></span><span></span></div><span class="c-btn pri dis" style="height:46px">אימות</span><span class="c-hint" style="text-align:center">אין לך גישה לאפליקציית האימות? פנה למנהל בכיר לאיפוס.</span>`) };
+SCREENS.mfaEnroll = { cap: '<b>2FA enrolment</b> — first sign-in after an invite. QR is a placeholder pattern.', html: () => {
+  const cells = Array.from({ length: 441 }, (_, i) => { const x = i % 21, y = (i / 21) | 0; const f = (a, b) => x >= a && x < a + 7 && y >= b && y < b + 7 && !(x > a && x < a + 6 && y > b && y < b + 6 && !(x > a + 1 && x < a + 5 && y > b + 1 && y < b + 5)); const on = f(0, 0) || f(14, 0) || f(0, 14) || ((x * 7 + y * 13 + x * y) % 3 === 0 && !(x < 8 && y < 8) && !(x > 12 && y < 8) && !(x < 8 && y > 12)); return `<i class="${on ? 'b' : ''}"></i>`; }).join('');
+  return auth(`<h2>הגדרת אימות דו-שלבי</h2><p>סרוק את הקוד באפליקציית אימות (למשל Google Authenticator), ואז הזן את הקוד שמופיע בה.</p><div class="c-qr">${cells}</div><div class="c-link"><span>JBSW Y3DP EHPK 3PXP</span>${ic('copy')}</div>${field('קוד מהאפליקציה', '', { focus: true })}<span class="c-btn pri" style="height:46px">הפעלה</span>`);
+} };
+SCREENS.deactivated = { cap: '<b>Deactivated account</b> — a senior admin deactivated it; takes effect on the next call.', html: () => auth(`<h2>החשבון הושבת</h2><p>החשבון שלך בקונסולה אינו פעיל יותר. אם לדעתך זו טעות, פנה למנהל הצוות.</p><span class="c-btn sec" style="height:46px">חזרה למסך הכניסה</span>`) };
+SCREENS.noAccess = { cap: '<b>No access</b> — a reviewer opened an admin URL. The server refuses anyway; this is the UI state.', html: () => desk({ area: 'review', nav: '', title: 'אין גישה', topRight: '', body: `<div class="c-empty"><span class="ic">${ic('lock')}</span><h3>אין לך גישה לאזור הזה</h3><p>החשבון שלך מוגדר כסוקר. אזור הניהול פתוח למנהלים בלבד.</p>${btn('חזרה למשימות', 'pri')}</div>` }) };
+
+/* ============================ ADMIN AREA ============================ */
+const CROWS = [
+  ['urgent', 'report', 'אהרון שטרן', 'פוסט ציבורי · "מי שיגיע מחר שיביא איתו משהו להגנה…"', 'תוכן מסוכן', 0, ['late', 'באיחור 12 דק׳', 100], ''],
+  ['urgent', 'report', 'נתן וייס', 'הודעה פרטית · "אם תספר למישהו תצטער"', 'תוכן מסוכן', 0, ['risk', 'נותרו 11 דק׳', 82], ''],
+  ['standard', 'report', 'יעקב פרידמן', 'תגובה · "אתה לא מבין כלום, עדיף שתשתוק…"', 'הטרדה / איומים', 2, ['ok', 'נותרו 19 ש׳', 21], 'mine'],
+  ['standard', 'prohibited', 'מנחם לוי', 'פוסט בקבוצה · אלימות · רמה 3', '', 0, ['ok', 'נותרו 22 ש׳', 8], ''],
+  ['standard', 'report', 'ספרי בני', 'פוסט ציבורי · "מבצע! 50% הנחה על כל…"', 'ספאם / פרסומי', 4, ['ok', 'נותרו 23 ש׳', 4], ''],
+  ['patterns', 'pattern', 'שלמה דרעי', '23 דיווחים ב-30 יום · 91% נדחו', '', 0, ['ok', 'נותרו 20 ש׳', 17], ''],
+  ['appeals', 'appeal', 'דוד כץ', 'השעיה 7 ימים · הטרדה', '', 0, ['ok', 'נותרו 2 ימים', 33], ''],
+  ['appeals', 'appeal', 'רפאל גבאי', 'חסימה קבועה · איומים פיזיים', 'דורש מנהל בכיר', 0, ['ok', 'נותרו 2 ימים 20 ש׳', 22], 'other'],
+];
+function caseTable(rows) {
+  return `<div class="c-tablecard"><table class="c-table"><thead><tr><th>נתיב</th><th>סוג</th><th>נושא</th><th>תקציר</th><th>דיווחים נוספים</th><th>יעד טיפול</th><th>מטופל על ידי</th></tr></thead><tbody>
+  ${rows.map(r => `<tr class="${r[7] === 'mine' ? 'mine' : ''}"><td>${lane(r[0])}</td><td>${kind(r[1])}${r[4] ? `<span class="sub">${r[4]}</span>` : ''}</td><td><b>${r[2]}</b></td><td><span class="trunc">${r[3]}</span></td><td class="num">${r[5] ? `+${r[5]}` : '<span class="c-mute">—</span>'}</td><td>${sla(...r[6])}</td><td>${r[7] === 'mine' ? '<b>אצלך</b>' : r[7] === 'other' ? 'אלי מ.' : '<span class="c-mute">—</span>'}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+const casesTop = () => `${tabs([['הכול', 20, true], ['דחוף', 2, false, true], ['רגיל', 14], ['ערעורים', 3], ['דפוסים', 1]])}<div class="c-chips"><span class="c-chip">${ic('filter')}רק שלי</span><span class="c-chip on">לא מטופלים</span><span class="c-chip">סוג: הכול</span><span class="c-chip">קטגוריה: הכול</span></div>`;
+SCREENS.aCases = { cap: '<b>Admin · cases</b> — conduct cases (fork 2): reports, prohibited verdicts, abuse patterns, penalty appeals. "Other reports" counts open reports on the same content (open question 1).', html: () => desk({ area: 'admin', nav: 'cases', title: 'תיקים', body: casesTop() + caseTable(CROWS) }) };
+SCREENS.aCasesEmpty = { cap: '<b>Admin · cases empty</b>.', html: () => desk({ area: 'admin', nav: 'cases', title: 'תיקים', body: `${tabs([['הכול', 0, true], ['דחוף', 0], ['רגיל', 0], ['ערעורים', 0], ['דפוסים', 0]])}<div class="c-empty"><span class="ic ok">${ic('check')}</span><h3>אין תיקים פתוחים</h3><p>כל הדיווחים והערעורים טופלו. תיקים חדשים יופיעו כאן לפי דחיפות.</p></div>` }) };
+SCREENS.aLoading = { cap: '<b>Admin · loading</b>.', html: () => desk({ area: 'admin', nav: 'cases', title: 'תיקים', body: `${tabs([['הכול', '·', true], ['דחוף', '·'], ['רגיל', '·'], ['ערעורים', '·'], ['דפוסים', '·']])}<div class="c-tablecard" style="padding:20px;display:flex;flex-direction:column;gap:18px">${Array.from({ length: 8 }, () => `<div style="display:flex;gap:24px;align-items:center"><span class="c-sk" style="width:60px;height:22px;border-radius:999px"></span><span class="c-sk" style="width:90px;height:22px;border-radius:999px"></span><span class="c-sk" style="width:110px;height:14px"></span><span class="c-sk" style="width:320px;height:14px"></span><span class="c-sk" style="width:110px;height:14px"></span></div>`).join('')}</div>` }) };
+SCREENS.aError = { cap: '<b>Admin · error</b>.', html: () => desk({ area: 'admin', nav: 'cases', title: 'תיקים', body: `<div class="c-empty"><span class="ic dng">${ic('wifi')}</span><h3>לא הצלחנו לטעון את הנתונים</h3><p>בדוק את החיבור ונסה שוב. אם הבעיה נמשכת, ייתכן שתוקף הכניסה פג ויש להתחבר מחדש.</p>${btn('ניסיון נוסף', 'pri', 'refresh')}</div>` }) };
+
+const caseCrumb = (id, k, extra = '') => `${ic('chevl')}תיקים <b>· תיק ${id}</b>${kind(k)}${extra}`;
+const takenTop = `<span class="c-timer">${ic('clock')}אצלך · 24:10</span>${btn('שחרור', 'ghost sm')}`;
+function subjectCard(name, o = {}) {
+  return `<div class="c-card"><h3>${ic('user')}נושא התיק<span class="sp"></span>${btn('דף משתמש', 'ghost sm', 'external')}</h3>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">${cav(name, 44)}<div><b style="font-size:16px">${name}</b><div class="c-muted">חבר מאז מרץ 2026</div></div><span class="sp" style="flex:1"></span>${statusPill(o.status || 'active')}</div>
+    <dl class="c-kv"><dt>עבירות פעילות</dt><dd><b>${o.strikes ?? 1}</b> ${o.strikes === 0 ? '' : '· הקרובה פגה ב-12.01.2027'}</dd><dt>החלטות קודמות</dt><dd>${o.past || 'אזהרה · ספאם · 14.10.2026'}</dd><dt>דיווחים עליו</dt><dd>${o.reportsOn || '7 ב-90 יום · 3 נמצאו מוצדקים'}</dd></dl></div>`;
+}
+const decBar = (o = {}) => `<div class="c-decbar">${btn('סגירה ללא פעולה', 'sec sm', 'check')}${btn('דיווח כוזב', 'ghost sm', 'flag')}${btn('הסרת התוכן', 'sec sm', 'trash')}${btn('שליחת מדיה לסיווג', o.media ? 'sec sm' : 'sec sm dis', 'image')}<span class="sp"></span>${btn('ענישה…', 'pri', 'gavel')}</div>`;
+function reportCard(o = {}) {
+  return `<div class="c-card"><h3>${ic('flag')}הדיווח<span class="sp"></span><small>היום 09:14</small></h3><dl class="c-kv"><dt>קטגוריה</dt><dd><b>${o.cat || 'הטרדה / איומים'}</b></dd><dt>הערת המדווח</dt><dd class="c-quote">${o.note || '"הוא כותב לי ככה כבר שבוע בכל פוסט שאני מעלה"'}</dd>
+    <dt>המדווח</dt><dd>זהות מוסתרת · 3 דיווחים ב-30 יום · 0% נדחו <a style="color:#2E3A8C;font-weight:700;margin-inline-start:8px">חשיפת זהות</a></dd></dl>
+    ${o.others === false ? '' : `<div style="margin-top:14px;padding-top:14px;border-top:1px solid #E9ECF7"><b style="font-size:14px">דיווחים פתוחים נוספים על אותו תוכן · 2</b><div class="c-muted" style="margin:6px 0 10px">הטרדה / איומים · לפני 3 שעות &nbsp;·&nbsp; אחר · "שפה לא מכבדת" · אתמול</div>${check('להכריע בכל שלושת הדיווחים יחד', true)}</div>`}</div>`;
+}
+SCREENS.aCaseReport = { cap: '<b>Admin · report case (text)</b> — content, report, reporter as reliability numbers (identity behind a logged click), other open reports on the same content, subject summary, decision bar.', html: () => desk({ area: 'admin', nav: 'cases', crumb: caseCrumb('#C-2041', 'report', lane('standard')), topRight: takenTop, body: `<div class="c-cols"><div class="c-colmain">
+  <div class="c-card"><h3>${ic('comment')}התוכן המדווח<span class="sp"></span><small>תגובה בפוסט ציבורי של משה רוזנברג · 14.11 08:52</small></h3>
+    <div style="display:flex;gap:12px">${cav('יעקב פרידמן', 38)}<div><b>יעקב פרידמן</b><p class="c-quote" style="margin:6px 0 0;font-size:15.5px">אתה לא מבין כלום, עדיף שתשתוק לפני שיקרה לך משהו. כולם כבר יודעים מי אתה.</p></div></div>
+    <div class="c-muted" style="margin-top:12px">אין מדיה בתוכן הזה.</div></div>
+  ${reportCard()}
+  <div style="flex:1"></div>${decBar()}</div>
+  <div class="c-colside">${subjectCard('יעקב פרידמן')}<div class="c-card"><h3>${ic('history')}בתיק הזה</h3><div class="c-muted">נפתח מדיווח · היום 09:14<br>נלקח על ידי שמואל טל · 09:41</div></div></div></div>` }) };
+
+SCREENS.aCaseMessage = { cap: '<b>Admin · message report</b> (fork 25) — in-console transcript: reported message + 5 before; "show 10 earlier" asks for a reason and is logged. Text only; media is a chip. Other party anonymous.', html: () => desk({ area: 'admin', nav: 'cases', crumb: caseCrumb('#C-2038', 'report', lane('urgent')), topRight: takenTop, body: `<div class="c-cols"><div class="c-colmain">
+  <div class="c-card" style="flex:1;display:flex;flex-direction:column;min-height:0"><h3>${ic('msg')}שיחה פרטית<span class="sp"></span><small>מוצגות 6 הודעות · כל הרחבה נרשמת ביומן</small></h3>
+    <div style="display:flex;justify-content:center;margin-bottom:8px">${btn('הצגת 10 הודעות קודמות', 'sec sm', 'up')}</div>
+    <div class="c-chat"><span class="c-who them">משתמש ב</span><div class="c-msg them">אני לא מעוניין להמשיך את השיחה הזו<small>13.11 21:02</small></div>
+    <span class="c-who">נתן וייס</span><div class="c-msg">למה? רק שאלתי שאלה<small>21:03</small></div><div class="c-msg"><span class="c-mchip" style="height:28px">${ic('image')}מדיה · נבדקת בנפרד</span><small>21:03</small></div>
+    <span class="c-who them">משתמש ב</span><div class="c-msg them">בבקשה תפסיק לכתוב לי<small>21:10</small></div>
+    <span class="c-who">נתן וייס</span><div class="c-msg">אני יודע איפה אתה גר<small>21:14</small></div><div class="c-msg rep">אם תספר למישהו תצטער<small>21:15 · ההודעה המדווחת</small></div></div></div>
+  ${decBar({ media: true })}</div>
+  <div class="c-colside">${reportCard({ cat: 'תוכן מסוכן', note: '"קיבלתי ממנו איומים אחרי שביקשתי שיפסיק"', others: false })}${subjectCard('נתן וייס', { strikes: 0, past: 'אין', reportsOn: '2 ב-90 יום' })}</div></div>` }) };
+SCREENS.aExpandReason = { cap: '<b>Admin · reason to expand the transcript</b> — every expansion of private messages needs a reason and is audit-logged.', html: () => SCREENS.aCaseMessage.html().replace(/<\/div>$/, `<div class="c-scrim"><div class="c-dialog"><h2><span class="ic amb">${ic('msg')}</span>הצגת הודעות קודמות</h2><p>ההרחבה חושפת 10 הודעות פרטיות נוספות מהשיחה. כתוב למה זה נחוץ להכרעה. הפעולה נרשמת ביומן.</p>${field('סיבה', 'צריך לבדוק אם האיום הגיע אחרי ויכוח קודם', { area: true, focus: true })}<div class="foot">${btn('ביטול', 'ghost')}${btn('הצגה', 'pri')}</div></div></div></div>`) };
+
+SCREENS.aCaseProhibited = { cap: '<b>Admin · case from a prohibited verdict</b> (fork 2) — the admin never sees the image: a verdict card (group, level-3 definition, reviewer, copies removed) and a locked chip.', html: () => desk({ area: 'admin', nav: 'cases', crumb: caseCrumb('#C-2036', 'prohibited', lane('standard')), topRight: takenTop, body: `<div class="c-cols"><div class="c-colmain">
+  <div class="c-card"><h3>${ic('ban', { color: '#C53030' })}פסיקת צוות הסיווג<span class="sp"></span><small>היום 10:42</small></h3>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">${pill('תוכן אסור · אלימות · רמה 3', '#C53030', '#FBEAEA')}<span class="c-muted">זוועה, מוות גרפי, פגיעה עצמית</span></div>
+    <dl class="c-kv"><dt>סוקר</dt><dd>יוסף קליין</dd><dt>מקור המשימה</dt><dd>חשד לתוכן אסור (AI)</dd><dt>מה כבר קרה</dt><dd>המדיה הוסרה מהפוסט ומ-2 עותקים זהים. הבייטים נשמרים 90 יום.</dd></dl>
+    <div class="c-lock" style="margin-top:14px">${ic('lock')}<span><b>התמונה אינה מוצגת באזור הניהול.</b> ההכרעה כאן היא על המשתמש, על בסיס פסיקת הסוקר.</span></div></div>
+  <div class="c-card"><h3>${ic('file')}הפוסט<span class="sp"></span><small>קבוצה · שכונת רמות · 14.11 10:05</small></h3><div style="display:flex;gap:12px">${cav('מנחם לוי', 38)}<div><b>מנחם לוי</b><p class="c-quote" style="margin:6px 0 0">תראו מה קרה אתמול בצומת. שיידעו כולם.</p></div></div><div style="margin-top:12px"><span class="c-mchip">${ic('image')}תמונה · הוסרה</span></div></div>
+  <div style="flex:1"></div>${decBar()}</div>
+  <div class="c-colside">${subjectCard('מנחם לוי', { strikes: 1 })}<div class="c-card"><h3>${ic('gavel')}הצעת המערכת</h3><div class="c-ladder"><span class="past"><b>אזהרה</b>1</span><span class="next"><b>24 שעות</b>2</span><span><b>7 ימים</b>3</span><span><b>חסימה</b>4</span></div><p class="c-muted" style="margin:10px 0 0">עבירה פעילה אחת. אם תאושר עבירה, זו תהיה השנייה: השעיה 24 שעות.</p></div></div></div>` }) };
+
+SCREENS.aCasePattern = { cap: '<b>Admin · abuse pattern</b> (fork 21, 8b) — numbers only; nothing happened automatically. Admin dismisses, warns, or opens a false-reporting case.', html: () => desk({ area: 'admin', nav: 'cases', crumb: caseCrumb('#C-2030', 'pattern', lane('standard')), topRight: takenTop, body: `<div class="c-cols"><div class="c-colmain">
+  <div class="c-banner red" style="background:#FBF3E2;color:#8A5A0B">${ic('info')}<span>התיק נפתח כי משתמש עבר סף שהוגדר. שום פעולה לא ננקטה נגד אף אחד באופן אוטומטי.</span></div>
+  <div class="c-tiles" style="grid-template-columns:repeat(4,1fr)"><div class="c-tile amb"><span>דיווחים שהגיש · 30 יום</span><b>23</b><em>הסף: 10</em></div><div class="c-tile amb"><span>נדחו</span><b>91%</b><em>הסף: 80%</em></div><div class="c-tile"><span>משתמשים שדווחו</span><b>2</b><em>21 מהדיווחים על אותו משתמש</em></div><div class="c-tile"><span>הוכרעו כמוצדקים</span><b>2</b></div></div>
+  <div class="c-tablecard"><table class="c-table"><thead><tr><th>תאריך</th><th>על מי</th><th>קטגוריה</th><th>תוצאה</th></tr></thead><tbody>
+  ${[['14.11', 'אברהם כהן', 'תוכן הכולל נשים', 'נדחה · התמונה ללא נשים'], ['13.11', 'אברהם כהן', 'מידע שגוי', 'נדחה'], ['13.11', 'אברהם כהן', 'הטרדה / איומים', 'נדחה'], ['11.11', 'משה גרין', 'ספאם / פרסומי', 'אושר · הוסר'], ['10.11', 'אברהם כהן', 'אחר', 'נדחה'], ['09.11', 'אברהם כהן', 'תוכן הכולל נשים', 'נדחה']].map(r => `<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table></div>
+  <div class="c-decbar">${btn('סגירה ללא פעולה', 'sec', 'check')}${btn('אזהרה', 'sec', 'alert')}<span class="sp"></span>${btn('פתיחת תיק דיווח כוזב', 'pri', 'gavel')}</div></div>
+  <div class="c-colside">${subjectCard('שלמה דרעי', { strikes: 0, past: 'אין', reportsOn: '0' })}</div></div>` }) };
+
+function appealScreen(overlay) {
+  const ban = V.appeal === 'ban';
+  return desk({ area: 'admin', nav: 'cases', me: ban ? ME.admin : null, crumb: caseCrumb(ban ? '#C-2027' : '#C-2029', 'appeal', lane('appeals')), topRight: takenTop, overlay, body: `<div class="c-cols"><div class="c-colmain">
+  <div class="c-card"><h3>${ic('gavel')}ההחלטה המקורית<span class="sp"></span><small>הוחלט על ידי ${ban ? 'אלי מ.' : 'שמואל טל'} · 10.11.2026</small></h3>
+    <dl class="c-kv"><dt>עונש</dt><dd><b>${ban ? 'חסימה קבועה' : 'השעיה 7 ימים'}</b> ${ban ? '' : '· עד 17.11.2026'}</dd><dt>כלל</dt><dd>${ban ? 'איומים פיזיים · מסלול ישיר' : 'הטרדה · עבירה שלישית פעילה'}</dd><dt>התוכן</dt><dd class="c-quote">${ban ? '"אני אחכה לך ליד הבית, תראה מה יקרה"' : '"שוב אתה? אף אחד לא רוצה אותך פה, תעוף מהקבוצה"'}</dd></dl></div>
+  <div class="c-card"><h3>${ic('msg')}הערעור של המשתמש<span class="sp"></span><small>11.11.2026</small></h3><p class="c-quote" style="margin:0">${ban ? '"זה היה ציטוט מסרט ששלחתי לחבר, לא איום. אני מבקש שתבדקו שוב."' : '"כתבתי את זה בכעס אחרי שהוא העליב אותי קודם. אני מבין שזה לא היה בסדר, אבל שבוע זה מוגזם."'}</p></div>
+  <div class="c-card"><h3>${ic('check')}ההכרעה</h3>
+    ${ban ? `<div class="c-banner red" style="margin-bottom:12px">${ic('lock')}<span>ערעור על חסימה קבועה דורש מנהל בכיר. אפשר לעיין בתיק ולהוסיף הערה.</span></div>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;${ban ? 'opacity:.45' : ''}">${radio('אישור ההחלטה', 'העונש נשאר בתוקף')}${radio('הפחתה', 'השעיה 24 שעות במקום 7 ימים', !ban)}${radio('ביטול מלא', 'העבירה נמחקת והתוכן משוחזר')}</div>
+    <div style="margin-top:12px;${ban ? 'opacity:.45' : ''}">${field('נימוק', ban ? '' : 'התגובה נכתבה בתגובה לעלבון קודם; הפחתה לשלב הקודם בסולם.', { area: true })}</div></div>
+  <div class="c-decbar"><span class="c-muted">ההחלטה תישמר ביומן. המשתמש יקבל את התוצאה בתיבת הדואר כשתיפתח.</span><span class="sp"></span>${btn('שמירת ההכרעה', ban ? 'pri dis' : 'pri', 'check')}</div></div>
+  <div class="c-colside">${subjectCard(ban ? 'רפאל גבאי' : 'דוד כץ', { status: ban ? 'banned' : 'suspended', strikes: ban ? 0 : 3, past: ban ? 'חסימה קבועה · 10.11' : 'אזהרה 02.10 · השעיה 24 שעות 28.10' })}</div></div>` });
+}
+SCREENS.aCaseAppeal = { cap: '<b>Admin · penalty appeal</b> (fork 7) — any admin may decide, incl. the original decider; permanent-ban appeals need a senior admin (switch "Penalty appeal kind" in the panel for the locked state).', html: () => appealScreen() };
+
+function penaltyDialog() {
+  const ladderRules = ['הטרדה', 'ספאם / פרסומי', 'מידע שגוי', 'דיווח כוזב', 'עקיפת המסווג', 'תוכן אסור', 'התנהגות לא הולמת אחרת'];
+  const directRules = ['הטרדה חמורה', 'איומים פיזיים', 'סיכון לקטינים', 'מידע שגוי מסוכן'];
+  return `<div class="c-scrim"><div class="c-dialog wide"><h2><span class="ic">${ic('gavel')}</span>ענישה · יעקב פרידמן</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr 300px;gap:22px">
+    <div style="display:flex;flex-direction:column;gap:8px"><b style="font-size:13.5px;color:#5A6488">מסלול הדרגתי</b>${ladderRules.map((r, i) => radio(r, '', i === 0)).join('')}</div>
+    <div style="display:flex;flex-direction:column;gap:8px"><b style="font-size:13.5px;color:#5A6488">מסלול ישיר (עבירות חמורות)</b>${directRules.map(r => radio(r, '', false, 'dng')).join('')}
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px"><b style="font-size:13.5px;color:#5A6488">סולם העבירות</b><div class="c-ladder"><span class="past"><b>אזהרה</b>1</span><span class="next"><b>24 שעות</b>2</span><span><b>7 ימים</b>3</span><span><b>חסימה</b>4</span></div>
+      <p style="font-size:13.5px">עבירה פעילה אחת. העבירה הזו תהיה השנייה. <b>הצעה: השעיה 24 שעות.</b></p>${check('הקלה מההצעה (דורש נימוק)', false)}${check('הסרת התוכן המדווח', true)}</div></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><b style="font-size:13.5px;color:#5A6488">מה המשתמש יראה</b><div class="c-mini"><b>החשבון מוגבל זמנית</b><span>הסיבה: הטרדה</span><span>בגלל: תגובה שכתבת ב-14.11</span><span>עד: 15.11.2026, 10:30</span><span class="c-mute">אפשר לערער מתוך האפליקציה.</span></div><span class="c-hint">הודעות על אזהרות יגיעו לתיבת הדואר כשתיפתח (שלב 7).</span></div>
+  </div>
+  <div class="foot">${btn('ביטול', 'ghost')}${btn('החלת השעיה 24 שעות', 'pri', 'gavel')}</div></div></div>`;
+}
+SCREENS.aPenalty = { cap: '<b>Admin · penalty</b> (fork 15) — rule picker (ladder / direct), proposal from active strikes, optional "go lower" with reason, preview of what the user sees.', html: () => desk({ area: 'admin', nav: 'cases', crumb: caseCrumb('#C-2041', 'report', lane('standard')), topRight: takenTop, body: '', overlay: penaltyDialog() }) };
+SCREENS.aBanConfirm = { cap: '<b>Admin · permanent ban confirm</b> — ladder-reached ban needs the user\'s display name typed. The ban hides profile, posts and comments from everyone.', html: () => desk({ area: 'admin', nav: 'cases', crumb: caseCrumb('#C-2044', 'report', lane('standard')), topRight: takenTop, body: '', overlay: `<div class="c-scrim"><div class="c-dialog"><h2><span class="ic dng">${ic('ban')}</span>חסימה קבועה</h2>
+  <p>זו העבירה הרביעית הפעילה של <b>יעקב פרידמן</b>. החסימה מסתירה את הפרופיל, הפוסטים והתגובות שלו מכולם. אפשר לערער, וערעור על חסימה נבדק על ידי מנהל בכיר.</p>
+  ${field('כדי לאשר, הקלד את שם המשתמש: יעקב פרידמן', 'יעקב פריד', { focus: true })}
+  <div class="foot">${btn('ביטול', 'ghost')}${btn('חסימה קבועה', 'dng dis', 'ban')}</div></div></div>` }) };
+SCREENS.aMinors = { cap: '<b>Admin · minors risk</b> (fork 22, 07 §5.2) — direct: permanent ban + automatic legal hold + authorities record (offline; the console sends nothing). Senior admins are notified on the dashboard.', html: () => desk({ area: 'admin', nav: 'cases', crumb: caseCrumb('#C-2047', 'report', lane('urgent')), topRight: takenTop, body: '', overlay: `<div class="c-scrim"><div class="c-dialog wide" style="width:720px"><h2><span class="ic dng">${ic('shield')}</span>סיכון לקטינים</h2>
+  <div class="c-banner red">${ic('alert')}<span>חסימה מיידית קבועה · שמירת ראיות בעיכוב משפטי · תיעוד דיווח לרשויות</span></div>
+  <div style="display:flex;flex-direction:column;gap:8px">${check('החשבון ייחסם לצמיתות והתוכן שלו יוסתר מכולם', true)}${check('התוכן והמדיה יישמרו בעיכוב משפטי ולא יימחקו עד שמנהל בכיר ישחרר', true)}${check('מנהלים בכירים יקבלו התראה בלוח הבקרה', true)}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">${field('הגוף שאליו דווח', 'לדוגמה: משטרת ישראל', { ph: true })}${field('תאריך הדיווח', '14.11.2026')}${field('מספר אסמכתא', '', { focus: true })}${field('מי דיווח', 'שמואל טל')}</div>
+  ${field('הערה', 'מה נמסר ובאיזה ערוץ', { area: true, ph: true })}
+  <p style="font-size:13.5px">הדיווח לרשויות נעשה מחוץ למערכת. כאן רק מתעדים אותו.</p>
+  <div class="foot">${btn('ביטול', 'ghost')}${btn('חסימה ותיעוד', 'dng', 'shield')}</div></div></div>` }) };
+
+SCREENS.aUser = { cap: '<b>Admin · user page</b> — status, strikes with expiry, actions and appeals, report counts, open cases, legal holds. No follower or membership lists (invariant #5) and no avatar image.', html: () => desk({ area: 'admin', nav: 'users', crumb: `${ic('chevl')}משתמשים <b>· דוד כץ</b>`, body: `<div class="c-cols"><div class="c-colmain">
+  <div class="c-card" style="display:flex;gap:16px;align-items:center">${cav('דוד כץ', 64)}<div style="flex:1"><b class="disp" style="font-size:22px">דוד כץ</b><div class="c-muted" style="direction:ltr;text-align:right">u_7f3a19c2 · חבר מאז 03.2026</div></div>${statusPill('suspended')}${btn('תיק חדש', 'sec', 'briefcase')}</div>
+  <div class="c-card"><h3>${ic('alert')}עבירות פעילות<span class="sp"></span><small>עבירה פעילה 90 יום</small></h3>
+    <div class="c-strike"><span class="n">1</span><span><b>הטרדה</b> · אזהרה</span><span class="sp"></span><span class="c-muted">02.10.2026 · פגה ב-31.12.2026</span></div>
+    <div class="c-strike"><span class="n">2</span><span><b>הטרדה</b> · השעיה 24 שעות</span><span class="sp"></span><span class="c-muted">28.10.2026 · פגה ב-26.01.2027</span></div>
+    <div class="c-strike"><span class="n">3</span><span><b>הטרדה</b> · השעיה 7 ימים ${pill('ערעור ממתין', '#7C6A9C', '#EFEBF6')}</span><span class="sp"></span><span class="c-muted">10.11.2026 · פגה ב-08.02.2027</span></div>
+    <div class="c-strike"><span class="n off">·</span><span class="c-mute">ספאם · אזהרה · 03.05.2026 · פגה</span></div></div>
+  <div class="c-tablecard" style="flex:0 0 auto"><table class="c-table"><thead><tr><th>תאריך</th><th>החלטה</th><th>כלל</th><th>על ידי</th><th>ערעור</th></tr></thead><tbody>
+    <tr><td>10.11.2026</td><td><b>השעיה 7 ימים</b></td><td>הטרדה</td><td>שמואל טל</td><td>${pill('ממתין', '#7C6A9C', '#EFEBF6')}</td></tr><tr><td>28.10.2026</td><td><b>השעיה 24 שעות</b> + הסרת תגובה</td><td>הטרדה</td><td>שמואל טל</td><td>—</td></tr><tr><td>02.10.2026</td><td><b>אזהרה</b></td><td>הטרדה</td><td>אלי מ.</td><td>—</td></tr></tbody></table></div></div>
+  <div class="c-colside"><div class="c-card"><h3>${ic('flag')}דיווחים</h3><dl class="c-kv"><dt>דיווחים שהגיש</dt><dd>4 ב-90 יום · 25% נדחו</dd><dt>דיווחים עליו</dt><dd>7 ב-90 יום · 3 מוצדקים</dd></dl></div>
+  <div class="c-card"><h3>${ic('briefcase')}תיקים פתוחים</h3><div class="c-muted">#C-2029 · ערעור על עונש · נותרו 2 ימים</div></div>
+  <div class="c-card"><h3>${ic('lock')}עיכובים משפטיים</h3><div class="c-muted">אין</div></div>
+  <div class="c-lock">${ic('info')}<span>רשימות עוקבים, נעקבים וחברויות אינן מוצגות. מספר בלי רשימה.</span></div></div></div>` }) };
+
+const AROWS = [
+  ['היום 11:04:12', 'רחל אדלר', 'סוקר', 'פתיחת תמונה', 'משימה #T-8812', 'חשיפה · צבע'],
+  ['היום 11:02:40', 'רחל אדלר', 'סוקר', 'הכרעה בסיווג', 'מדיה m_51c0', 'נשים 1 · 2 עותקים'],
+  ['היום 10:58:03', 'אלי מ.', 'מנהל בכיר', 'שינוי הגדרה', 'high_min', '0.800 → 0.750'],
+  ['היום 10:51:27', 'שמואל טל', 'מנהל', 'הרחבת תמליל', 'תיק #C-2038', '10 הודעות · נימוק'],
+  ['היום 10:42:19', 'יוסף קליין', 'סוקר', 'סימון כאסור', 'מדיה m_9a2e', 'אלימות 3 · תיק #C-2036'],
+  ['היום 10:30:55', 'אלי מ.', 'מנהל בכיר', 'כניסה לאזור המדיה', 'סשן', 'אישור אזהרה'],
+  ['היום 10:12:08', 'שמואל טל', 'מנהל', 'החלת עונש', 'דוד כץ', 'השעיה 7 ימים · הטרדה'],
+  ['היום 09:58:44', 'שמואל טל', 'מנהל', 'חשיפת זהות מדווח', 'תיק #C-2033', 'נימוק'],
+  ['היום 09:40:01', 'מרים שפירא', 'סוקר', 'דילוג', 'משימה #T-8790', 'צריך דעה נוספת'],
+  ['היום 08:01:15', 'מרים שפירא', 'סוקר', 'כניסה למערכת', '—', '2FA'],
+];
+const auditBody = () => `<div class="c-chips"><span class="c-chip">${ic('user')}איש צוות: הכול</span><span class="c-chip">${ic('filter')}פעולה: הכול</span><span class="c-chip on">היום</span><span class="c-chip">7 ימים</span><span class="c-chip">טווח…</span><span class="c-search" style="width:280px;height:32px">${ic('search')}מזהה יעד</span></div>
+  <div class="c-tablecard"><table class="c-table"><thead><tr><th>זמן</th><th>איש צוות</th><th>תפקיד</th><th>פעולה</th><th>יעד</th><th>פרטים</th></tr></thead><tbody>
+  ${AROWS.map((r, i) => `<tr class="${i === 2 ? 'hl' : ''}"><td class="num">${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td><td>${r[3]}</td><td style="direction:ltr;text-align:right">${r[4]}</td><td>${r[5]}</td></tr>`).join('')}</tbody></table></div>`;
+SCREENS.aAudit = { cap: '<b>Admin · audit log</b> (fork 23) — append-only; senior admins see everything, admins see conduct entries. Includes reveals, entries to the media area, settings changes.', html: () => desk({ area: 'admin', nav: 'audit', title: 'יומן פעולות', topRight: `<span class="c-muted">רשומות נשמרות שנתיים · לא ניתנות לעריכה</span>`, body: auditBody() }) };
+SCREENS.aAuditEntry = { cap: '<b>Admin · audit entry</b> — drawer with old → new and the reason.', html: () => desk({ area: 'admin', nav: 'audit', title: 'יומן פעולות', topRight: '', body: auditBody(), overlay: `<div class="c-scrim" style="background:rgba(16,26,58,.18)"></div><div class="c-drawer"><h2>${ic('sliders')}שינוי הגדרה<span class="x">${ic('x')}</span></h2>
+  <dl class="c-kv"><dt>זמן</dt><dd>14.11.2026 10:58:03</dd><dt>איש צוות</dt><dd>אלי מ. · מנהל בכיר</dd><dt>הגדרה</dt><dd style="direction:ltr;text-align:right">pipeline_config.high_min</dd></dl>
+  <div class="c-card" style="background:#F3F5FC;box-shadow:none"><div class="c-diff"><s>0.800</s>${ic('chevl')}<b>0.750</b></div></div>
+  <div><b style="font-size:13.5px;color:#5A6488">נימוק</b><p class="c-quote" style="margin:6px 0 0">יותר מדי תמונות עם נשים ברורות מגיעות לבדיקה אנושית; לפי נתוני השבוע, ה-AI צודק כמעט תמיד מעל 0.75.</p></div></div>` }) };
+
+const confirmEntryBody = `<div class="c-empty"><div class="c-dialog" style="box-shadow:var(--shadow-soft)"><h2><span class="ic amb">${ic('alert')}</span>מעבר לאזור המדיה</h2>
+  <p>האזור הזה מציג תמונות שה-AI או משתמשים סימנו לבדיקה. חלקן עלולות להיות לא צנועות או קשות לצפייה. התמונות מוצגות מטושטשות עד שתבחר לחשוף אותן, וכל פתיחה נרשמת ביומן.</p>
+  ${check('הבנתי, ואני מבקש להיכנס לאזור המדיה', false)}<div class="foot">${btn('חזרה', 'ghost')}${btn('כניסה לאזור המדיה', 'pri dis', 'alert')}</div></div></div>`;
+SCREENS.aEnterReview = { cap: '<b>Admin · warning before the media area</b> (fork 1) — explicit checkbox, then confirm; per session; audit-logged. The button stays disabled until checked.', html: () => desk({ area: 'admin', nav: '', title: 'מעבר לאזור המדיה', topRight: '', body: confirmEntryBody }) };
+
+/* ============================ ADMIN · 8b ============================ */
+function bars(series, colors, h = 170) {
+  const max = Math.max(...series.map(d => d.v.reduce((a, b) => a + b, 0)));
+  return `<div style="display:flex;align-items:flex-end;gap:18px;height:${h}px;padding-top:8px">${series.map(d => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:100%;max-width:46px;display:flex;flex-direction:column-reverse;border-radius:6px;overflow:hidden;height:${Math.round(d.v.reduce((a, b) => a + b, 0) / max * (h - 26))}px">${d.v.map((v, i) => `<i style="display:block;background:${colors[i]};flex:${v}"></i>`).join('')}</div><span style="font-size:12px;color:#8A93B5">${d.l}</span></div>`).join('')}</div>`;
+}
+const LC = ['#C53030', '#22C3D6', '#2E3A8C', '#7C6A9C'];
+SCREENS.aDashboard = { cap: '<b>Admin · dashboard</b> (fork 18, 8b) — moderation ops + basic platform counts from stored data. No behavioural analytics.', html: () => desk({ area: 'admin', nav: 'dash', title: 'לוח בקרה', topRight: `<span class="c-chips"><span class="c-chip on">היום</span><span class="c-chip">7 ימים</span><span class="c-chip">30 יום</span></span>`, body: `
+  <div class="c-tiles" style="grid-template-columns:repeat(6,1fr)"><div class="c-tile dng"><span>דחוף באיחור</span><b>1</b><em>ו-1 בסיכון</em></div><div class="c-tile"><span>תמונות בתור</span><b>17</b><em>ממוצע המתנה 1 ש׳ 12 דק׳</em></div><div class="c-tile"><span>תיקים רגילים</span><b>14</b></div><div class="c-tile"><span>ערעורים ממתינים</span><b>3</b><em>1 דורש מנהל בכיר</em></div><div class="c-tile amb"><span>משימות תקועות</span><b>1</b></div><div class="c-tile"><span>פיגור המסווג</span><b>48 שנ׳</b><em>זמן עד סיווג, חציון</em></div></div>
+  <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:18px">
+    <div class="c-card"><h3>פריטים שנכנסו לפי נתיב · 7 ימים<span class="sp"></span><span class="c-legend"><span><i style="background:${LC[0]}"></i>דחוף</span><span><i style="background:${LC[1]}"></i>תמונות</span><span><i style="background:${LC[2]}"></i>רגיל</span><span><i style="background:${LC[3]}"></i>ערעורים</span></span></h3>
+      ${bars([['א', [3, 40, 12, 1]], ['ב', [2, 52, 15, 2]], ['ג', [4, 47, 11, 1]], ['ד', [1, 61, 18, 3]], ['ה', [3, 58, 16, 2]], ['ו', [2, 39, 9, 1]], ['ש', [0, 6, 2, 0]]].map(([l, v]) => ({ l, v })), LC)}</div>
+    <div class="c-card"><h3>עמידה ביעדי טיפול · 7 ימים</h3>${[['דחוף · שעה', 92, '#C53030'], ['תמונות · 4 שעות', 97, '#157C8A'], ['רגיל · 24 שעות', 99, '#2E3A8C'], ['ערעורים · 72 שעות', 100, '#7C6A9C']].map(([l, p, c]) => `<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:6px"><span>${l}</span><b class="disp">${p}%</b></div><div style="height:8px;border-radius:4px;background:#E9ECF7"><div style="height:8px;border-radius:4px;width:${p}%;background:${c}"></div></div></div>`).join('')}</div></div>
+  <div class="c-tiles" style="grid-template-columns:repeat(5,1fr)"><div class="c-tile"><span>משתמשים</span><b>3,482</b></div><div class="c-tile"><span>הצטרפו היום</span><b>41</b></div><div class="c-tile"><span>פוסטים היום</span><b>612</b></div><div class="c-tile"><span>דיווחים היום</span><b>23</b></div><div class="c-tile"><span>עלות מסווג החודש (הערכה)</span><b>$4.80</b><em>Haiku 5.5 + הסלמה</em></div></div>` }) };
+SCREENS.aReviewers = { cap: '<b>Admin · review team stats</b> (fork 26, 8b) — passive only: throughput, skips, agreement with the AI (meaningful in blind mode), changed on appeal. No QA sampling.', html: () => desk({ area: 'admin', nav: 'reviewers', title: 'צוות הסיווג', topRight: `<span class="c-chips"><span class="c-chip">היום</span><span class="c-chip on">7 ימים</span><span class="c-chip">30 יום</span></span>`, body: `
+  <div class="c-tablecard"><table class="c-table"><thead><tr><th>סוקר</th><th>שעות פעילות</th><th>החלטות</th><th>משימות לשעה</th><th>דילוגים</th><th>הסכמה עם ה-AI</th><th>שונו בערעור</th><th>סומנו כאסורים</th></tr></thead><tbody>
+  ${[['רחל אדלר', '31', 214, '6.9', 6, '91%', 2, 3], ['יוסף קליין', '28', 188, '6.7', 3, '88%', 1, 5], ['מרים שפירא', '24', 141, '5.9', 11, '93%', 0, 1], ['דניאל ברק', '12', 52, '4.3', 2, '84%', 3, 0]].map(r => `<tr><td><b>${r[0]}</b></td>${r.slice(1).map(v => `<td class="num">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  <div class="c-lock">${ic('info')}<span>הסכמה עם ה-AI נמדדת רק במצב שבו הסוקר מחליט בלי לראות את תשובת ה-AI. מצב נוכחי: <b>עיוור + משוב אחרי ההחלטה</b>.</span></div>` }) };
+SCREENS.aClassifier = { cap: '<b>Admin · classifier health + per-upload log</b> (8b) — rates per group, escalation, dedupe, latency; the log is metadata only (90-day scores, ADR 0011). No images.', html: () => desk({ area: 'admin', nav: 'classifier', title: 'מסווג ה-AI', topRight: `<span class="c-chips"><span class="c-chip">היום</span><span class="c-chip on">7 ימים</span></span>`, body: `
+  <div class="c-tiles" style="grid-template-columns:repeat(5,1fr)"><div class="c-tile"><span>תמונות שסווגו</span><b>4,210</b></div><div class="c-tile"><span>הוסלמו ל-Sonnet</span><b>6.2%</b></div><div class="c-tile"><span>נשלחו לבדיקה אנושית</span><b>3.1%</b></div><div class="c-tile"><span>עותקים זהים (dedupe)</span><b>18%</b></div><div class="c-tile"><span>זמן סיווג חציוני</span><b>2.4 שנ׳</b></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:18px;flex:1;min-height:0">
+  <div class="c-tablecard"><table class="c-table"><thead><tr><th>קבוצה</th><th>רמה 0</th><th>רמה 1–2</th><th>לא בטוח</th><th>רמה 3</th></tr></thead><tbody>${[['נשים', '71%', '27%', '1.6%', '0.1%'], ['אלימות', '96%', '3.6%', '0.3%', '0.05%'], ['סמלים דתיים', '97%', '2.7%', '0.2%', '0.02%'], ['התמכרויות', '98%', '1.9%', '0.1%', '—']].map(r => `<tr><td><b>${r[0]}</b></td>${r.slice(1).map(v => `<td class="num">${v}</td>`).join('')}</tr>`).join('')}<tr><td><b>סירובים</b></td><td colspan="4" class="num">0.2%</td></tr></tbody></table></div>
+  <div class="c-tablecard"><table class="c-table"><thead><tr><th>זמן</th><th>מדיה</th><th>מודל</th><th>תשובה</th><th>ביטחון</th><th>תוצאה</th><th>זמן</th></tr></thead><tbody>${[['11:04:58', 'm_51d2', 'haiku-5-5', 'נשים 1', '0.93', 'מסונן', '2.1 שנ׳'], ['11:04:51', 'm_51d1', 'dedupe', 'עותק של m_40aa', '—', 'כללי', '0.01 שנ׳'], ['11:04:40', 'm_51d0', 'sonnet-5-5', 'לא בטוח', '0.55', 'לבדיקה', '5.8 שנ׳'], ['11:04:33', 'm_51cf', 'haiku-5-5', 'הכול 0', '0.97', 'כללי', '1.9 שנ׳'], ['11:04:20', 'm_51ce', 'haiku-5-5', 'סירוב', '—', 'לבדיקה', '1.2 שנ׳'], ['11:04:02', 'm_51cd', 'haiku-5-5', 'אלימות 1', '0.88', 'מסונן', '2.3 שנ׳']].map(r => `<tr><td class="num">${r[0]}</td><td style="direction:ltr;text-align:right">${r[1]}</td><td style="direction:ltr;text-align:right">${r[2]}</td><td>${r[3]}</td><td class="num">${r[4]}</td><td>${r[5]}</td><td class="num">${r[6]}</td></tr>`).join('')}</tbody></table></div></div>` }) };
+
+function settingsBody() {
+  const row = (b, s, ctrl, now) => `<div class="c-settingrow"><div class="lbl2"><b>${b}</b><span>${s}</span></div><div>${ctrl}</div><div class="now">${now}</div></div>`;
+  const slider = (a, b) => `<div class="c-slider"><b style="inset-inline-start:${a}%;width:${b - a}%"></b><i style="inset-inline-start:${a}%"></i><i style="inset-inline-start:${b}%"></i></div><div style="display:flex;justify-content:space-between;font-size:12.5px;color:#8A93B5;margin-top:8px"><span>אישור אוטומטי &lt; 0.20</span><span>בדיקה אנושית</span><span>סימון אוטומטי ≥ 0.75</span></div>`;
+  return `${tabs([['סיווג', undefined, true], ['בדיקה'], ['יעדי טיפול'], ['סולם עבירות'], ['דפוסים'], ['שמירת מידע']])}
+  <div class="c-card" style="padding:6px 22px">
+    ${row('ספי ביטחון', 'מתחת לסף התחתון: אישור אוטומטי. מעל העליון: סימון אוטומטי. ביניהם: בדיקה אנושית.', slider(20, 75), 'שונה היום ע״י אלי מ.')}
+    ${row('מודל ראשי', 'מסווג כל תמונה', `<span class="c-input" style="direction:ltr;justify-content:flex-end">claude-haiku-5-5</span>`, '')}
+    ${row('מודל הסלמה', 'לתשובות לא בטוחות לפני אדם', `<span class="c-input" style="direction:ltr;justify-content:flex-end">claude-sonnet-5-5</span>`, '')}
+    ${row('תשובת ה-AI לסוקרים', 'מה הסוקר רואה בזמן ההחלטה', `<div style="display:flex;gap:8px">${radio('עיוור', '', false)}${radio('עיוור + משוב', '', true)}${radio('מוצג', '', false)}</div>`, '')}
+    ${row('גודל אצווה', 'משימות לכל הרצה של המסווג', `<span class="c-input" style="width:120px">20</span>`, '')}
+  </div>
+  <div class="c-lock">${ic('lock')}<span><b>טשטוש אזורי · כבוי.</b> ממתין להחלטת מוצר (שאלות פתוחות ב-backlog §K). אין מתג בקונסולה עד שתתקבל החלטה.</span></div>
+  <div class="c-decbar"><span class="c-muted">יש שינוי אחד שלא נשמר</span><span class="sp"></span>${btn('ביטול', 'ghost')}${btn('שמירה…', 'pri')}</div>`;
+}
+SCREENS.aSettings = { cap: '<b>Admin · settings</b> (fork 24, 8b) — senior admins edit; admins read. Region blur shown locked. Every save asks for a reason.', html: () => desk({ area: 'admin', nav: 'settings', title: 'הגדרות', topRight: `<span class="c-muted">עריכה למנהלים בכירים בלבד</span>`, body: settingsBody() }) };
+SCREENS.aSettingConfirm = { cap: '<b>Admin · confirm a settings change</b> — old → new, reason required, audit-logged.', html: () => desk({ area: 'admin', nav: 'settings', title: 'הגדרות', topRight: '', body: settingsBody(), overlay: `<div class="c-scrim"><div class="c-dialog"><h2><span class="ic">${ic('sliders')}</span>שמירת שינוי</h2>
+  <div class="c-card" style="background:#F3F5FC;box-shadow:none;padding:14px 18px;display:flex;justify-content:space-between;align-items:center"><span>סף סימון אוטומטי</span><span class="c-diff"><s>0.800</s>${ic('chevl')}<b>0.750</b></span></div>
+  <p>השינוי חל על תמונות חדשות בלבד. תמונות שכבר סווגו לא ישתנו.</p>
+  ${field('נימוק (חובה)', 'לפי נתוני השבוע ה-AI צודק כמעט תמיד מעל 0.75', { area: true, focus: true })}
+  <div class="foot">${btn('ביטול', 'ghost')}${btn('שמירה', 'pri', 'check')}</div></div></div>` }) };
+const staffBody = () => `<div class="c-tablecard"><table class="c-table"><thead><tr><th>שם</th><th>אימייל</th><th>תפקיד</th><th>אימות דו-שלבי</th><th>כניסה אחרונה</th><th>מצב</th><th></th></tr></thead><tbody>
+  ${[['אלי מ.', 'eli@…', 'מנהל בכיר', true, 'היום 10:30', 'פעיל'], ['שמואל טל', 'shmuel@…', 'מנהל', true, 'היום 08:55', 'פעיל'], ['רחל אדלר', 'rachel@…', 'סוקר', true, 'היום 08:02', 'פעיל'], ['יוסף קליין', 'yosef@…', 'סוקר', true, 'היום 07:58', 'פעיל'], ['מרים שפירא', 'miriam@…', 'סוקר', true, 'היום 08:01', 'פעיל'], ['דניאל ברק', 'daniel@…', 'סוקר', false, '—', 'הוזמן'], ['חיים לנדאו', 'chaim@…', 'סוקר', true, '02.11.2026', 'הושבת']].map(r => `<tr><td><b>${r[0]}</b></td><td style="direction:ltr;text-align:right">${r[1]}</td><td>${r[2]}</td><td>${r[3] ? pill('פעיל', '#2F855A', '#EAF5EF', 'check') : pill('טרם הוגדר', '#B7791F', '#FBF3E2')}</td><td>${r[4]}</td><td>${r[5] === 'פעיל' ? r[5] : `<span class="c-mute">${r[5]}</span>`}</td><td style="text-align:end">${r[5] === 'הושבת' ? '' : `${btn('תפקיד', 'ghost sm')}${btn('השבתה', 'ghost sm')}`}</td></tr>`).join('')}</tbody></table></div>`;
+SCREENS.aStaff = { cap: '<b>Admin · staff</b> (fork 5, 8b) — invite, role change, instant deactivation (senior admins).', html: () => desk({ area: 'admin', nav: 'staff', title: 'אנשי צוות', topRight: btn('הזמנת איש צוות', 'pri', 'plus'), body: staffBody() }) };
+SCREENS.aInvite = { cap: '<b>Admin · invite result</b> — a one-time link the senior admin passes on; no email is sent (no SMTP yet, backlog §D).', html: () => desk({ area: 'admin', nav: 'staff', title: 'אנשי צוות', topRight: '', body: staffBody(), overlay: `<div class="c-scrim"><div class="c-dialog"><h2><span class="ic">${ic('key')}</span>הזמנת איש צוות</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">${field('שם לתצוגה', 'נחמה לוין')}${field('תפקיד', 'סוקר')}</div>${field('אימייל עבודה', 'nechama@team.safeplace')}
+  <div class="c-banner red" style="background:#EAF5EF;color:#2F855A">${ic('check')}<span>ההזמנה נוצרה. העבר את הקישור לאיש הצוות בערוץ מאובטח.</span></div>
+  <div class="c-link"><span>https://console.safeplace/invite#k9Qx2…T7</span>${btn('העתקה', 'sec sm', 'copy')}</div>
+  <span class="c-hint">הקישור חד-פעמי ותקף 24 שעות. אנחנו לא שולחים מייל. בכניסה הראשונה איש הצוות יגדיר סיסמה ואימות דו-שלבי.</span>
+  <div class="foot">${btn('סיום', 'pri')}</div></div></div>` }) };
+
+/* ============================ PHONE (390×844) — user-facing, Eli's copy (drafts) ============================ */
+const P = (inner, cls) => `<div class="phone">${screen(inner, cls)}</div>`;
+const pbanner = `<div style="margin:2px 14px 10px;background:#FBF3E2;border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;color:#7A4E0A">${ic('clock', { size: 20 })}<div style="flex:1;font-size:14px;line-height:1.45"><b style="font-family:Rubik,sans-serif;font-weight:600">החשבון שלך מוגבל עד יום ראשון, 16.11 בשעה 14:30</b><div>בינתיים אי אפשר לפרסם, להגיב או לשלוח הודעות.</div></div><span style="font-weight:700;font-size:14px;color:#2E3A8C;align-self:center">פרטים</span></div>`;
+const feedTop = () => `${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span><span class="iconbtn">${ic('search')}</span></div>`;
+const appealForm = (typed) => `<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:8px"><b style="font-family:Rubik,sans-serif;font-weight:600;font-size:15px">חושב שזו טעות?</b><div style="border:1px solid var(--c-border);border-radius:14px;padding:10px 12px;min-height:84px;font-size:14.5px;line-height:1.45;color:${typed ? 'var(--c-ink)' : 'var(--c-ink-mute)'}">${typed || 'ספר לנו למה ההחלטה שגויה'}</div><span style="font-size:12px;color:var(--c-ink-mute);text-align:left">${typed ? typed.length : 0}/1000</span></div>`;
+const detailRows = (o) => `<div style="padding:4px 20px 6px;display:flex;flex-direction:column;gap:10px;font-size:14.5px;line-height:1.45">${o.map(([k, v]) => `<div style="display:flex;gap:10px"><span style="width:62px;flex:0 0 62px;color:var(--c-ink-mute);font-weight:600">${k}</span><span style="color:var(--c-ink-700);flex:1;min-width:0">${v}</span></div>`).join('')}</div>`;
+const SUSP_ROWS = [['הסיבה', 'הטרדה'], ['בגלל', 'תגובה שכתבת ב-14.11: "אתה לא מבין כלום…"'], ['עד', 'יום ראשון, 16.11.2026, 14:30'], ['אפשר', 'לצפות, לסמן אהבתי, לשמור, לעקוב ולדווח']];
+SCREENS.mBanner = { phone: true, cap: '<b>Phone · suspension banner</b> (fork 17b) — on the feed while suspended. Copy is Eli\'s (draft).', html: () => P(`${feedTop()}${pbanner}<div class="scroll"><div class="feed">${card(POSTS[1])}${card(POSTS[0])}</div></div>${bnav()}`) };
+SCREENS.mBlockedSheet = { phone: true, cap: '<b>Phone · blocked sheet with appeal</b> — opens from the banner or when tapping post / comment / "+". Text appeal only (open question 2).', html: () => P(`${feedTop()}${pbanner}<div class="scroll"><div class="feed">${card(POSTS[1])}</div></div>${bnav()}
+  <div class="scrim"></div><div class="sheet"><div class="grab"></div><div style="padding:6px 20px 10px;font-family:Rubik,sans-serif;font-weight:600;font-size:19px">החשבון מוגבל זמנית</div>${detailRows(SUSP_ROWS)}${appealForm('כתבתי את זה בכעס אחרי ויכוח, אבל לא איימתי על אף אחד')}<button class="cta">שליחת ערעור</button></div>`) };
+SCREENS.mAppealSent = { phone: true, cap: '<b>Phone · appeal received</b> — the restriction stays until a decision.', html: () => P(`${feedTop()}${pbanner}<div class="scroll"><div class="feed">${card(POSTS[1])}</div></div>${bnav()}
+  <div class="scrim"></div><div class="sheet"><div class="grab"></div><div class="empty" style="padding:22px 30px 6px"><span class="ic" style="background:#EAF5EF;color:#2F855A">${ic('check')}</span><h3>הערעור התקבל</h3><p>צוות Safe·Place יבדוק אותו בהקדם. ההגבלה נשארת בתוקף עד להחלטה.</p></div><button class="cta">סגירה</button></div>`) };
+SCREENS.mBanned = { phone: true, cap: '<b>Phone · banned</b> (fork 16) — replaces the whole app after sign-in; details, appeal form, sign out.', html: () => P(`${statusbar()}<div class="scroll" style="background:#fff"><div class="empty" style="padding:44px 30px 10px"><span class="ic" style="background:#FBEAEA;color:#C53030">${ic('ban')}</span><h3>החשבון נחסם</h3><p>החשבון שלך נחסם לצמיתות בעקבות הפרה של כללי הקהילה. הפרופיל והתוכן שלך אינם מוצגים לאחרים.</p></div>
+  ${detailRows([['הסיבה', 'איומים פיזיים'], ['בגלל', 'הודעה ששלחת ב-10.11: "אני אחכה לך ליד הבית…"'], ['מתאריך', '10.11.2026']])}${appealForm('')}<button class="cta" style="display:block;width:calc(100% - 40px);margin:6px 20px 0;opacity:.5">שליחת ערעור</button><div style="text-align:center;padding:18px;color:var(--c-ink-soft);font-weight:600">יציאה מהחשבון</div></div>`) };
+SCREENS.mRemovedMedia = { phone: true, cap: '<b>Phone · own post, media removed</b> — uploader sees a neutral placeholder; no appeal button until the Phase 7 inbox (open question 3).', html: () => P(`${statusbar()}<div class="ptop"><span class="iconbtn">${ic('back')}</span><span class="ttl">פוסט</span></div><div class="scroll" style="background:#fff"><article class="card soft" style="box-shadow:none;border-radius:0">
+  <div class="ph">${av('אבי מזרחי', 42)}<div class="who"><div class="nm"><b>אבי מזרחי</b><time>אתמול</time></div>${sourceLabel({ kind: 'public' })}</div><span class="more">${ic('more')}</span></div><div class="body">תראו מה קרה אתמול בצומת.</div>
+  <div class="ph-filter soft" style="height:200px"><span class="eye">${ic('eyeoff', { size: 20 })}</span><b>המדיה הוסרה</b><span>המדיה בפוסט הזה הוסרה כי היא מפרה את כללי הקהילה.</span></div>${ibar({ likes: 3, comments: 1 })}</article></div>`) };
+
+const ORDER = ['login', 'mfa', 'mfaEnroll', 'deactivated', 'noAccess',
+  'rQueue', 'rQueueEmpty', 'rLoading', 'rTask', 'rTaskRevealed', 'rTaskGraphic', 'rTaskMulti', 'rProhibited', 'rSkip', 'rFeedback', 'rLockExpired', 'rHistory', 'rError', 'rAsAdmin',
+  'aEnterReview', 'aCases', 'aCasesEmpty', 'aLoading', 'aError', 'aCaseReport', 'aCaseMessage', 'aExpandReason', 'aCaseProhibited', 'aCasePattern', 'aCaseAppeal', 'aPenalty', 'aBanConfirm', 'aMinors', 'aUser', 'aAudit', 'aAuditEntry',
+  'aDashboard', 'aReviewers', 'aClassifier', 'aSettings', 'aSettingConfirm', 'aStaff', 'aInvite',
+  'mBanner', 'mBlockedSheet', 'mAppealSent', 'mBanned', 'mRemovedMedia'];
+
+function renderAll() {
+  const only = params.get('screen');
+  const list = only ? [only] : ORDER;
+  document.getElementById('stage').style.setProperty('--z', V.z);
+  document.getElementById('stage').innerHTML = list.map(k => {
+    const s = SCREENS[k];
+    if (!s) return `<div class="cell"><div class="cap">Unknown screen: ${k}</div></div>`;
+    const html = s.html();
+    return `<div class="cell" id="s-${k}">${s.phone ? html : `<div class="zoomwrap">${html}</div>`}<div class="cap"><b style="color:#22c3d6">${k}</b> · ${s.cap}</div></div>`;
+  }).join('');
+  if (!params.has('bare')) renderPanel();
+}
+if (params.has('bare')) document.body.classList.add('bare');
+renderAll();
+</script>
+</body>
+</html>
