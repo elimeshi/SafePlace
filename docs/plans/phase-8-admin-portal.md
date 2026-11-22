@@ -7,9 +7,12 @@ here is an open question (§10): ask Eli, don't guess (CLAUDE.md §3).
 Branch: `phase-8-admin`, from `origin/main` @ `d513d50` (Phase 4 and the classifier
 cascade are merged into main).
 
-Status: **plan approved in sections; design lab built, waiting for Eli's review and
-lock.** Reference PNGs are exported from the locked lab. Implementation starts only
-after that.
+Status: **plan approved; lab LOCKED by Eli 2026-11-22 as-is** (Q1–Q5 defaults are the
+shipped choices). Reference PNGs are in `docs/design/phase-8-admin/reference/`.
+§10 is answered.
+
+Per Eli, the same session that planned this phase implements it. Implementation of
+8a starts 2026-11-22.
 
 ## 0. What this phase delivers
 
@@ -776,29 +779,36 @@ Eli confirms the wording):
   media: they would need the pipeline, and an admin could not view them. 8a appeals are
   text only. See §10.
 
-## 10. Open questions (ask Eli; none blocks 8a's data tier)
+## 10. Questions answered by Eli (2026-11-22)
 
-1. **Grouped reports:** may the case view show "N other open reports on this content"
-   and resolve them together (§3.5)? The lab shows it. It is a human choice, but it
-   does show report volume to the admin.
-2. **Appeal evidence:** text only for now. Should screenshots ever be attachable? If
-   so, they go through the pipeline and are reviewed by the team, not the admin.
-3. **Removed-media placeholder on the uploader's own post** (§5.2): show it, or let the
-   media silently disappear until the inbox?
-4. **Rule names and descriptions in Hebrew** (users see them on the blocked sheet):
-   Eli's copy. Drafts are in the lab.
-5. **Suspended users and groups/Family Spaces:** can a suspended user still join a
-   group or accept a Family Space invite? Planned: yes; only creation of content is
-   blocked.
-6. **Second admin before the pilot?** Not required by the rules any more (fork 7), but
-   a single admin is a single point of failure for 1-hour urgent cases.
-7. **Hired team sizing and shifts:** drives whether a 1-hour urgent SLA is real at
-   night and on Shabbat. The SLA clock currently runs 24/7; pausing it on Shabbat would
-   be a settings addition.
-8. **Exposing the `console` schema on hosted** is a dashboard setting (Eli). The
-   alternative is `public.console_*` functions with no config change.
-9. **The reporter identity reveal** in admin cases: planned behind a logged click with
-   a reason. Confirm, or never show it?
+1. **Grouped reports:** yes. The case view shows "N other open reports on this content"
+   and a checkbox decides them together. A human still decides; nothing is automatic.
+2. **Appeal evidence:** text only, at most 1000 characters. No attachments.
+3. **Removed media on the uploader's own post:** a neutral "the media was removed"
+   placeholder (lab `mRemovedMedia`). No appeal button until the Phase 7 inbox.
+4. **Rule names:** the lab's Hebrew drafts are accepted. They live in a copy module
+   (`moderation.rules.name_he` seeded from it).
+5. **Suspended users:** may join groups and accept Family Space invites. Only content
+   creation is blocked.
+6. **Second admin:** not a pilot prerequisite. Recorded risk: with one admin, an urgent
+   1-hour case at night waits for him.
+7. **SLA clocks pause on Shabbat and Yom Tov** (all lanes, urgent included; urgent items
+   still sort first).
+   - Data: `moderation.sla_pauses(id, starts_at, ends_at, label)`, entered by a senior
+     admin (8b settings, SLA tab; 8a seeds the next 12 months from a script using fixed
+     Jerusalem candle-lighting and havdalah times).
+   - `moderation.sla_due(created_at, minutes)` adds working minutes, skipping pause
+     windows; it sets `sla_due_at` at creation.
+   - "At risk" and "late" are computed with the same skipping.
+   - Not in the locked lab: the pause-calendar list on the SLA settings tab (8b). Mock
+     it in the lab and get Eli's OK before building it.
+8. **`console` schema:** yes. Eli adds `console` to the hosted API's exposed schemas
+   when 8a is applied.
+9. **Reporter identity:** any admin may reveal it, with a written reason, and the reveal
+   is audit-logged.
+
+Hired team sizing and shifts are still open (HR, legal #21). They don't block
+engineering.
 
 ## Progress log
 
@@ -819,3 +829,15 @@ Eli confirms the wording):
     "file://wsl.localhost/...admin-lab.html?bare=1&screen=<name>"`.
   - Phone screens use 390×844.
 - Waiting for Eli's review and lock of the lab (Q1–Q5) and his answers to §10.
+
+### 2026-11-22 — lab locked, §10 answered, 8a starts
+
+- **Lab:** Eli approved as-is. The 48 reference PNGs were exported with Edge headless
+  (1440×900 console, 390×844 phone, reduced motion forced).
+- **§10:** all nine answered. The Shabbat/Yom Tov SLA pause was added.
+- **Next design phase (Eli):** personal area (05) + content-filter settings with double
+  confirm + block list + sign out + privacy basics. It closes pilot blocker 1 and the
+  Phase 5 handoff items above.
+  - Groups, Family Spaces, gender change and account deletion stay later.
+  - Production plumbing becomes its own short non-design step before the pilot.
+- `phase-8-admin` docs fast-forwarded into `main` with Eli's approval.

@@ -8,8 +8,10 @@ Every phase session starts by reading this file, then its own `docs/plans/<phase
 
 - **One phase at a time, with full attention.** No parallel phases. The foundations are
   solid because each phase had one owner, a settled plan and a locked design.
-- **Fresh Claude session per phase.** State lives in the repo (this file, the phase plan
-  and its progress log, ADRs, backlog), never in chat history.
+- **One Claude session per phase, start to finish** (Eli, 2026-11-22). The session
+  that plans and designs a phase also implements it, because it knows the reasoning
+  behind each decision. State still lives in the repo (this file, the phase plan and
+  its progress log, ADRs, backlog), so any session can pick it up.
 - **Each phase starts with a deep plan and a full design lab**, before any code:
   - Brainstorm the decisions with Eli, one question at a time; ask on every real fork.
   - Write `docs/plans/<phase>.md` (decisions, data tier, policy rules, API, screens,
@@ -59,18 +61,18 @@ custom SMTP and the email-confirm deep link (backlog §D), encrypted session sto
 (classifier), #10 (location), #12 (comment media), #13 (external link), #16 (counts).
 #1–5 and #9 gate any launch. See `docs/legal/legal-tracker.md`.
 
-**Housekeeping:** `main` lacks Phase 4 and the classifier; merge `phase-4-feed` → `main`
-(Eli's call) before the next phase branches.
+**Housekeeping:** Phase 4 and the classifier are merged into `main` (2026-11-05).
 
 ## Phase order
 
 | # | Phase | Why here |
 |---|---|---|
-| 8 | **Admin and human-review portal** (spec 07) | Every report must reach a human (07 §3.1); the pipeline already routes items there; every later phase feeds this queue. Also closes pilot blocker 2. |
-| 6a | **Settings slice + production plumbing** | Filter toggle with double confirm, sign out, block; deploy and schedule the worker; prod environment, builds, monitoring. Closes blockers 1 and 3. May swap with phase 8 (small, and fixes invariant #3). |
-| — | *Decision point:* small closed pilot, or continue straight on | Decide after 6a. |
-| 5 | Profile, groups, Family Spaces (04, 05) | Invites, mutual consent, space admin control, avatar upload (through the pipeline). |
-| 6 | Full settings (06) | Gender change, account deletion (legal #19, #20), remaining controls. |
+| 8 | **Admin and human-review portal** (spec 07) | Planned and locked 2026-11-22 (`docs/plans/phase-8-admin-portal.md`). 8a in progress. Closes pilot blocker 2. |
+| 5a | **Personal area + content-filter settings + blocks** (05, part of 06) | Eli 2026-11-22. Personal area and public profile (including "user unavailable" for banned users), avatar upload through the pipeline, saved posts, counts; per-group content-filter controls with double confirm; sign out; block list; privacy basics. Closes pilot blocker 1 and the Phase 8 handoff items. |
+| P | **Production plumbing** (no design) | Deploy and schedule the classification worker; separate prod Supabase; app builds; error monitoring; web host for the console and copy-link. Closes pilot blocker 3. |
+| — | *Decision point:* small closed pilot, or continue straight on | Decide after 5a and P. |
+| 5b | Groups and Family Spaces (04, 05 §5) | Invites, mutual consent, space admin control. |
+| 6 | Rest of settings (06) | Gender change, account deletion (legal #19, #20), remaining controls. |
 | 7 | Search, messages, notifications and inbox (08, 09) | The inbox also delivers moderation decisions (07 §5.3). |
 | — | Then | Statuses, polls, tagging, real ranking session, desktop web, legal clearance, public launch. |
 

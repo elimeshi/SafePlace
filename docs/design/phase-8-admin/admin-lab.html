@@ -753,6 +753,7 @@ const STATE = [
   { k: 'z', t: 'Desktop preview zoom (lab only)', opts: [['.4', '40%'], ['.5', '50%'], ['.65', '65%'], ['1', '100%']] },
 ];
 const params = new URLSearchParams(location.search);
+// LOCKED by Eli 2026-11-22: approved as-is. cnav side, frame dark, picker seg, density comfy, sla text are the shipped choices; other options stay viewable for reference only.
 const DEFAULTS = { cnav: 'side', frame: 'dark', picker: 'seg', density: 'comfy', sla: 'text', reason: 'ai_medium_confidence', ctx: 'public', ai: 'blind_then_feedback', appeal: 'suspension', z: '.5' };
 // Phone screens reuse the Phase 4 helpers with the choices Eli locked on 2026-10-19.
 const PHONE_LOCKED = { nav: 'tabs', card: 'soft', like: 'primary', shd: 'solid', fam: 'grad', plus: 'grad', ground: 'flat', compose: 'white', filter: 'soft' };
@@ -763,7 +764,7 @@ function seg(list, title) {
 }
 function renderPanel() {
   const p = document.getElementById('panel');
-  p.innerHTML = `<div class="brand"><h1>Safe·Place — Admin &amp; review lab</h1><small>Phase 8 · staff console (1440×900) + 5 phone surfaces (390×844) · "Indigo Nights" tokens · images are placeholders only</small></div>` +
+  p.innerHTML = `<div class="brand"><h1>Safe·Place — Admin &amp; review lab</h1><small>LOCKED 2026-11-22 · Phase 8 · staff console (1440×900) + 5 phone surfaces (390×844) · "Indigo Nights" tokens · images are placeholders only</small></div>` +
     `<div class="q"><span class="t">Open design questions</span></div>` + seg(Q) +
     `<div class="q"><span class="t" style="margin-top:10px">State controls (not design choices)</span></div>` + seg(STATE) +
     `<div class="q"><span class="t">Screens</span><p class="why">${ORDER.map(k => `<a href="?bare=1&screen=${k}" style="color:#22c3d6">${k}</a>`).join(' · ')}</p></div>`;
