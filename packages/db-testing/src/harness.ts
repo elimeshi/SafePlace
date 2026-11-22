@@ -26,6 +26,16 @@ export interface TestDb {
   asUser<T>(userId: string, fn: (q: Querier) => Promise<T>): Promise<T>;
   /** Run `fn` as an anonymous (logged-out) request (role `anon`, RLS applies). */
   asAnon<T>(fn: (q: Querier) => Promise<T>): Promise<T>;
+  /**
+   * Run `fn` as a staff account (role `authenticated`, RLS applies). The JWT
+   * carries `aal` (TOTP: aal2 by default) and `session_id`, which the staff
+   * guards read, plus app_metadata.staff as the real staff JWT does.
+   */
+  asStaff<T>(
+    userId: string,
+    fn: (q: Querier) => Promise<T>,
+    opts?: { aal?: "aal1" | "aal2"; sessionId?: string }
+  ): Promise<T>;
   /** Run `fn` as the backend `service_role` (BYPASSRLS) — e.g. the pipeline. */
   asService<T>(fn: (q: Querier) => Promise<T>): Promise<T>;
   close(): Promise<void>;
@@ -77,6 +87,18 @@ export async function createTestDb(): Promise<TestDb> {
     raw: db,
     asUser: (userId, fn) =>
       withClaims("authenticated", { sub: userId, role: "authenticated" }, fn),
+    asStaff: (userId, fn, opts) =>
+      withClaims(
+        "authenticated",
+        {
+          sub: userId,
+          role: "authenticated",
+          aal: opts?.aal ?? "aal2",
+          session_id: opts?.sessionId ?? "s1",
+          app_metadata: { staff: true },
+        },
+        fn
+      ),
     asAnon: (fn) => withClaims("anon", { role: "anon" }, fn),
     asService: (fn) =>
       withClaims("service_role", { role: "service_role" }, fn),
