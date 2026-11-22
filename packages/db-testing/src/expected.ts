@@ -29,6 +29,10 @@ export function postContextOf(p: PostFixture): PostContext {
     status: p.status,
     exposure: p.exposure,
     sourceKind: p.sourceKind,
+    // shortcut: column lands in Phase 8 migration, wire it then
+    authorBanned: false,
+    // shortcut: column lands in Phase 8 migration, wire it then
+    removed: false,
   };
 }
 
@@ -130,6 +134,8 @@ export function expectedAvatar(
       // The avatar's owner is the profile it belongs to — canViewProfilePhoto
       // grants the owner their own photo.
       ownerId: target.id,
+      // shortcut: column lands in Phase 8 migration, wire it then
+      ownerBanned: false,
     });
   return { profileVisible, avatarVisible };
 }

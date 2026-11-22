@@ -41,7 +41,7 @@ const S1: ContentAudience = { kind: "family_space", spaceId: "s1" };
 const S2: ContentAudience = { kind: "family_space", spaceId: "s2" };
 
 function post(exposure: ContentExposure, overrides: Partial<PostContext> = {}): PostContext {
-  return { authorId: "author", status: "published", exposure, sourceKind: "profile", ...overrides };
+  return { authorId: "author", status: "published", exposure, sourceKind: "profile", authorBanned: false, removed: false, ...overrides };
 }
 
 describe("isAudienceSetValid", () => {
@@ -109,7 +109,7 @@ describe("canViewPost", () => {
 });
 
 describe("canViewComment", () => {
-  const c = { authorId: "commenter", post: post([PUBLIC]) };
+  const c = { authorId: "commenter", authorBanned: false, removed: false, post: post([PUBLIC]) };
   it("shows a comment on a visible post", () => expect(canViewComment(makeViewer(), c)).toBe(true));
   it("hides it when the post is not visible", () => {
     expect(canViewComment(makeViewer(), { ...c, post: post([G1]) })).toBe(false);

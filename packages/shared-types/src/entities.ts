@@ -18,6 +18,7 @@ import type {
 export type AccountStatus =
   | "active"
   | "suspended"
+  | "banned"
   | "frozen"
   | "pending_deletion"
   | "deleted";

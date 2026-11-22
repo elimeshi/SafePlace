@@ -476,5 +476,9 @@ export function postContextOf(item: PostItem): PostContext | null {
     status: "published",
     exposure: audiences as unknown as ContentExposure,
     sourceKind: item.sourceKind,
+    // shortcut: column lands in Phase 8 migration, wire it then
+    authorBanned: false,
+    // shortcut: column lands in Phase 8 migration, wire it then
+    removed: false,
   };
 }

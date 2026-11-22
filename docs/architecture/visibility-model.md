@@ -65,15 +65,17 @@ evaluated on every read.
 
 ```
 canViewMedia(viewer, mediaItem) =
-     viewer.id == mediaItem.uploaderId          // the uploader always sees their own content
+     (viewer.id == mediaItem.uploaderId AND classification != 'removed')  // the uploader sees their own content
   OR (   viewerSatisfiesExposure(viewer, mediaItem.exposure)
      AND viewerSatisfiesClassification(viewer, mediaItem.classification) )
 ```
 
 The uploader always sees their own uploaded media — any classification,
 including `pending_review` (frozen) and `contains_women`, regardless of their
-own filter settings. The same principle applies to a user's own profile photo
-(`canViewProfilePhoto`). Otherwise:
+own filter settings — except `removed` (a prohibited verdict, Phase 8), which
+is hidden from everyone. The same principle applies to a user's own profile
+photo (`canViewProfilePhoto`), which is also hidden while its owner is banned.
+Otherwise:
 
 ```
 viewerSatisfiesClassification(viewer, mediaItem, liftSex) =
@@ -83,7 +85,7 @@ viewerSatisfiesClassification(viewer, mediaItem, liftSex) =
                OR mediaItem.levels[group] <= viewer.filterSettings.contentLevels[group]
   // liftSex: a Family Space context, or the avatar opt-out on profile photos.
   // Either lifts the sex group only; violence/religion/addictions still apply.
-  // 'unclassified' and 'pending_review' are false for everyone here, even in
+  // 'unclassified', 'pending_review' and 'removed' are false for everyone here, even in
   // a Family Space — the uploader's own access comes from canViewMedia above.
 ```
 

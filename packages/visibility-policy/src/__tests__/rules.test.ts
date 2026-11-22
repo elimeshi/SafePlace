@@ -279,6 +279,7 @@ describe("canViewProfilePhoto", () => {
         classification: "contains_women",
         levels: lv({ sex: 1 }),
         ownerId: "someone-else",
+        ownerBanned: false,
       })
     ).toBe(true);
   });
@@ -296,6 +297,7 @@ describe("canViewProfilePhoto", () => {
         classification: "contains_women",
         levels: lv({ sex: 1 }),
         ownerId: "someone-else",
+        ownerBanned: false,
       })
     ).toBe(false);
   });
@@ -314,6 +316,7 @@ describe("canViewProfilePhoto", () => {
         classification: "contains_women",
         levels: lv({ sex: 1 }),
         ownerId: "me",
+        ownerBanned: false,
       })
     ).toBe(true);
   });
@@ -388,6 +391,7 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
         classification: "unclassified",
         levels: null,
         ownerId: "owner-1",
+        ownerBanned: false,
       })
     ).toBe(false);
   });
@@ -399,6 +403,7 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
         classification: "unclassified",
         levels: null,
         ownerId: "owner-1",
+        ownerBanned: false,
       })
     ).toBe(true);
   });
@@ -416,6 +421,7 @@ describe("canViewProfilePhoto — unclassified avatar", () => {
         classification: "unclassified",
         levels: null,
         ownerId: "owner-1",
+        ownerBanned: false,
       })
     ).toBe(false);
   });
@@ -524,15 +530,15 @@ describe("per-group levels — every group, Family Space and avatar branch", () 
 
   it("avatars with filterAppliesToAvatars on: a non-sex level above max, or null levels, are withheld", () => {
     const v = viewer({ contentLevels: ZERO, filterAppliesToAvatars: true });
-    expect(canViewProfilePhoto(v, { ...general(lv({ religion: 1 })), ownerId: "someone-else" })).toBe(false);
-    expect(canViewProfilePhoto(v, { ...general(null), ownerId: "someone-else" })).toBe(false);
+    expect(canViewProfilePhoto(v, { ...general(lv({ religion: 1 })), ownerId: "someone-else", ownerBanned: false })).toBe(false);
+    expect(canViewProfilePhoto(v, { ...general(null), ownerId: "someone-else", ownerBanned: false })).toBe(false);
   });
 
   it("avatar opt-out lifts the sex group only (Eli, 2026-11-02)", () => {
     const v = viewer({ contentLevels: ZERO, filterAppliesToAvatars: false });
-    expect(canViewProfilePhoto(v, { classification: "contains_women", levels: lv({ sex: 2 }), ownerId: "someone-else" })).toBe(true);
-    expect(canViewProfilePhoto(v, { ...general(lv({ violence: 1 })), ownerId: "someone-else" })).toBe(false);
-    expect(canViewProfilePhoto(v, { classification: "unclassified", levels: null, ownerId: "someone-else" })).toBe(false);
-    expect(canViewProfilePhoto(v, { ...general(null), ownerId: "someone-else" })).toBe(false);
+    expect(canViewProfilePhoto(v, { classification: "contains_women", levels: lv({ sex: 2 }), ownerId: "someone-else", ownerBanned: false })).toBe(true);
+    expect(canViewProfilePhoto(v, { ...general(lv({ violence: 1 })), ownerId: "someone-else", ownerBanned: false })).toBe(false);
+    expect(canViewProfilePhoto(v, { classification: "unclassified", levels: null, ownerId: "someone-else", ownerBanned: false })).toBe(false);
+    expect(canViewProfilePhoto(v, { ...general(null), ownerId: "someone-else", ownerBanned: false })).toBe(false);
   });
 });

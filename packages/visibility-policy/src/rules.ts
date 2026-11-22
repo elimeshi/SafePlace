@@ -1,4 +1,5 @@
 import type {
+  AccountState,
   CommentContext,
   ContentAudience,
   ContentExposure,
@@ -13,6 +14,7 @@ import type {
   MediaItemContext,
   PostContext,
   Viewer,
+  WriteAction,
 } from "./types";
 import { CONTENT_GROUPS, DEFAULT_FILTER_SETTINGS } from "./types";
 
@@ -68,16 +70,25 @@ export function isAudienceSetValid(audiences: readonly ContentAudience[]): boole
  * filtered; this is exposure + blocks + draft state only. A draft is the
  * author's alone. Mute is deliberately absent: it only affects the feed
  * (postFeedPlacement) and comment display, never reachability.
+ *
+ * A banned author's post and a removed post are hidden from everyone, the
+ * author included: a ban hides the person's content until an appeal restores it.
  */
 export function canViewPost(viewer: Viewer, post: PostContext): boolean {
+  if (post.authorBanned || post.removed) return false;
   if (post.status === "draft") return viewer.userId === post.authorId;
   if (viewer.blockedUsers.has(post.authorId)) return false;
   return viewerSatisfiesExposure(viewer, post.exposure);
 }
 
-/** A comment inherits its post's visibility; blocked and muted authors are hidden. */
+/**
+ * A comment inherits its post's visibility; blocked and muted authors are
+ * hidden, and banned or removed comments are hidden from everyone (as posts).
+ */
 export function canViewComment(viewer: Viewer, comment: CommentContext): boolean {
   return (
+    !comment.authorBanned &&
+    !comment.removed &&
     canViewPost(viewer, comment.post) &&
     !viewer.blockedUsers.has(comment.authorId) &&
     !viewer.mutedUsers.has(comment.authorId)
@@ -183,6 +194,9 @@ export function viewerSatisfiesClassification(
   isWithinViewersFamilySpace: boolean
 ): boolean {
   switch (media.classification) {
+    case "removed":
+      // Prohibited content: no setting, space or carve-out reaches it.
+      return false;
     case "unclassified":
     case "pending_review":
       // Fail CLOSED: nothing is known, or a human has not decided. No viewer
@@ -223,7 +237,9 @@ export function canViewMedia(
   // The uploader always sees their own content, regardless of classification,
   // exposure, or their own filter settings. This subsumes the frozen
   // (pending_review) uploader case that used to be a separate caller concern.
-  if (viewer.userId === media.uploaderId) return true;
+  // Removed media is the one exception: it is hidden from the uploader too
+  // (Phase 8 plan §2 fork 22).
+  if (viewer.userId === media.uploaderId) return media.classification !== "removed";
 
   return (
     viewerSatisfiesExposure(viewer, media.exposure) &&
@@ -239,11 +255,13 @@ export function canViewMedia(
  */
 export function canViewProfilePhoto(
   viewer: Viewer,
-  photo: { classification: MediaClassification; levels: ContentLevels | null; ownerId: string }
+  photo: { classification: MediaClassification; levels: ContentLevels | null; ownerId: string; ownerBanned: boolean }
 ): boolean {
+  // A banned profile is hidden from everyone, the owner included.
+  if (photo.ownerBanned) return false;
   // The owner always sees their own profile photo (same principle as
-  // canViewMedia's uploader rule).
-  if (viewer.userId === photo.ownerId) return true;
+  // canViewMedia's uploader rule, including its `removed` exception).
+  if (viewer.userId === photo.ownerId) return photo.classification !== "removed";
   // Avatar opt-out lifts the sex group only (Eli, 2026-11-02), mirroring the Family Space exception.
   return viewerSatisfiesClassification(viewer, photo, /* lift sex */ !viewer.filterSettings.filterAppliesToAvatars);
 }
@@ -297,7 +315,8 @@ export type UploaderMediaState =
   | "processing" // queued or in flight — not yet visible to others
   | "under_review" // frozen for human moderation
   | "filtered_for_some_viewers" // some group at level ≥ 1 the uploader is told about
-  | "published";
+  | "published"
+  | "removed"; // a reviewer found it prohibited; hidden from everyone
 
 /**
  * Which groups the uploader is told about. Every group at level ≥ 1 — except
@@ -329,6 +348,8 @@ export function resolveUploaderMediaState(
       return "processing";
     case "pending_review":
       return "under_review";
+    case "removed":
+      return "removed";
     case "general":
     case "contains_women":
       return noticeGroupsFor(levels, uploaderGender).length > 0 ? "filtered_for_some_viewers" : "published";
@@ -342,4 +363,25 @@ export function resolveUploaderMediaState(
  */
 export function canViewFamilySpaceMemberCount(viewer: Viewer, spaceId: string): boolean {
   return viewer.familySpaceMemberships.has(spaceId);
+}
+
+/** What a suspension stops: creating and editing content, not browsing, interacting, reporting or appealing. */
+const SUSPENSION_BLOCKS: ReadonlySet<WriteAction> = new Set<WriteAction>([
+  "post",
+  "comment",
+  "message",
+  "message_request",
+  "profile_edit",
+  "media_upload",
+]);
+
+/**
+ * Whether an account may perform a write (Phase 8 plan §2 fork 16, §4.4; SQL
+ * mirror: visibility.account_write_allowed). A banned user may only appeal —
+ * the appeal form is the one door the banned screen leaves open.
+ */
+export function accountWriteAllowed(account: AccountState, action: WriteAction, now: Date): boolean {
+  if (account.status === "banned") return action === "appeal";
+  const suspended = account.suspendedUntil !== null && account.suspendedUntil.getTime() > now.getTime();
+  return !(suspended && SUSPENSION_BLOCKS.has(action));
 }

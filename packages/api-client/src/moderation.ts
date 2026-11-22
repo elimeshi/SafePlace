@@ -91,7 +91,7 @@ export interface UploaderMediaView {
  * rather than by reading the classification in a screen.
  *
  * The uploader always sees their own media itself (canViewMedia's uploader
- * short-circuit); this is only about what they are told alongside it.
+ * short-circuit), except removed media; this is only about what they are told alongside it.
  */
 export function resolveUploaderMediaViews(
   media: Array<{ id: string; classification: MediaClassification; levels: ContentLevels | null }>,

@@ -54,7 +54,8 @@ export type MediaClassification =
   | "unclassified" // queued, not yet scored
   | "general" // low probability of containing women — unfiltered
   | "pending_review" // medium probability — frozen pending human moderation
-  | "contains_women"; // high probability — subject to viewer filtering
+  | "contains_women" // high probability — subject to viewer filtering
+  | "removed"; // a reviewer marked it prohibited — hidden from everyone, the uploader included
 
 /**
  * One audience a post (or any content) is addressed to. Orthogonal to
@@ -86,13 +87,40 @@ export interface PostContext {
   status: PostStatus;
   exposure: ContentExposure;
   sourceKind: PostSourceKind;
+  /** A banned author's content is hidden from everyone while the ban stands (Phase 8 plan §2 fork 16). */
+  authorBanned: boolean;
+  /** `removed_at` is set: an admin removed it (Phase 8 plan §3.4). */
+  removed: boolean;
 }
 
 /** What a visibility decision about a comment needs to know. */
 export interface CommentContext {
   authorId: string;
+  authorBanned: boolean;
+  removed: boolean;
   post: PostContext;
 }
+
+/**
+ * The penalty state of an account (Phase 8 plan §2 fork 16). A suspension is
+ * derived from `suspendedUntil` against the clock, so it lapses without a sweep.
+ */
+export interface AccountState {
+  status: "active" | "banned";
+  suspendedUntil: Date | null;
+}
+
+/** Every kind of write an account restriction can gate (SQL: account_write_allowed). */
+export type WriteAction =
+  | "post"
+  | "comment"
+  | "message"
+  | "message_request"
+  | "profile_edit"
+  | "media_upload"
+  | "interaction" // like, save, follow, mute, block
+  | "report"
+  | "appeal";
 
 /**
  * A user's personal consumption controls. One per user — see
