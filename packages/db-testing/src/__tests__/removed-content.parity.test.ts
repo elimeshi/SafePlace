@@ -11,13 +11,15 @@ import {
   canViewMedia,
   canViewPost,
   canViewProfilePhoto,
+  isMediaRowVisible,
   resolveDefaultFilterSettings,
   type ContentLevels,
   type MediaClassification,
+  type MediaItemContext,
   type PostContext,
 } from "@safeplace/visibility-policy";
 import { createTestDb, type TestDb } from "../harness";
-import { MEDIA, USER, USERS, insertPost, seedFixtures, type UserFixture } from "../seed";
+import { FAMILY_SPACE_ID, GROUP2_ID, MEDIA, USER, USERS, insertPost, seedFixtures, type UserFixture } from "../seed";
 import { viewerOf } from "../expected";
 
 const hx = (s: string): string => `00000000-0000-0000-0000-${s.padStart(12, "0")}`;
@@ -126,24 +128,26 @@ describe("comments: removed or banned-author comments agree with canViewComment"
   }
 });
 
-describe("media: removed media is never served, the uploader included", () => {
+describe("media: removed media is hidden from everyone but its uploader, and never served", () => {
   for (const u of VIEWERS) {
     it(`viewer=${u.key}`, async () => {
+      const ids = REMOVED_MEDIA.map((m) => m.id);
       const { rows } = await db.asUser(u.id, (q) =>
-        q.query<{ id: string; storage_path: string | null }>(`select id, storage_path from media_items_visible where id = any($1)`, [
-          REMOVED_MEDIA.map((m) => m.id),
-        ])
+        q.query<{ id: string; storage_path: string | null }>(`select id, storage_path from media_items_visible where id = any($1)`, [ids])
       );
+      const base = await idsVisible(u.id, `select id from public.media_items where id = any($1)`, ids);
       for (const m of REMOVED_MEDIA) {
-        const want = canViewMedia(viewerOf(u), {
+        const media: MediaItemContext = {
           classification: "removed",
           levels: m.levels,
           exposure: [{ kind: "public" }],
           uploaderId: USER.author.id,
           isWithinViewersFamilySpace: false,
-        });
+        };
         const row = rows.find((r) => r.id === m.id);
-        expect(row?.storage_path != null, `${u.key} × ${m.id}`).toBe(want);
+        expect(row !== undefined, `${u.key} × ${m.id}: row in view`).toBe(isMediaRowVisible(viewerOf(u), media));
+        expect(base.has(m.id), `${u.key} × ${m.id}: row in base table`).toBe(isMediaRowVisible(viewerOf(u), media));
+        expect(row?.storage_path != null, `${u.key} × ${m.id}: served`).toBe(canViewMedia(viewerOf(u), media));
       }
       const signable = await db.asUser(u.id, (q) =>
         q.query(`select 1 from storage.objects where name = any($1)`, [REMOVED_MEDIA.map((m) => `media/${m.id}`)])
@@ -208,5 +212,69 @@ describe("removed media in the pipeline", () => {
     await db.raw.query(`update public.media_items set content_sha256 = 'removed-sha' where id = $1`, [hx("8e0")]);
     const { rows } = await db.asService((q) => q.query(`select * from moderation.find_resolved_by_hash('removed-sha', null, null)`));
     expect(rows).toHaveLength(0);
+  });
+});
+
+// --- counts exclude banned users (numbers without lists, invariant #5) --------
+describe("counts: a banned user's follows, memberships, likes and comments stop counting", () => {
+  const LIVE_CMT = hx("8d2");
+  beforeAll(async () => {
+    // Recorded before the ban (raw bypasses RLS, so order does not matter here).
+    const raw = db.raw;
+    await raw.query(`insert into public.follows (follower_id, followed_id) values ($1, $2)`, [BANNED, USER.author.id]);
+    await raw.query(`insert into public.follows (follower_id, followed_id) values ($1, $2)`, [USER.maleFiltered.id, BANNED]);
+    await raw.query(`insert into public.group_members (group_id, user_id) values ($1, $2)`, [GROUP2_ID, BANNED]);
+    await raw.query(`insert into public.family_space_members (space_id, user_id) values ($1, $2)`, [FAMILY_SPACE_ID, BANNED]);
+    await raw.query(`insert into public.post_likes (user_id, post_id) values ($1, $2)`, [BANNED, TARGET_POST]);
+    await raw.query(`insert into public.comment_likes (user_id, comment_id) values ($1, $2)`, [BANNED, LIVE_CMT]);
+    await raw.query(`insert into public.post_likes (user_id, post_id) values ($1, $2)`, [USER.maleFiltered.id, TARGET_POST]);
+    await raw.query(`insert into public.comment_likes (user_id, comment_id) values ($1, $2)`, [USER.maleFiltered.id, LIVE_CMT]);
+  });
+
+  /** Raw (ground-truth) count of `sql`, and the same count without the banned user's rows. */
+  const truth = async (sql: string, param: string): Promise<{ all: number; unbanned: number }> => {
+    const { rows } = await db.raw.query<{ all: number; unbanned: number }>(
+      `select count(*)::int as all, count(*) filter (where who <> $2)::int as unbanned from (${sql}) t`,
+      [param, BANNED]
+    );
+    return rows[0]!;
+  };
+  const viewerCount = async (viewer: string, fn: string, target: string): Promise<number> => {
+    const { rows } = await db.asUser(viewer, (q) => q.query<{ n: number }>(`select public.${fn}($1) as n`, [target]));
+    return rows[0]!.n;
+  };
+
+  const cases: [string, string, string, string][] = [
+    ["follower_count", USER.author.id, `select follower_id as who from public.follows where followed_id = $1`, USER.maleFiltered.id],
+    ["following_count", USER.maleFiltered.id, `select followed_id as who from public.follows where follower_id = $1`, USER.maleFiltered.id],
+    ["group_member_count", GROUP2_ID, `select user_id as who from public.group_members where group_id = $1`, USER.maleFiltered.id],
+    ["family_space_member_count", FAMILY_SPACE_ID, `select user_id as who from public.family_space_members where space_id = $1`, USER.author.id],
+  ];
+  for (const [fn, target, sql, viewer] of cases) {
+    it(fn, async () => {
+      const t = await truth(sql, target);
+      expect(t.all, "the banned row exists").toBe(t.unbanned + 1);
+      expect(await viewerCount(viewer, fn, target)).toBe(t.unbanned);
+    });
+  }
+
+  it("post_stats: likes and comments by a banned user do not count", async () => {
+    const likes = await truth(`select user_id as who from public.post_likes where post_id = $1`, TARGET_POST);
+    expect(likes.all).toBe(likes.unbanned + 1);
+    const { rows } = await db.asUser(USER.femaleDefault.id, (q) =>
+      q.query<{ like_count: number; comment_count: number }>(`select like_count, comment_count from public.post_stats($1)`, [[TARGET_POST]])
+    );
+    expect(rows[0]!.like_count).toBe(likes.unbanned);
+    // 8d0 (banned author) and 8d1 (removed) are not counted; 8d2 is.
+    expect(rows[0]!.comment_count).toBe(1);
+  });
+
+  it("comment_stats: a banned user's like does not count", async () => {
+    const likes = await truth(`select user_id as who from public.comment_likes where comment_id = $1`, LIVE_CMT);
+    expect(likes.all).toBe(likes.unbanned + 1);
+    const { rows } = await db.asUser(USER.femaleDefault.id, (q) =>
+      q.query<{ like_count: number }>(`select like_count from public.comment_stats($1)`, [[LIVE_CMT]])
+    );
+    expect(rows[0]!.like_count).toBe(likes.unbanned);
   });
 });

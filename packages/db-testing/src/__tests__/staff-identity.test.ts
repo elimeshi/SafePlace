@@ -116,3 +116,7 @@ it("moderation_actions accepts a staff decider, and the same decider on the appe
   );
   expect(rows[0]!.n).toBe(1);
 });
+
+it("a staff account with decisions cannot be deleted (decisions survive; staff are deactivated)", async () => {
+  await expect(db.raw.query(`delete from auth.users where id = $1`, [STAFF.admin])).rejects.toThrow(/foreign key/);
+});

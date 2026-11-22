@@ -284,3 +284,18 @@ it("an author cannot restore a removed post or comment", async () => {
   await db.raw.query(`update public.posts set removed_at = null where id = $1`, [a.post]);
   await db.raw.query(`update public.comments set removed_at = null where id = $1`, [a.comment]);
 });
+
+it("the column guards bind client roles only: a SECURITY DEFINER console RPC may edit a profile", async () => {
+  // Stand-in for a console RPC: owned by the migration role, so current_user is not a client role.
+  await db.raw.exec(`
+    create function public.test_console_edit(target uuid) returns void
+      language sql security definer set search_path = '' as $fn$
+      update public.profiles set bio = 'reset by staff', suspended_until = now() + interval '7 days' where id = target;
+    $fn$;
+    grant execute on function public.test_console_edit(uuid) to authenticated;`);
+  const a = ACTOR.suspended;
+  await db.asStaff(STAFF.admin, (q) => q.query(`select public.test_console_edit($1)`, [a.id]));
+  const { rows } = await db.raw.query<{ bio: string }>(`select bio from public.profiles where id = $1`, [a.id]);
+  expect(rows[0]!.bio).toBe("reset by staff");
+  await db.raw.exec(`drop function public.test_console_edit(uuid)`);
+});

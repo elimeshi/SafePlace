@@ -248,6 +248,24 @@ export function canViewMedia(
 }
 
 /**
+ * Whether the viewer may know a media item exists at all (SQL mirror: the
+ * media_select policy on media_items), given its parent is visible. Distinct
+ * from canViewMedia: a row withheld only by the viewer's filter stays visible
+ * so the client can render a placeholder. A frozen (pending_review) or removed
+ * item is the uploader's alone — they see "under review" / "the media was
+ * removed"; for everyone else it does not exist (Phase 8 plan §2 fork 22).
+ */
+export function isMediaRowVisible(
+  viewer: Viewer,
+  media: Pick<MediaItemContext, "classification" | "exposure" | "uploaderId">
+): boolean {
+  if (viewer.userId === media.uploaderId) return true;
+  if (viewer.blockedUsers.has(media.uploaderId)) return false;
+  if (media.classification === "pending_review" || media.classification === "removed") return false;
+  return viewerSatisfiesExposure(viewer, media.exposure);
+}
+
+/**
  * Whether a viewer should see another user's profile photo as the real
  * image vs. a neutral generic avatar. See
  * docs/product/05-personal-area-spec.md §2.6.1 — this is filtering, not

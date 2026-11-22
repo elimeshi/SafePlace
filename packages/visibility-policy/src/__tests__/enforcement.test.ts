@@ -5,6 +5,7 @@ import {
   canViewMedia,
   canViewPost,
   canViewProfilePhoto,
+  isMediaRowVisible,
   resolveDefaultFilterSettings,
   resolveUploaderMediaState,
 } from "../rules";
@@ -97,6 +98,33 @@ describe("canViewMedia — removed (plan §2 fork 22)", () => {
   it("hides it inside a Family Space too", () => {
     const v = makeViewer({ familySpaceMemberships: new Set(["s1"]) });
     expect(canViewMedia(v, { ...removed, exposure: [{ kind: "family_space", spaceId: "s1" }], isWithinViewersFamilySpace: true })).toBe(false);
+  });
+});
+
+describe("isMediaRowVisible — whether the viewer may know the media exists", () => {
+  const media = (classification: "general" | "contains_women" | "unclassified" | "pending_review" | "removed") => ({
+    classification,
+    exposure: [{ kind: "public" }] as const,
+    uploaderId: "uploader",
+  });
+  it("the uploader always sees the row, removed and pending_review included (placeholder)", () => {
+    for (const c of ["general", "unclassified", "pending_review", "removed"] as const) {
+      expect(isMediaRowVisible(makeViewer({ userId: "uploader" }), media(c)), c).toBe(true);
+    }
+  });
+  it("removed and pending_review rows are hidden from everyone else", () => {
+    expect(isMediaRowVisible(makeViewer(), media("removed"))).toBe(false);
+    expect(isMediaRowVisible(makeViewer(), media("pending_review"))).toBe(false);
+  });
+  it("a filtered row stays visible, so the viewer gets a placeholder", () => {
+    expect(isMediaRowVisible(makeViewer(), media("contains_women"))).toBe(true);
+    expect(isMediaRowVisible(makeViewer(), media("unclassified"))).toBe(true);
+  });
+  it("follows exposure and blocks", () => {
+    const fol = { ...media("general"), exposure: [{ kind: "followers_only", authorId: "uploader" }] as const };
+    expect(isMediaRowVisible(makeViewer(), fol)).toBe(false);
+    expect(isMediaRowVisible(makeViewer({ following: new Set(["uploader"]) }), fol)).toBe(true);
+    expect(isMediaRowVisible(makeViewer({ blockedUsers: new Set(["uploader"]) }), media("general"))).toBe(false);
   });
 });
 

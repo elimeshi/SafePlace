@@ -1,16 +1,16 @@
 /**
  * The expected-decision oracle for the parity suite. It computes what a viewer
- * SHOULD be able to see purely from @safeplace/visibility-policy (+ the two
- * DB-layer concerns the policy package deliberately doesn't model: blocks, and
- * the documented uploader-sees-own-frozen carve-out). The DB is then asserted
+ * SHOULD be able to see purely from @safeplace/visibility-policy (+ the one
+ * DB-layer concern the policy package deliberately doesn't model for avatars:
+ * blocks hide the whole profile). The DB is then asserted
  * to agree. If these two ever diverge, one of them has an enforcement bug.
  */
 import {
   canViewMedia,
   canViewPost,
   canViewProfilePhoto,
+  isMediaRowVisible,
   viewerSatisfiesAudience,
-  viewerSatisfiesExposure,
   type ContentAudience,
   type PostContext,
   type Viewer,
@@ -75,35 +75,15 @@ export interface ExpectedMedia {
 
 export function expectedMedia(u: UserFixture, m: MediaFixture): ExpectedMedia {
   const v = viewerOf(u);
-
-  // The uploader always sees their own row, and its real URL for any
-  // classification but `removed`. (No self-block is possible.)
-  if (m.uploaderId === u.id) {
-    const contentVisible = m.classification !== "removed";
-    return { rowPresent: true, contentVisible, isFiltered: !contentVisible };
-  }
-
-  if (isBlockedBetween(u.id, m.uploaderId)) {
-    return { rowPresent: false, contentVisible: false, isFiltered: false };
-  }
-
-  const isWithinFamilySpace =
-    m.familySpaceId !== null && v.familySpaceMemberships.has(m.familySpaceId);
-  const exposureOk = viewerSatisfiesExposure(v, m.exposure);
-
-  // A non-uploader can KNOW the media exists only when exposure passes and it's
-  // not frozen (pending_review is uploader-only).
-  const rowPresent = exposureOk && m.classification !== "pending_review";
-  const contentVisible =
-    rowPresent &&
-    canViewMedia(v, {
-      classification: m.classification,
-      levels: m.levels,
-      exposure: m.exposure,
-      isWithinViewersFamilySpace: isWithinFamilySpace,
-      uploaderId: m.uploaderId,
-    });
-
+  const media = {
+    classification: m.classification,
+    levels: m.levels,
+    exposure: m.exposure,
+    isWithinViewersFamilySpace: m.familySpaceId !== null && v.familySpaceMemberships.has(m.familySpaceId),
+    uploaderId: m.uploaderId,
+  };
+  const rowPresent = isMediaRowVisible(v, media);
+  const contentVisible = rowPresent && canViewMedia(v, media);
   return { rowPresent, contentVisible, isFiltered: rowPresent && !contentVisible };
 }
 
