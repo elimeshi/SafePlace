@@ -20,6 +20,12 @@
 - `0017-multi-audience-exposure.md` — `post_audiences`, OR visibility, Family Space never mixes (pending Eli).
 - `0018-multi-group-content-classification.md` — four ordinal ladders (sex/violence/religion/addictions), level 3 prohibited, Haiku 5.5 + Sonnet escalation.
 - `0019-hash-dedupe-verdict-reuse.md` — only an exact SHA-256 match copies a resolved verdict (dHash stored, never grants a clearance — amended 2026-11-02); no near-dup search.
+- `0020-staff-identity-and-roles.md` — separate staff auth accounts (`app_metadata.staff`), no profile, invite-only, TOTP checked in SQL, three roles.
+- `0021-moderation-console-stack-and-media-lock.md` — Vite + React DOM console; `console` RPC schema with no table grants; signed media only under an active claim; blur is wellbeing, not access control.
+- `0022-media-tasks-vs-conduct-cases.md` — reviewers classify media, admins judge people; anonymized reviewer view; two-eyes for reviewers only; report routing.
+- `0023-strikes-ladder-and-enforcement.md` — expiring strikes, direct track, derived suspension, `banned` status, restrictive RLS write guards, SLA lanes with Shabbat pause.
+- `0024-removed-media-legal-hold-authorities.md` — `removed` lifecycle value, 90-day hold then purge, legal hold, offline authorities records, append-only audit log.
+- `0025-dedupe-override-propagation.md` — a reviewer decision applies to every SHA-256-identical copy; closes the ADR 0019 follow-up.
 - `open-questions-backlog.md` — every item the product specs explicitly
   deferred (97 items), organized by area. Check here before assuming
   something was overlooked.

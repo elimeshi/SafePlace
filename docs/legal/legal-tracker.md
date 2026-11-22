@@ -9,7 +9,8 @@
 
 Source: every "⚖ טעון אישור משפטי" marker across `docs/product/*.md`
 (16 feature-specific items), plus the master spec's own consolidated list
-in §3.7 (9 items), plus 3 engineering-raised items (ADR 0018). **28 items total.**
+in §3.7 (9 items), plus 3 engineering-raised items (ADR 0018), plus 4
+engineering-raised items (Phase 8). **32 items total.**
 
 Status legend: 🔴 not yet reviewed · 🟡 in review · 🟢 cleared
 
@@ -23,9 +24,9 @@ Status legend: 🔴 not yet reviewed · 🟡 in review · 🟢 cleared
 | 4 | Public-facing wording describing the nature of the space (how it's presented externally) | 🔴 |
 | 5 | Legal basis for collecting declared gender, retention, and permitted uses | 🔴 |
 | 6 | Whether a "prefer not to say" gender option is required, and its effect on the onboarding screen | 🔴 |
-| 7 | Legal requirements around automated content scanning (LLM) — proportionality, transparency, consent. **Phase 3 built the scanning pipeline and made specific choices counsel should see: what is retained (the model's verdict and confidence, never its free-text reasoning), for how long (90 days), and reachable by whom (service role only) — see ADR 0011. Region blur (ADR 0012, built and switched off) would additionally store machine-altered derivatives of users' photographs. Building it needed no sign-off; switching it on for real users does.** **Phase 4 note (ADR 0015): media is now also scanned from the moment it is attached in the composer, as an author-only draft, including drafts that are never published.** | 🔴 |
+| 7 | Legal requirements around automated content scanning (LLM) — proportionality, transparency, consent. **Phase 3 built the scanning pipeline and made specific choices counsel should see: what is retained (the model's verdict and confidence, never its free-text reasoning), for how long (90 days), and reachable by whom (service role only) — see ADR 0011. Region blur (ADR 0012, built and switched off) would additionally store machine-altered derivatives of users' photographs. Building it needed no sign-off; switching it on for real users does.** **Phase 4 note (ADR 0015): media is now also scanned from the moment it is attached in the composer, as an author-only draft, including drafts that are never published.** **Phase 8 note (ADR 0021): humans now see flagged media. Reviewers view it blurred until they reveal it, under an active claim, and every media open and reveal is audit-logged; the blur is a wellbeing measure, not access control.** | 🔴 |
 | 8 | Legal status of "space" (group) admins — are they officeholders, and what's their liability | 🔴 |
-| 9 | Moderation policy — the platform's responsibility for content posted on it | 🔴 |
+| 9 | Moderation policy — the platform's responsibility for content posted on it. **Phase 8 note (ADRs 0022, 0023): the strikes ladder, suspension, ban and the appeal flow are now built; not cleared for production.** | 🔴 |
 
 ## Feature-specific
 
@@ -42,7 +43,7 @@ Status legend: 🔴 not yet reviewed · 🟡 in review · 🟢 cleared
 | 18 | Private messaging in a gender-separated product — can men and women message at all, in what contexts, mutual opt-in vs. open model, how separation is enforced within a conversation | `05-personal-area-spec.md` §4.2 | 🔴 |
 | 19 | Gender-change mechanism — once-per-year limit, 24h activation delay, warning copy | `06-settings-spec.md` §4.3.2 | 🔴 |
 | 20 | Account deletion policy — 30-day hold period, fate of comments left on others' posts, GDPR / Israeli data-protection law compliance | `06-settings-spec.md` §4.3.3 | 🔴 |
-| 21 | Moderation staff structure — employment terms, training, oversight, exposure to sensitive content, mental-health/wellbeing requirements | `07-moderation-spec.md` §4.1 | 🔴 |
+| 21 | Moderation staff structure — employment terms, training, oversight, exposure to sensitive content, mental-health/wellbeing requirements. *Phase 8 note (ADRs 0020, 0021): a hired team now views flagged images in the console. Our mitigations are the blur, the reveal log, anonymized tasks and 2FA; wellbeing, employment terms and training remain HR/legal.* | `07-moderation-spec.md` §4.1 | 🔴 |
 | 22 | Cross-gender user search/discoverability — is this required to be possible by anti-discrimination law (default: yes, opt-out available) | `08-search-spec.md` §1.2 | 🔴 |
 | 23 | No server-side search history storage — strong privacy decision; confirm compliant with Israeli privacy law, and confirm implications for moderation's ability to detect malicious search patterns | `08-search-spec.md` §6.1 | 🔴 |
 | 24 | Private messaging overall mechanism and wording — communication freedom framed as non-discrimination, not "encouragement" of cross-gender contact | `09-messages-spec.md` §1.2 | 🔴 |
@@ -53,8 +54,17 @@ Status legend: 🔴 not yet reviewed · 🟡 in review · 🟢 cleared
 | # | Item | Source | Status |
 |---|---|---|---|
 | 26 | Automated classification of media into violence / religion / addictions levels — in particular classifying *non-Jewish religious imagery* as filterable content; whether the viewer-side framing (§3.6) extends to these groups | `docs/decisions/0018-multi-group-content-classification.md`, `docs/architecture/content-categories.md` §1–§3 | 🔴 |
-| 27 | Level-3 "prohibited content" (nudity, gore, self-harm, idolatry/missionary) is removed by moderation rather than filtered — needs a Terms-of-Service basis and the enforcement-ladder wording | `content-categories.md` §2, `07-moderation-spec.md` §5 | 🔴 |
+| 27 | Level-3 "prohibited content" (nudity, gore, self-harm, idolatry/missionary) is removed by moderation rather than filtered — needs a Terms-of-Service basis and the enforcement-ladder wording. *Phase 8 note (ADRs 0022-0024): level-3 media is now removed by a reviewer's verdict, hidden from everyone including the uploader, and a conduct case opens for the uploader; the ToS basis is still unreviewed.* | `content-categories.md` §2, `07-moderation-spec.md` §5 | 🔴 |
 | 28 | User images are sent to a third-party model API (Anthropic) for classification — privacy-policy disclosure, DPA, retention (Anthropic states uploads are not used for training and are not stored beyond the request) | ADR 0004, ADR 0018, Anthropic vision docs FAQ | 🔴 |
+
+## Engineering-raised (Phase 8, 2026-11-22)
+
+| # | Item | Source | Status |
+|---|---|---|---|
+| 29 | Retention of removed media (90 days, then purged) and legal holds, including the automatic hold for "minors risk" | ADR 0024, `docs/plans/phase-8-admin-portal.md` §9 | 🔴 |
+| 30 | Reporting to authorities: the procedure, which agency, what is preserved, and who decides. Built as an offline record only (agency, date, reference); the console sends nothing | ADR 0024, `docs/plans/phase-8-admin-portal.md` §9 | 🔴 |
+| 31 | Audit log retention (2 years, a placeholder) and staff-activity logging (reveals, sign-ins) as employee monitoring | ADR 0024, `docs/plans/phase-8-admin-portal.md` §9 | 🔴 |
+| 32 | Suspension and ban: hiding a banned user's content, appeal rights, and the Terms-of-Service basis for each rule in the catalogue | ADR 0023, `docs/plans/phase-8-admin-portal.md` §9 | 🔴 |
 
 ## Process
 

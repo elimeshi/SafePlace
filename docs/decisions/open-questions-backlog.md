@@ -169,9 +169,11 @@ See ADR 0003. All of these are placeholder-until-locked:
 - **Product-spec entries for violence / religion / addictions** — the master
   spec covers women only; ADR 0018 is the authority until Eli writes the spec
   text (`docs/product/`).
-- **Dedupe and moderator overrides** — a moderator re-levelling a source
-  image does not propagate to hash-identical copies (ADR 0019). Dedupe reuses
-  a verdict on exact SHA-256 only (ADR 0019 amendment, Eli 2026-11-02).
+- ~~**Dedupe and moderator overrides**~~ — **resolved 2026-11-22**: a
+  reviewer decision applies to every SHA-256-identical copy and closes their
+  open tasks; a prohibited verdict removes all copies (ADR 0025). Dedupe
+  reuses a verdict on exact SHA-256 only (ADR 0019 amendment, Eli
+  2026-11-02).
 - **Region blur on deduped items** — a deduped `contains_women` copy skips
   the redaction stage, so it has no blurred derivative (fails safe; blur is
   off). Decide before switching blur on.
@@ -199,10 +201,13 @@ See ADR 0003. All of these are placeholder-until-locked:
   classifier prompt answers both conservatively today; both are community
   questions rather than engineering ones (raised Phase 3, see
   `services/moderation-pipeline/src/classifier-prompt.ts`)
-- Whether to notify a reporter of the outcome of their report (currently: no) (§3.4)
-- Moderation SLA targets — proposed: 1h for danger/minor-safety content,
-  24h standard, 72h appeals (§4.3)
-- Exact repeat-violation windows and penalty decay rules (§5.1)
+- Whether to notify a reporter of the outcome of their report (currently: no)
+  (§3.4). **Still no, confirmed by Eli 2026-11-22 for Phase 8** (plan fork 17).
+- ~~Moderation SLA targets~~ — **resolved 2026-11-22**: four lanes and the
+  Shabbat/Yom Tov pause per ADR 0023; the values are senior-admin settings
+  (§4.3)
+- ~~Exact repeat-violation windows and penalty decay rules~~ — **resolved
+  2026-11-22** by ADR 0023 (§5.1)
 
 ## L. Search
 
