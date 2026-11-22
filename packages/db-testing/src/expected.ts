@@ -29,10 +29,8 @@ export function postContextOf(p: PostFixture): PostContext {
     status: p.status,
     exposure: p.exposure,
     sourceKind: p.sourceKind,
-    // shortcut: column lands in Phase 8 migration, wire it then
-    authorBanned: false,
-    // shortcut: column lands in Phase 8 migration, wire it then
-    removed: false,
+    authorBanned: USER_BY_ID.get(p.authorId)?.banned ?? false,
+    removed: p.removed ?? false,
   };
 }
 
@@ -78,10 +76,11 @@ export interface ExpectedMedia {
 export function expectedMedia(u: UserFixture, m: MediaFixture): ExpectedMedia {
   const v = viewerOf(u);
 
-  // The uploader always sees their own content — row present, real URL served,
-  // for any classification. (No self-block is possible.)
+  // The uploader always sees their own row, and its real URL for any
+  // classification but `removed`. (No self-block is possible.)
   if (m.uploaderId === u.id) {
-    return { rowPresent: true, contentVisible: true, isFiltered: false };
+    const contentVisible = m.classification !== "removed";
+    return { rowPresent: true, contentVisible, isFiltered: !contentVisible };
   }
 
   if (isBlockedBetween(u.id, m.uploaderId)) {
@@ -119,8 +118,9 @@ export function expectedAvatar(
   viewer: UserFixture,
   target: UserFixture
 ): ExpectedAvatar {
+  // A banned profile is hidden from everyone, its owner included.
   const profileVisible =
-    viewer.id === target.id || !isBlockedBetween(viewer.id, target.id);
+    !target.banned && (viewer.id === target.id || !isBlockedBetween(viewer.id, target.id));
   // No avatar at all: nothing to withhold (avatar_permitted(null) = true).
   const avatar = target.avatar ?? {
     classification: "general" as const,
@@ -134,8 +134,7 @@ export function expectedAvatar(
       // The avatar's owner is the profile it belongs to — canViewProfilePhoto
       // grants the owner their own photo.
       ownerId: target.id,
-      // shortcut: column lands in Phase 8 migration, wire it then
-      ownerBanned: false,
+      ownerBanned: target.banned ?? false,
     });
   return { profileVisible, avatarVisible };
 }

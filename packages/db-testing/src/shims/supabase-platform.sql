@@ -34,7 +34,9 @@ create table auth.users (
 -- exactly as PostgREST does for a real request.
 create or replace function auth.uid() returns uuid
   language sql stable
-  as $$ select nullif(current_setting('request.jwt.claims', true)::json ->> 'sub', '')::uuid $$;
+  -- nullif before the cast, as on Supabase: after a transaction-local claim
+  -- ends, the setting reads back as '' (not NULL), which is not valid json.
+  as $$ select nullif(nullif(current_setting('request.jwt.claims', true), '')::json ->> 'sub', '')::uuid $$;
 
 create or replace function auth.role() returns text
   language sql stable

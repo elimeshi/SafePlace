@@ -78,6 +78,8 @@ export interface UserFixture {
   suppressed?: string[];
   /** This user's avatar, if any (media on their profile): lifecycle + resolved levels. */
   avatar?: { id: string; classification: MediaClassification; levels: ContentLevels | null };
+  /** account_status = 'banned' (Phase 8): their profile and content are hidden from everyone. */
+  banned?: boolean;
 }
 
 /** Resolved levels for the legacy grid: only the women axis is known. */
@@ -362,6 +364,8 @@ export interface PostFixture {
   sourceKind: PostSourceKind;
   sourceGroupId: string | null;
   sourceSpaceId: string | null;
+  /** removed_at is set (Phase 8): hidden from everyone, the author included. */
+  removed?: boolean;
 }
 
 const GRID_SOURCE: Record<(typeof EXPOSURES)[number], PostSourceKind> = {
@@ -435,6 +439,8 @@ export const EXTRA_POSTS = {
   draft: profilePost("e03", [{ kind: "public" }], "draft"),
   /** Public, in the public group only (everyone-in-G2 reads, others do not). */
   group2Only: profilePost("e04", [{ kind: "group", groupId: GROUP2_ID }]),
+  /** Public, then removed by an admin. */
+  removed: { ...profilePost("e05", [{ kind: "public" }]), removed: true },
 };
 POSTS.push(...Object.values(EXTRA_POSTS));
 
@@ -553,7 +559,10 @@ export async function seedFixtures(db: PGlite): Promise<void> {
 
   // 4. Posts (draft -> audiences -> publish, as a client does) + their media
   // (classification set directly = post-pipeline state).
-  for (const p of POSTS) await insertPost(db, p);
+  for (const p of POSTS) {
+    await insertPost(db, p);
+    if (p.removed) await q(db, `update public.posts set removed_at = now() where id = $1`, [p.postId]);
+  }
   for (const m of [...MEDIA, ...LEVEL_MEDIA]) {
     await q(
       db,
@@ -581,5 +590,10 @@ export async function seedFixtures(db: PGlite): Promise<void> {
     );
     await q(db, `insert into storage.objects (bucket_id, name, owner) values ('media', $1, $2)`, [`media/${u.avatar.id}`, u.id]);
     await q(db, `update public.profiles set avatar_media_id = $2 where id = $1`, [u.id, u.avatar.id]);
+  }
+
+  // 6. Penalty state last, so the steps above ran as an unrestricted account.
+  for (const u of USERS) {
+    if (u.banned) await q(db, `update public.profiles set account_status = 'banned' where id = $1`, [u.id]);
   }
 }
