@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Safe·Place — Personal Area Design Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Assistant:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============================ LAB CHROME (LTR) ============================ */
+:root{--lab-bg:#0c0e13;--lab-panel:#141821;--lab-panel-2:#1b202b;--lab-line:#262c38;--lab-ink:#e7ebf2;--lab-ink-soft:#8b95a6;--lab-accent:#22c3d6}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--lab-bg);color:var(--lab-ink);font-family:Inter,system-ui,sans-serif;font-size:13px;display:flex;overflow:hidden}
+.panel{width:330px;flex:0 0 330px;height:100vh;overflow-y:auto;background:var(--lab-panel);border-inline-end:1px solid var(--lab-line);padding:18px 18px 70px;direction:ltr}
+.brand h1{font-size:14px;font-weight:600;margin:0 0 2px}.brand small{color:var(--lab-ink-soft);font-size:11px}
+.q{margin-top:18px}
+.q .t{display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--lab-ink-soft);font-weight:600;margin-bottom:4px}
+.q .why{color:var(--lab-ink-soft);font-size:11px;line-height:1.45;margin:0 0 8px}
+.seg{display:flex;background:var(--lab-panel-2);border:1px solid var(--lab-line);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{flex:1;border:0;background:transparent;color:var(--lab-ink-soft);font-family:inherit;padding:6px 6px;border-radius:6px;cursor:pointer;font-size:11.5px;min-width:60px}
+.seg button.active{background:var(--lab-accent);color:#06232a;font-weight:600}
+.stage{flex:1;height:100vh;overflow:auto;background:radial-gradient(1200px 600px at 70% -10%,#171c27 0%,transparent 60%),var(--lab-bg)}
+.stage-inner{display:flex;align-items:flex-start;justify-content:center;gap:28px;padding:30px 22px 80px;flex-wrap:wrap}
+.cell{display:flex;flex-direction:column;align-items:center;gap:10px}
+.cell .cap{font-size:12px;color:var(--lab-ink-soft);direction:ltr;max-width:390px;text-align:center}
+.cell .cap b{color:var(--lab-ink)}
+body.bare{background:#fff}
+body.bare .panel{display:none}
+body.bare .stage{background:#fff}
+body.bare .stage-inner{padding:0;gap:0;justify-content:flex-start}
+body.bare .cell .cap{display:none}
+body.bare .phone{border-radius:0;padding:0;background:none;box-shadow:none}
+body.bare .phone .screen{border-radius:0}
+
+/* ============================ PHONE + TOKENS ============================ */
+.phone{
+  /* Locked "Indigo Nights" tokens — packages/design-tokens + design-lab/FINAL-SPEC.md */
+  --c-primary:#2E3A8C;--c-primary-dark:#1B2352;--c-primary-500:#4451A6;--c-accent:#22C3D6;--c-accent-700:#157C8A;
+  --c-bg:#F3F5FC;--c-surface:#FFFFFF;--c-ink:#1A2140;--c-ink-700:#2E3760;--c-ink-soft:#5A6488;--c-ink-mute:#8A93B5;
+  --c-border:#DCE1F2;--c-line:#E9ECF7;--c-blue100:#E5E8F7;--c-blue200:#C4CBEC;--c-cyan100:#DBF4F8;
+  --c-amber:#F59E0B;--c-slate:#94A3B8;--c-danger:#C53030;--c-rose:#D24D6B;
+  --u:9.28px;--r:18px;--r-lg:24px;--r-sm:8px;
+  --shadow-soft:0 2px 10px rgba(20,26,60,.07),0 1px 3px rgba(20,26,60,.06);
+  --shadow-cta:0 12px 26px -10px rgba(46,58,140,.6);
+  --like:var(--c-primary);
+  width:390px;flex:0 0 auto;height:844px;border-radius:46px;background:#05070b;padding:11px;position:relative;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.75),0 0 0 1px #1c222d,inset 0 0 0 2px #0b0e14}
+.phone .screen{position:relative;height:100%;width:100%;border-radius:36px;overflow:hidden;background:var(--c-bg);direction:rtl;color:var(--c-ink);font-family:Assistant,sans-serif;font-size:16px;display:flex;flex-direction:column}
+body.bare .phone{width:390px;height:844px}
+.statusbar{position:relative;display:flex;align-items:center;justify-content:space-between;padding:14px 26px 6px;font-size:13px;font-weight:600;color:var(--c-ink);flex:0 0 auto;z-index:6;direction:ltr}
+.statusbar.on-dark{color:#fff}
+.statusbar .sb-r{display:flex;gap:6px;align-items:center;opacity:.85}
+.statusbar .dot{width:16px;height:9px;border-radius:2px;background:currentColor;opacity:.6}
+.statusbar .bat{width:22px;height:11px;border:1.5px solid currentColor;border-radius:3px;opacity:.6;position:relative}
+.statusbar .bat::after{content:"";position:absolute;inset:1.5px;width:60%;background:currentColor;border-radius:1px}
+.scroll{flex:1;overflow:hidden;position:relative}
+svg.i{width:22px;height:22px;flex:0 0 auto;display:block}
+.disp{font-family:Rubik,sans-serif}
+
+/* ground variants */
+.screen.ground-wash{background:linear-gradient(172deg,#DDF1F7 0%,#F3F5FC 26%,#F3F5FC 100%)}
+
+/* app bar */
+.appbar{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 8px;flex:0 0 auto}
+.wordmark{font-family:Rubik,sans-serif;font-weight:700;font-size:25px;color:var(--c-primary);letter-spacing:-.02em;direction:ltr}
+.wordmark .mid{color:var(--c-accent)}
+.iconbtn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--c-ink-700)}
+
+/* statuses rail */
+.stories{display:flex;gap:14px;padding:6px 18px 12px;overflow:hidden}
+.story{display:flex;flex-direction:column;align-items:center;gap:6px;width:66px;flex:0 0 66px}
+.story .lbl{font-size:12px;font-weight:600;color:var(--c-ink-soft);white-space:nowrap}
+.plus-dashed{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:var(--c-surface);border:2px dashed var(--c-blue200);color:var(--c-primary)}
+.plus-grad{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#22C3D6 0%,#2E3A8C 60%,#1B2352 100%);color:#fff;box-shadow:var(--shadow-cta)}
+.stories-empty{display:flex;align-items:center;font-size:13px;color:var(--c-ink-mute);line-height:1.4;max-width:220px;padding-top:14px}
+
+/* section title */
+.sec{display:flex;align-items:baseline;justify-content:space-between;padding:4px 18px 8px}
+.sec h3{margin:0;font-family:Rubik,sans-serif;font-weight:600;font-size:15px;color:var(--c-ink)}
+
+/* spaces rail */
+.spaces{display:flex;gap:12px;padding:0 18px 16px;overflow:hidden}
+.space{width:156px;flex:0 0 156px;border-radius:var(--r);overflow:hidden;background:var(--c-surface);box-shadow:var(--shadow-soft)}
+.space .hd{display:flex;align-items:center;gap:7px;padding:9px 11px}
+.space .hd svg{width:15px;height:15px}
+.space .hd span{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:Rubik,sans-serif}
+.space .bd{height:80px;position:relative;overflow:hidden}
+.space .bd.text{padding:9px 11px;font-size:13px;line-height:1.45;color:var(--c-ink-700);background:var(--c-bg)}
+.space .ft{padding:8px 11px;font-size:11.5px;color:var(--c-ink-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* post card */
+.feed{display:flex;flex-direction:column;gap:14px;padding:4px 14px 18px}
+.card{background:var(--c-surface);overflow:hidden}
+.card.soft{border-radius:var(--r-lg);box-shadow:var(--shadow-soft)}
+.card.framed{border-radius:var(--r);border:1px solid var(--c-border);box-shadow:0 1px 2px rgba(20,26,60,.04)}
+.ph{display:flex;align-items:flex-start;gap:11px;padding:15px 16px 10px}
+.ph .who{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.ph .nm{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.ph .nm b{font-family:Rubik,sans-serif;font-weight:600;font-size:15px;color:var(--c-ink)}
+.ph .nm time{font-size:13px;color:var(--c-ink-mute)}
+.ph .more{color:var(--c-ink-mute);margin-top:-4px}
+.av{border-radius:50%;display:grid;place-items:center;flex:0 0 auto;font-family:Rubik,sans-serif;font-weight:600;color:var(--c-primary);background:var(--c-blue100)}
+.av.ring{box-shadow:0 0 0 2.5px var(--c-surface),0 0 0 5px var(--c-accent)}
+.body{padding:0 16px 12px;font-size:16px;line-height:1.62;color:var(--c-ink)}
+.body .more-link{color:var(--c-primary);font-weight:600}
+.loc{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--c-ink-soft);padding:0 16px 10px}
+.loc svg{width:15px;height:15px}
+.media{position:relative;height:230px;overflow:hidden;background:#cfd6ea}
+.media svg.scene{width:100%;height:100%;display:block}
+.ibar{display:flex;align-items:center;gap:4px;padding:6px 10px 8px;border-top:1px solid var(--c-line)}
+.ibar .act{display:flex;align-items:center;gap:6px;padding:8px 8px;border-radius:12px;color:var(--c-ink-soft);font-size:14px;font-weight:600}
+.ibar .act.on{color:var(--like)}
+.ibar .sp{flex:1}
+.ibar .num{font-variant-numeric:tabular-nums}
+
+/* source labels — 01-feed-spec §4.2: ~20px tall, soft tint, rounded, generous padding */
+.lbl{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:600;align-self:flex-start;white-space:nowrap}
+.lbl svg{width:13px;height:13px}
+
+/* filtered / processing placeholders */
+.ph-filter{height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:0 30px}
+.ph-filter.soft{background:linear-gradient(180deg,#EEF1FA,#E5E8F7)}
+.ph-filter.stripes{background:repeating-linear-gradient(135deg,#EEF1FA 0 12px,#E6E9F6 12px 24px)}
+.ph-filter b{font-family:Rubik,sans-serif;font-weight:600;font-size:14.5px;color:var(--c-ink-700)}
+.ph-filter span{font-size:13px;color:var(--c-ink-soft);line-height:1.45}
+.ph-filter .eye{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.75);display:grid;place-items:center;color:var(--c-primary);margin-bottom:2px}
+.state-strip{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13.5px;line-height:1.45}
+.state-strip svg{width:18px;height:18px}
+.state-strip.proc{background:var(--c-cyan100);color:var(--c-accent-700)}
+.state-strip.review{background:#FBF3E2;color:#8A5A12}
+.state-strip.notice{background:var(--c-blue100);color:var(--c-ink-700);align-items:flex-start;flex-direction:column;gap:8px}
+.state-strip .acts{display:flex;gap:8px}
+.mini{border:0;border-radius:12px;font-family:Rubik,sans-serif;font-weight:600;font-size:13px;padding:7px 12px}
+.mini.pri{background:var(--c-primary);color:#fff}
+.mini.sec{background:transparent;color:var(--c-primary);border:1.5px solid #9AA4D8}
+.mini.ghost{background:transparent;color:var(--c-ink-soft);padding:7px 6px}
+
+/* collapsed strip — 01-feed-spec §6.2: avatars on the right, "tap to expand" centre, chevron left */
+.cstrip{display:flex;align-items:center;gap:10px;margin:2px 14px 10px;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.86);box-shadow:var(--shadow-soft);backdrop-filter:blur(8px)}
+.cstrip .avs{display:flex}
+.cstrip .avs .av{margin-inline-start:-8px;box-shadow:0 0 0 2px #fff}
+.cstrip .avs .av:first-child{margin-inline-start:0}
+.cstrip .mid{flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--c-ink-soft)}
+.cstrip svg{width:18px;height:18px;color:var(--c-ink-soft)}
+
+/* follow rail */
+.frail{position:absolute;inset-inline:0;bottom:0;background:rgba(255,255,255,.96);box-shadow:0 -6px 24px -12px rgba(20,26,60,.25);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:12px 0 14px;backdrop-filter:blur(8px)}
+.frail .top{display:flex;align-items:center;justify-content:space-between;padding:0 18px 10px}
+.frail .top h3{margin:0;font-family:Rubik,sans-serif;font-weight:600;font-size:15px}
+.frail .row{display:flex;gap:10px;padding:0 18px;overflow:hidden}
+.fcard{width:132px;flex:0 0 132px;border-radius:var(--r);background:var(--c-bg);padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.fcard b{font-family:Rubik,sans-serif;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.fcard .bio{font-size:12px;color:var(--c-ink-soft);line-height:1.35;height:32px;overflow:hidden}
+.fcard .cnt{font-size:12px;color:var(--c-ink-mute)}
+.fbtn{width:100%;border:0;border-radius:12px;background:var(--c-primary);color:#fff;font-family:Rubik,sans-serif;font-weight:600;font-size:13px;padding:7px 0;margin-top:2px}
+
+/* bottom nav */
+.bnav{flex:0 0 auto;display:flex;align-items:center;justify-content:space-around;padding:8px 24px 22px;background:var(--c-surface);border-top:1px solid var(--c-line);z-index:5}
+.bnav .tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--c-ink-mute);width:70px}
+.bnav .tab.on{color:var(--c-primary)}
+
+/* sheet */
+.scrim{position:absolute;inset:0;background:rgba(16,26,58,.38);z-index:10}
+.sheet{position:absolute;inset-inline:0;bottom:0;background:var(--c-surface);border-radius:var(--r-lg) var(--r-lg) 0 0;z-index:11;padding:8px 0 26px;box-shadow:0 -10px 40px -10px rgba(16,26,58,.35)}
+.sheet .grab{width:40px;height:5px;border-radius:9px;background:var(--c-border);margin:2px auto 10px}
+.sheet h4{margin:0;padding:4px 20px 10px;font-family:Rubik,sans-serif;font-weight:600;font-size:16px}
+.sheet .sub{padding:0 20px 10px;font-size:13.5px;color:var(--c-ink-soft);line-height:1.5}
+.srow{display:flex;align-items:center;gap:13px;padding:13px 20px;font-size:15.5px;color:var(--c-ink)}
+.srow svg{color:var(--c-primary)}
+.srow .tx{flex:1;display:flex;flex-direction:column;gap:2px}
+.srow .tx em{font-style:normal;font-size:12.5px;color:var(--c-ink-mute)}
+.srow.dis{opacity:.45}
+.srow.sel{background:var(--c-bg)}
+.sdiv{height:1px;background:var(--c-line);margin:6px 20px}
+.sgroup{padding:8px 20px 4px;font-size:11.5px;font-weight:700;color:var(--c-ink-mute);letter-spacing:.04em}
+.tg{flex:0 0 auto;width:46px;height:27px;border-radius:999px;background:var(--c-border);position:relative}
+.tg.on{background:var(--c-primary)}
+.tg::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tg.on::after{inset-inline-start:22px}
+.toast{position:absolute;inset-inline:18px;bottom:96px;z-index:12;background:var(--c-primary-dark);color:#fff;border-radius:14px;padding:11px 14px;font-size:14px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-cta)}
+
+/* compose */
+.ctop{display:flex;align-items:center;justify-content:space-between;padding:4px 14px 10px;border-bottom:1px solid var(--c-line)}
+.ctop .ttl{font-family:Rubik,sans-serif;font-weight:600;font-size:16.5px}
+.pub{border:0;border-radius:14px;background:var(--c-primary);color:#fff;font-family:Rubik,sans-serif;font-weight:600;font-size:15px;padding:9px 18px;box-shadow:var(--shadow-cta)}
+.pub.dim{opacity:.4;box-shadow:none}
+.cid{display:flex;align-items:flex-start;gap:12px;padding:16px 18px 6px}
+.cid .who{display:flex;flex-direction:column;gap:6px}
+.cid b{font-family:Rubik,sans-serif;font-weight:600;font-size:15.5px}
+.expo{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:var(--c-blue100);color:var(--c-primary);font-size:13px;font-weight:700;align-self:flex-start}
+.expo svg{width:15px;height:15px}
+.expo.locked{background:var(--c-bg);color:var(--c-ink-700);border:1px solid var(--c-border)}
+.expo-help{font-size:12px;color:var(--c-ink-mute);line-height:1.4;max-width:260px}
+.ctext{padding:10px 18px;font-size:17px;line-height:1.65;color:var(--c-ink);min-height:120px}
+.ctext.ph{color:var(--c-ink-mute)}
+.cmedia{margin:4px 18px 12px;border-radius:var(--r);overflow:hidden;position:relative;height:190px}
+.cmedia .x{position:absolute;top:10px;inset-inline-end:10px;width:30px;height:30px;border-radius:50%;background:rgba(16,26,58,.55);color:#fff;display:grid;place-items:center}
+.cmedia .x svg{width:16px;height:16px}
+.cmedia .chip{position:absolute;bottom:10px;inset-inline-start:10px;display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.92);color:var(--c-accent-700);font-size:12.5px;font-weight:700}
+.cmedia .chip svg{width:14px;height:14px}
+.cloc{display:inline-flex;align-items:center;gap:6px;margin:0 18px 10px;height:30px;padding:0 10px 0 12px;border-radius:999px;background:var(--c-bg);border:1px solid var(--c-border);font-size:13px;color:var(--c-ink-700);font-weight:600;align-self:flex-start}
+.cloc svg{width:14px;height:14px}
+.abar{display:flex;align-items:center;gap:6px;padding:10px 14px 24px;border-top:1px solid var(--c-line);background:var(--c-surface)}
+.abtn{display:flex;align-items:center;gap:7px;padding:9px 12px;border-radius:12px;color:var(--c-ink-700);font-size:14px;font-weight:600;background:var(--c-bg)}
+.abtn svg{width:19px;height:19px;color:var(--c-primary)}
+.notice{margin:6px 18px 12px;border-radius:var(--r);background:var(--c-surface);border:1px solid var(--c-blue200);padding:14px 14px 12px;display:flex;gap:10px;box-shadow:var(--shadow-soft)}
+.notice svg{color:var(--c-primary);margin-top:1px}
+.notice p{margin:0 0 10px;font-size:14.5px;line-height:1.55;color:var(--c-ink)}
+.notice .acts{display:flex;gap:8px;align-items:center}
+
+/* compose on glass variant */
+.screen.glassy{background:linear-gradient(145deg,#22C3D6 0%,#2E3A8C 52%,#1B2352 100%)}
+.screen.glassy .ctop{border-color:rgba(255,255,255,.18);color:#fff}
+.screen.glassy .ctop .iconbtn{color:#fff}
+.screen.glassy .pub{background:#fff;color:var(--c-primary)}
+.screen.glassy .gcard{margin:8px 14px;border-radius:var(--r-lg);background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);color:#fff;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.screen.glassy .cid b{color:#fff}
+.screen.glassy .ctext{color:#fff}
+.screen.glassy .ctext.ph{color:rgba(255,255,255,.7)}
+.screen.glassy .expo{background:rgba(255,255,255,.92)}
+.screen.glassy .abar{background:transparent;border-color:rgba(255,255,255,.18)}
+.screen.glassy .abtn{background:rgba(255,255,255,.92)}
+.screen.glassy .cloc{background:rgba(255,255,255,.92)}
+
+/* single post */
+.ptop{display:flex;align-items:center;gap:8px;padding:2px 10px 8px;border-bottom:1px solid var(--c-line);background:var(--c-surface)}
+.ptop .ttl{font-family:Rubik,sans-serif;font-weight:600;font-size:16.5px}
+.pbar{display:flex;align-items:center;justify-content:space-around;padding:4px 10px;border-top:1px solid var(--c-line);border-bottom:1px solid var(--c-line)}
+.pbar .act{display:flex;align-items:center;gap:7px;padding:11px 14px;font-size:15px;font-weight:600;color:var(--c-ink-soft);font-family:Rubik,sans-serif}
+.pbar .act.on{color:var(--like)}
+.comments{padding:12px 16px 90px;display:flex;flex-direction:column;gap:14px;background:var(--c-surface)}
+.cmt{display:flex;gap:9px;align-items:flex-start}
+.cmt.l2{margin-inline-start:42px}
+.cmt .bub{background:var(--c-bg);border-radius:16px;padding:8px 12px 9px;display:flex;flex-direction:column;gap:2px;max-width:100%}
+.cmt .bub b{font-family:Rubik,sans-serif;font-weight:600;font-size:13.5px}
+.cmt .bub p{margin:0;font-size:15px;line-height:1.5}
+.cmt .bub .at{color:var(--c-primary);font-weight:700}
+.cmt .meta{display:flex;gap:14px;font-size:12.5px;color:var(--c-ink-mute);padding:4px 12px 0;font-weight:600}
+.cmt .meta .on{color:var(--like)}
+.cmt .cmedia-f{margin-top:6px;height:120px;border-radius:12px;overflow:hidden}
+.more-cmts{align-self:center;font-size:13.5px;font-weight:700;color:var(--c-primary);padding:6px}
+.cbox{position:absolute;inset-inline:0;bottom:0;display:flex;align-items:center;gap:9px;padding:10px 12px 26px;background:var(--c-surface);border-top:1px solid var(--c-line);z-index:5}
+.cbox .field{flex:1;height:42px;border-radius:999px;background:var(--c-bg);border:1.5px solid var(--c-border);display:flex;align-items:center;padding:0 14px;font-size:15px;color:var(--c-ink-mute)}
+.cbox .send{width:40px;height:40px;border-radius:50%;background:var(--c-primary);color:#fff;display:grid;place-items:center}
+.cbox .send svg{width:18px;height:18px}
+
+/* empty / error */
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:40px 34px}
+.empty .ic{width:64px;height:64px;border-radius:50%;background:var(--c-blue100);display:grid;place-items:center;color:var(--c-primary)}
+.empty .ic svg{width:28px;height:28px}
+.empty h3{margin:6px 0 0;font-family:Rubik,sans-serif;font-weight:600;font-size:19px}
+.empty p{margin:0;font-size:15px;line-height:1.6;color:var(--c-ink-soft)}
+.cta{border:0;border-radius:var(--r);background:var(--c-primary);color:#fff;font-family:Rubik,sans-serif;font-weight:600;font-size:16px;padding:14px 26px;box-shadow:var(--shadow-cta);margin-top:8px}
+.cta.secondary{background:transparent;color:var(--c-primary);border:1.5px solid #9AA4D8;box-shadow:none}
+
+/* ---- added 2026-10-19: the nine remaining pieces ---- */
+/* report sheet */
+.radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--c-border);flex:0 0 auto;display:grid;place-items:center}
+.radio.on{border-color:var(--c-primary)}
+.radio.on::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--c-primary)}
+.tarea{margin:6px 20px 12px;min-height:70px;border-radius:var(--r);border:1.5px solid var(--c-border);background:var(--c-surface);padding:12px 14px;font-size:15px;color:var(--c-ink-mute);line-height:1.5}
+.sheet .cta{display:block;width:calc(100% - 40px);margin:4px 20px 0}
+/* quote card */
+.quote{margin:0 16px 14px;border-radius:var(--r);border:1px solid var(--c-border);background:var(--c-bg);overflow:hidden}
+.quote .qh{display:flex;align-items:center;gap:8px;padding:11px 12px 6px}
+.quote .qh b{font-family:Rubik,sans-serif;font-weight:600;font-size:13.5px}
+.quote .qh time{font-size:12px;color:var(--c-ink-mute)}
+.quote .qb{padding:0 12px 10px;font-size:14.5px;line-height:1.55;color:var(--c-ink-700);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.quote .qm{height:120px;overflow:hidden}
+.quote.gone{display:flex;align-items:center;gap:8px;padding:14px;font-size:14px;color:var(--c-ink-soft)}
+.quote.gone svg{width:18px;height:18px;color:var(--c-ink-mute)}
+.shared-by{display:flex;align-items:center;gap:6px;padding:0 16px 8px;font-size:12.5px;color:var(--c-ink-mute);font-weight:600}
+.shared-by svg{width:14px;height:14px}
+/* exposure: space list */
+.sheet .back-row{display:flex;align-items:center;gap:8px;padding:2px 12px 8px}
+.sheet .back-row h4{padding:0}
+.gico{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:0 0 auto}
+.gico svg{width:18px;height:18px}
+.srow .gico svg{color:inherit}
+/* reply mode */
+.cmt.hl .bub{box-shadow:0 0 0 2px var(--c-cyan100);background:#EEF8FA}
+.replybar{position:absolute;inset-inline:0;bottom:78px;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--c-bg);border-top:1px solid var(--c-line);font-size:13px;color:var(--c-ink-soft);z-index:5}
+.replybar b{color:var(--c-ink-700)}
+.cbox .field.active{border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(46,58,140,.14);color:var(--c-ink);gap:6px}
+.atchip{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:999px;background:var(--c-blue100);color:var(--c-primary);font-size:13px;font-weight:700}
+/* skeleton */
+.sk{background:linear-gradient(90deg,#E6E9F5 0%,#EFF1F9 40%,#E6E9F5 80%);background-size:200% 100%;animation:sk 1.4s linear infinite;border-radius:8px}
+@keyframes sk{from{background-position:100% 0}to{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+.skc{background:var(--c-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-soft);padding:15px 16px;display:flex;flex-direction:column;gap:10px}
+/* expanded-from-strip panel */
+.xpanel{position:absolute;inset-inline:0;top:0;z-index:5;background:var(--c-bg);border-radius:0 0 var(--r-lg) var(--r-lg);box-shadow:0 14px 30px -14px rgba(16,26,58,.35);padding-top:46px}
+.xpanel .handle{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0 12px;font-size:13px;font-weight:600;color:var(--c-ink-soft)}
+.xpanel .handle svg{width:18px;height:18px}
+/* motion demo (interactive lab only) */
+.mzones{overflow:hidden;transition:max-height 260ms cubic-bezier(.25,.1,.25,1),opacity 220ms cubic-bezier(.25,.1,.25,1);max-height:330px}
+.mstrip{transition:opacity 200ms cubic-bezier(.25,.1,.25,1),transform 200ms cubic-bezier(.25,.1,.25,1);opacity:0;transform:translateY(-8px);height:0;overflow:visible}
+.mdemo.collapsed .mzones{max-height:0;opacity:0}
+.mdemo.collapsed .mstrip{opacity:1;transform:none;height:auto}
+.mdemo.collapsed .mfeed{margin-top:0}
+@media (prefers-reduced-motion:reduce){.mzones{transition:opacity 200ms}.mstrip{transition:opacity 200ms;transform:none}}
+.ck{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--c-border);background:#fff;flex:0 0 auto;display:grid;place-items:center;color:#fff}
+.ck.on{background:var(--c-primary);border-color:var(--c-primary)}
+.ck svg{width:14px;height:14px}
+.srow .ck svg{color:#fff}
+
+/* ============================ PHASE 5a ADDITIONS ============================ */
+/* Everything above this line is the Phase 4 feed-lab CSS, verbatim (locked 2026-10-19). */
+.topbar{display:flex;align-items:center;gap:4px;padding:2px 8px 8px;background:var(--c-surface);border-bottom:1px solid var(--c-line);flex:0 0 auto;min-height:52px}
+.topbar .ttl{flex:1;min-width:0;font-family:Rubik,sans-serif;font-weight:600;font-size:16.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .act{font-family:Rubik,sans-serif;font-weight:600;font-size:15px;color:var(--c-primary);padding:8px 10px}
+.topbar .act.dim{opacity:.4}
+.titlebar{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 10px;flex:0 0 auto}
+.titlebar h1{margin:0;font-family:Rubik,sans-serif;font-weight:600;font-size:24px;color:var(--c-ink)}
+.white{background:var(--c-surface)}
+
+/* grouped lists — Q3 */
+.lgroup{margin:0 14px 14px}
+.lgroup .gt{padding:6px 6px 8px;font-size:12px;font-weight:700;color:var(--c-ink-mute);letter-spacing:.04em}
+.lcard{background:var(--c-surface);border-radius:var(--r);box-shadow:var(--shadow-soft);overflow:hidden}
+.lrow{display:flex;align-items:center;gap:12px;padding:12px 14px;font-size:15.5px;color:var(--c-ink);min-height:54px}
+.lrow + .lrow{border-top:1px solid var(--c-line)}
+.lrow .ico{width:34px;height:34px;border-radius:11px;background:var(--c-blue100);color:var(--c-primary);display:grid;place-items:center;flex:0 0 auto}
+.lrow .ico svg{width:18px;height:18px}
+.lrow .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.lrow .tx em{font-style:normal;font-size:12.5px;color:var(--c-ink-mute);line-height:1.4}
+.lrow .val{font-size:14px;color:var(--c-ink-mute);font-variant-numeric:tabular-nums}
+.lrow .chev{color:var(--c-ink-mute);display:flex}
+.lrow .chev svg{width:18px;height:18px}
+.lrow.dis .ico,.lrow.dis .tx{opacity:.5}
+.lrow.danger,.lrow.danger .ico{color:var(--c-danger)}
+.lrow.danger .ico{background:#FBEAEA}
+.soon{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;background:#EEF1F6;color:#5B6B85;font-size:12px;font-weight:600;flex:0 0 auto}
+.list-flat .lgroup{margin:0 0 12px}
+.list-flat .lgroup .gt{padding:8px 20px 8px}
+.list-flat .lcard{border-radius:0;box-shadow:none;border-top:1px solid var(--c-line);border-bottom:1px solid var(--c-line)}
+.list-flat .lrow{padding-inline:20px}
+.radio-row .radio{margin-inline-start:auto}
+
+/* personal-area header */
+.mehead{display:flex;align-items:center;gap:14px;margin:0 14px 16px;padding:14px;background:var(--c-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-soft)}
+.list-flat .mehead{margin:0 0 12px;border-radius:0;box-shadow:none;border-bottom:1px solid var(--c-line);padding:14px 20px}
+.mehead .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.mehead b{font-family:Rubik,sans-serif;font-weight:600;font-size:18px}
+.mehead a{font-size:13.5px;font-weight:700;color:var(--c-primary);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.mehead a svg{width:15px;height:15px}
+
+/* avatars: photo placeholder (an abstract scene, never a person) and code-drawn presets */
+.avp{border-radius:50%;overflow:hidden;flex:0 0 auto;display:block;position:relative;background:#cfd6ea}
+.avp svg{width:100%;height:100%;display:block}
+.avp.ring{box-shadow:0 0 0 2.5px var(--c-surface),0 0 0 5px var(--c-accent)}
+.avp .lt{position:absolute;inset:0;display:grid;place-items:center;font-family:Rubik,sans-serif;font-weight:600;color:#fff;text-shadow:0 1px 3px rgba(16,26,58,.35)}
+.avwrap{position:relative;display:inline-block;flex:0 0 auto}
+.avwrap .badge{position:absolute;bottom:0;inset-inline-end:0;width:30px;height:30px;border-radius:50%;background:var(--c-primary);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 3px var(--c-surface)}
+.avwrap .badge svg{width:15px;height:15px}
+.avwrap .stt{position:absolute;bottom:0;inset-inline-end:0;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 0 3px var(--c-surface)}
+.avwrap .stt svg{width:15px;height:15px}
+
+/* public profile header — Q1 */
+.phead{background:var(--c-surface);padding:12px 18px 0}
+.phead.center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px}
+.phead .pn{font-family:Rubik,sans-serif;font-weight:600;font-size:20px;color:var(--c-ink)}
+.phead .bio{font-size:14.5px;line-height:1.55;color:var(--c-ink-700);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:340px}
+.counts{display:flex;justify-content:center;margin:2px 0 0}
+.counts .c{display:flex;flex-direction:column;align-items:center;min-width:88px;gap:1px}
+.counts b{font-family:Rubik,sans-serif;font-weight:600;font-size:17px;font-variant-numeric:tabular-nums;color:var(--c-ink)}
+.counts span{font-size:12.5px;color:var(--c-ink-mute);font-weight:600}
+.pbtns{display:flex;gap:8px;width:100%;padding:10px 0 14px}
+.pbtn{flex:1;height:40px;border-radius:14px;border:0;font-family:Rubik,sans-serif;font-weight:600;font-size:14.5px;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.pbtn.pri{background:var(--c-primary);color:#fff}
+.pbtn.sec{background:var(--c-blue100);color:var(--c-primary)}
+.pbtn.dis{background:var(--c-bg);color:var(--c-ink-mute)}
+.pbtn.narrow{flex:0 0 auto;padding:0 14px}
+.pbtn svg{width:17px;height:17px}
+.pbtn .soon{height:18px;padding:0 6px;font-size:10.5px}
+.phead.side .row1{display:flex;align-items:center;gap:14px}
+.phead.side .counts{flex:1;justify-content:space-around;margin:0}
+.phead.side .counts .c{min-width:0}
+.phead.side .pn{display:block;margin-top:10px}
+.phead.side .bio{margin-top:3px}
+.ptabs{display:flex;background:var(--c-surface);border-bottom:1px solid var(--c-line)}
+.ptabs .t{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 0 10px;font-size:14px;font-weight:600;color:var(--c-ink-mute);border-bottom:2.5px solid transparent}
+.ptabs .t.on{color:var(--c-primary);border-bottom-color:var(--c-primary)}
+.ptabs svg{width:18px;height:18px}
+
+/* grid — Q4 */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--c-surface)}
+.pgrid.soft{gap:6px;padding:6px;background:var(--c-bg)}
+.pgrid .tile{aspect-ratio:1/1;overflow:hidden;background:#cfd6ea;position:relative}
+.pgrid.soft .tile{border-radius:12px}
+.pgrid .tile svg.scene{width:100%;height:100%;display:block}
+
+/* people / blocked rows */
+.prow{display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--c-surface)}
+.prow + .prow{border-top:1px solid var(--c-line)}
+.prow .tx{flex:1;min-width:0}
+.prow b{font-family:Rubik,sans-serif;font-weight:600;font-size:15px;display:block;color:var(--c-ink)}
+.prow em{font-style:normal;font-size:13px;color:var(--c-ink-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.note{display:flex;gap:8px;align-items:center;margin:10px 14px;padding:9px 12px;border-radius:12px;background:var(--c-blue100);color:var(--c-ink-700);font-size:13px;line-height:1.45}
+.note svg{width:16px;height:16px;color:var(--c-primary)}
+
+/* forms */
+.fld{margin:0 18px 16px;display:flex;flex-direction:column;gap:6px}
+.fld label{font-size:13px;font-weight:700;color:var(--c-ink-soft)}
+.fld .in{border:1.5px solid var(--c-border);border-radius:14px;background:var(--c-surface);padding:12px 14px;font-size:16px;color:var(--c-ink);line-height:1.5}
+.fld .in.ta{min-height:112px}
+.fld .in.on{border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(46,58,140,.14)}
+.fld .row{display:flex;justify-content:space-between;gap:10px}
+.fld .hint{font-size:12.5px;color:var(--c-ink-mute);line-height:1.4}
+.fld .cnt{font-size:12px;color:var(--c-ink-mute);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.avedit{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 0 18px}
+.avedit .lnk{font-family:Rubik,sans-serif;font-weight:600;font-size:15px;color:var(--c-primary)}
+.errbar{display:flex;align-items:center;gap:8px;margin:0 18px 14px;padding:10px 12px;border-radius:12px;background:#FBEAEA;color:#9B2C2C;font-size:13.5px;line-height:1.45}
+.errbar svg{width:17px;height:17px}
+
+/* level picker — Q2 */
+.lvl{margin:0 14px 12px;background:var(--c-surface);border-radius:var(--r);box-shadow:var(--shadow-soft);padding:13px 14px 12px}
+.list-flat .lvl{margin:0 0 10px;border-radius:0;box-shadow:none;border-top:1px solid var(--c-line);border-bottom:1px solid var(--c-line);padding-inline:20px}
+.lvl .hd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.lvl .hd b{font-family:Rubik,sans-serif;font-weight:600;font-size:15.5px;flex:1}
+.segp{display:flex;background:var(--c-bg);border-radius:12px;padding:3px;gap:3px}
+.segp span{flex:1;text-align:center;padding:8px 4px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--c-ink-soft)}
+.segp span.on{background:var(--c-surface);color:var(--c-primary);box-shadow:0 1px 3px rgba(20,26,60,.14)}
+.lvl .desc{font-size:13.5px;color:var(--c-ink-soft);line-height:1.5;margin-top:9px}
+.rcard{display:flex;gap:10px;align-items:flex-start;padding:9px 2px}
+.rcard + .rcard{border-top:1px solid var(--c-line)}
+.rcard .tx{flex:1;display:flex;flex-direction:column;gap:2px}
+.rcard .tx b{font-size:14.5px;font-weight:600;color:var(--c-ink)}
+.rcard .tx span{font-size:13px;color:var(--c-ink-soft);line-height:1.45}
+.rcard .radio{margin-top:1px}
+.l3{display:flex;gap:9px;align-items:flex-start;margin:2px 18px 16px;font-size:13px;line-height:1.5;color:var(--c-ink-soft)}
+.l3 svg{width:17px;height:17px;color:var(--c-ink-mute);margin-top:1px}
+.intro{padding:4px 18px 14px;font-size:14.5px;line-height:1.55;color:var(--c-ink-soft)}
+
+/* double confirm */
+.wic{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;margin:4px auto 6px;background:#FBF3E2;color:#8A5A12}
+.wic svg{width:24px;height:24px}
+.sheet .center{text-align:center}
+.sheet h4.center{padding-bottom:6px}
+.sheet .sub.center{padding:0 26px 14px;font-size:14.5px;line-height:1.6;color:var(--c-ink-700)}
+.change{margin:0 20px 14px;border-radius:14px;background:var(--c-bg);padding:10px 12px;display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--c-ink-700);justify-content:center;flex-wrap:wrap}
+.change .from{color:var(--c-ink-mute);text-decoration:line-through}
+.change svg{width:16px;height:16px;color:var(--c-ink-mute)}
+.steps{display:flex;justify-content:center;gap:6px;padding:0 0 12px}
+.steps i{width:7px;height:7px;border-radius:50%;background:var(--c-border);display:block}
+.steps i.on{width:22px;border-radius:999px;background:var(--c-primary)}
+.tfield{margin:4px 20px 14px;height:54px;border-radius:14px;border:1.5px solid var(--c-border);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--c-ink-mute);font-family:Rubik,sans-serif;font-weight:500;letter-spacing:.02em}
+.tfield.on{border-color:var(--c-primary);box-shadow:0 0 0 3px rgba(46,58,140,.14);color:var(--c-ink)}
+.tfield .caret{display:inline-block;width:2px;height:22px;background:var(--c-primary);margin-inline-start:2px;vertical-align:middle}
+.cta.dim{opacity:.4;box-shadow:none}
+.cta.danger{background:var(--c-danger);box-shadow:none}
+.sheet .cta + .cta{margin-top:10px}
+.sheet .back-link{display:block;text-align:center;padding:14px 0 0;font-size:14.5px;font-weight:600;color:var(--c-ink-soft)}
+
+/* onboarding step 3 — the locked full-bleed language (design-lab FINAL-SPEC; the shipped WizardScreen fullbleed + GlassCard) */
+.screen.onb{background:linear-gradient(145deg,#22C3D6 0%,#2E3A8C 52%,#1B2352 100%);color:#fff}
+.onb .wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:27.8px}
+.onb .pdots{display:flex;gap:7px;justify-content:center;margin-bottom:20.4px}
+.onb .pdots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4);display:block}
+.onb .pdots i.on{width:22px;border-radius:999px;background:#fff}
+.onb .glass{background:rgba(255,255,255,.16);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.28);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:17px}
+.onb .glass h2{font-family:Rubik,sans-serif;font-weight:700;font-size:24px;line-height:1.18;margin:20px 0 4px;color:#fff}
+.onb .glass p{margin:0;font-size:15px;line-height:1.5;color:rgba(255,255,255,.9)}
+.onb .glass .shield{width:56px;height:56px;border-radius:18px;background:rgba(255,255,255,.18);display:grid;place-items:center;color:#fff}
+.onb .glass .shield svg{width:28px;height:28px}
+.onb .glass .lnk{align-self:flex-start;font-size:15px;font-weight:600;color:#fff;text-decoration:underline;text-underline-offset:3px}
+.onb .glass .octa{width:100%;border:0;border-radius:18px;background:#fff;color:var(--c-primary);font-family:Rubik,sans-serif;font-weight:600;font-size:16.3px;padding:18.6px;margin-top:4px}
+.onb .sheet{color:var(--c-ink)}
+.lvrow{display:flex;align-items:center;gap:12px;padding:12px 20px}
+.lvrow + .lvrow{border-top:1px solid var(--c-line)}
+.lvrow b{flex:1;font-family:Rubik,sans-serif;font-weight:600;font-size:15px}
+.lvrow span{font-size:13.5px;color:var(--c-ink-soft);font-weight:600}
+
+/* presets gallery */
+.pregrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:18px}
+.pregrid .p{display:flex;justify-content:center;padding:4px;border-radius:50%}
+.pregrid .p.sel .avp{box-shadow:0 0 0 3px var(--c-surface),0 0 0 5.5px var(--c-primary)}
+.draft{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;color:#06232a;background:#f5c451;border-radius:4px;padding:1px 5px;margin-inline-start:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<aside class="panel" id="panel"></aside>
+<main class="stage"><div class="stage-inner" id="stage"></div></main>
+<script>
+/* ============================ ICONS (Lucide, ISC) ============================ */
+const G = {
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  more:'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  comment:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',
+  bookmark:'<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/>',
+  down:'<path d="m6 9 6 6 6-6"/>', up:'<path d="m18 15-6-6-6 6"/>',
+  back:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  image:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/>',
+  pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  eye:'<path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/>',
+  x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  send:'<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+  mute:'<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>',
+  flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
+  userx:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>',
+  help:'<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  globe:'<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  thumbdown:'<path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>',
+  shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  wifi:'<path d="M12 20h.01"/><path d="M8.5 16.43a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"/><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"/><path d="M5 13a10 10 0 0 1 5.24-2.76"/><path d="m2 2 20 20"/>',
+  trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  family:'<path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+};
+const ic = (n, o = {}) => `<svg class="i" viewBox="0 0 24 24" fill="${o.fill ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="${o.sw || 2}" stroke-linecap="round" stroke-linejoin="round" style="${o.size ? `width:${o.size}px;height:${o.size}px;` : ''}${o.color ? `color:${o.color};` : ''}">${G[n]}</svg>`;
+
+/* Abstract photo stand-ins — never stock photos (master spec §6.3.5). */
+const scene = (k) => {
+  const S = {
+    street: ['#BFD3EA', '#8FA9CC', '#6E85AC', '#E9D9B8'],
+    hills: ['#CFE6EE', '#9CC6B5', '#6FA48F', '#F5E7C8'],
+    books: ['#E6E0F2', '#B8AED6', '#7C6A9C', '#F3EBDD'],
+    table: ['#F1E4D3', '#D9B996', '#B08968', '#FFF6E8'],
+  }[k];
+  return `<svg class="scene" viewBox="0 0 390 230" preserveAspectRatio="xMidYMid slice"><rect width="390" height="230" fill="${S[0]}"/><circle cx="300" cy="60" r="26" fill="${S[3]}" opacity=".9"/><path d="M0 170 Q90 110 180 150 T390 130 V230 H0Z" fill="${S[1]}"/><path d="M0 200 Q120 150 240 185 T390 175 V230 H0Z" fill="${S[2]}"/></svg>`;
+};
+
+const av = (name, size = 42, extra = '') => `<span class="av ${extra}" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.42)}px">${name.trim()[0]}</span>`;
+
+const params = new URLSearchParams(location.search);
+/* ============================ SHARED PIECES ============================ */
+const GROUP = { ramot: { name: 'שכונת רמות', color: '#2E3A8C', icon: 'home' }, sfarim: { name: 'גמ״ח ספרים', color: '#5B8C5A', icon: 'users' } };
+const statusbar = (dark) => `<div class="statusbar ${dark ? 'on-dark' : ''}"><span>9:41</span><span class="sb-r"><i class="dot"></i><i class="bat"></i></span></div>`;
+const tint = (hex, a) => { const n = parseInt(hex.slice(1), 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; const m = (c) => Math.round(c * a + 255 * (1 - a)); return `rgb(${m(r)},${m(g)},${m(b)})`; };
+
+function sourceLabel(src) {
+  if (src.kind === 'group') return `<span class="lbl" style="background:${tint(src.color, .14)};color:${src.color}">${ic(src.icon)}${src.name}</span>`;
+  if (src.kind === 'public') return `<span class="lbl" style="background:#EEF1F6;color:#5B6B85">פוסט ציבורי</span>`;
+  if (src.kind === 'followers') return `<span class="lbl" style="background:#EEF1F6;color:#5B6B85">לעוקבים</span>`;
+  if (src.kind === 'suggested') return `<span class="lbl" style="background:#FEF3DC;color:#A8650A">מוצע עבורך</span>`;
+  return '';
+}
+function filteredPh(h = 200) {
+  return `<div class="ph-filter ${V.filter}" style="height:${h}px"><span class="eye">${ic('eye', { size: 20 })}</span><b>מדיה מסוננת לפי ההעדפות שלך</b><span>ניתן לשנות את העדפות הצריכה באזור האישי בכל עת.</span></div>`;
+}
+function ibar(p) {
+  return `<div class="ibar"><span class="act ${p.liked ? 'on' : ''}">${ic('heart', { fill: p.liked })}<span class="num">${p.likes}</span></span><span class="act">${ic('comment')}<span class="num">${p.comments}</span></span><span class="act">${ic('share')}</span><span class="sp"></span><span class="act">${ic('bookmark', { fill: p.saved })}</span></div>`;
+}
+function card(p) {
+  let media = '';
+  if (p.media === 'filtered') media = filteredPh();
+  else if (p.media) media = `<div class="media">${scene(p.media)}</div>`;
+  const strip = p.state === 'processing' ? `<div class="state-strip proc">${ic('clock')}המדיה בעיבוד ותוצג בקרוב.</div>` : '';
+  return `<article class="card ${V.card}">
+    <div class="ph">${av(p.author, 42)}<div class="who"><div class="nm"><b>${p.author}</b><time>${p.time}</time></div>${sourceLabel(p.source)}</div><span class="more">${ic('more')}</span></div>
+    ${p.body ? `<div class="body">${p.body}</div>` : ''}
+    ${p.loc ? `<span class="loc">${ic('pin')}${p.loc}</span>` : ''}
+    ${media}${strip}
+    ${ibar(p)}
+  </article>`;
+}
+const POSTS = [
+  { author: 'משה רוזנברג', time: 'לפני שעתיים', source: { kind: 'group', ...GROUP.ramot }, body: 'תודה ענקית לכל המתנדבים שהגיעו אתמול לחלוקת החבילות לקראת החג. הקהילה שלנו פשוט מדהימה 💙', media: 'street', likes: 42, comments: 8, liked: true },
+  { author: 'הרב אליהו כהן', time: 'לפני 4 שעות', source: { kind: 'public' }, body: 'מחשבה קצרה לפרשת השבוע: לפעמים הדבר הגדול ביותר שאפשר לתת לזולת הוא פשוט להקשיב. שבת שלום לכולם.', likes: 128, comments: 23 },
+  { author: 'יעקב פרידמן', time: 'לפני 6 שעות', source: { kind: 'suggested' }, body: 'נפתח מסלול הליכה חדש בפארק השכונתי — מומלץ לבוא בשעות הבוקר.', media: 'filtered', likes: 15, comments: 3 },
+  { author: 'דוד לוינסון', time: 'אתמול', source: { kind: 'followers' }, body: 'הספרייה הביתית סוף סוף מסודרת. מי שצריך ספר — מוזמן לבקש.', media: 'books', likes: 9, comments: 2, saved: true },
+  { author: 'אבי מזרחי', time: 'עכשיו', source: { kind: 'public' }, body: 'בוקר טוב מהטיול המשפחתי 🙏', media: 'hills', state: 'processing', likes: 0, comments: 0, loc: 'נחל שורק' },
+];
+
+function bnav() {
+  if (V.nav !== 'tabs') return '';
+  return `<nav class="bnav"><span class="tab on">${ic('home', { sw: 2.4 })}בית</span><span class="tab">${ic('search')}חיפוש</span><span class="tab">${ic('user')}פרופיל</span></nav>`;
+}
+function screen(inner, cls = '') { return `<div class="screen ${cls}">${inner}</div>`; }
+function feedGround() { return V.ground === 'wash' ? 'ground-wash' : ''; }
+
+/* ============================ PHASE 5a ============================ */
+/* Everything above this block (icons, scene, av, source labels, card, ibar, bnav, screen) is the
+   Phase 4 feed-lab helper code, verbatim. Below: Phase 5a's variants, pieces and screens. */
+Object.assign(G, {
+  settings:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  grid:'<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  list:'<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
+  pencil:'<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>',
+  camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  chev:'<path d="m15 18-6-6 6-6"/>',
+  mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  sliders:'<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+  alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  eyeoff:'<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
+  palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/>',
+  ban:'<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  calendar:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+  moon:'<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  key:'<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+  arrow:'<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
+  activity:'<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>',
+  usercheck:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>',
+});
+
+/* ---- variants: the open visual questions ---- */
+const Q5 = [
+  { k: 'hdr', t: 'Q1 · Profile header layout', why: '05 §2.1: large profile photo, name, numbers (no lists), bio, follow / message / about.', opts: [['center', 'Centred'], ['side', 'Side by side (photo + numbers)']] },
+  { k: 'lvl', t: 'Q2 · Content-level picker', why: 'Four groups × levels 0–2 (ADR 0018). One line explains the chosen level.', opts: [['seg', 'Segmented 0/1/2 + one line'], ['cards', 'Three radio cards with text']] },
+  { k: 'list', t: 'Q3 · Settings / personal-area lists', why: 'Phase 4 cards are soft (r24, shadow, no border).', opts: [['cards', 'Grouped white cards'], ['flat', 'Flat full-width rows']] },
+  { k: 'grid', t: 'Q4 · Photo grid', why: '05 §2.3: Instagram-style grid; only posts whose media this viewer may see (§2.6.2).', opts: [['tight', '2px gutters'], ['soft', '6px gutters, rounded']] },
+  { k: 'msg', t: 'Q5 · "Send message" on a profile', why: '05 §2.1 "send message (if allowed)". Messages are Phase 7.', opts: [['soon', 'Greyed with בקרוב'], ['hidden', 'Hidden until Phase 7']] },
+];
+const STATE5 = [
+  { k: 'warn', t: 'State · which change the confirm shows', opts: [['loosen', 'נשים 0 → 1'], ['tighten', 'אלימות 1 → 0'], ['avatars', 'Avatars filter off'], ['suggest', 'Suggested posts off']] },
+  { k: 'gender', t: 'State · onboarding defaults for', opts: [['male', 'male'], ['female', 'female']] },
+];
+// Phase 4 choices, LOCKED 2026-10-19 — the helpers above read them.
+const P4 = { nav: 'tabs', card: 'soft', like: 'primary', shd: 'solid', fam: 'grad', plus: 'grad', ground: 'flat', compose: 'white', filter: 'soft' };
+const DEF5 = { hdr: 'center', lvl: 'seg', list: 'cards', grid: 'tight', msg: 'soon', warn: 'loosen', gender: 'male' };
+const V = Object.fromEntries([...Object.entries(P4), ...Object.entries(DEF5)].map(([k, d]) => [k, params.get(k) || d]));
+
+function seg5(list) {
+  return list.map(q => `<div class="q"><span class="t">${q.t}</span>${q.why ? `<p class="why">${q.why}</p>` : ''}<div class="seg">${q.opts.map(([v, l]) => `<button class="${V[q.k] === v ? 'active' : ''}" onclick="setV('${q.k}','${v}')">${l}</button>`).join('')}</div></div>`).join('');
+}
+function renderPanel() {
+  document.getElementById('panel').innerHTML = `<div class="brand"><h1>Safe·Place — Personal area lab</h1><small>Phase 5a · personal area, profile, settings, content filter, blocks · 390×844 · "Indigo Nights" tokens · Phase 4 phone CSS verbatim · images are placeholders only</small></div>` +
+    `<div class="q"><p class="why" style="color:#f5c451">Every Hebrew string on the phones is <b>Eli's product copy, drafted by engineering</b> (plan §9). Edit freely.</p></div>` +
+    `<div class="q"><span class="t">Open design questions</span></div>` + seg5(Q5) +
+    `<div class="q"><span class="t" style="margin-top:10px">State controls (not design choices)</span></div>` + seg5(STATE5) +
+    `<div class="q"><span class="t">Screens</span><p class="why">${ORDER.map(k => `<a href="?bare=1&screen=${k}" style="color:#22c3d6">${k}</a>`).join(' · ')}</p></div>`;
+}
+function setV(k, v) { V[k] = v; const u = new URL(location); u.searchParams.set(k, v); history.replaceState(null, '', u); renderAll(); }
+
+/* ---- pieces ---- */
+const LISTCLS = () => (V.list === 'flat' ? 'list-flat' : '');
+const back = () => `<span class="iconbtn">${ic('back')}</span>`;
+const topbar = (title, end = '') => `<div class="topbar">${back()}<span class="ttl">${title}</span>${end}</div>`;
+const chev = `<span class="chev">${ic('chev')}</span>`;
+const soon = `<span class="soon">בקרוב</span>`;
+function lrow(o) {
+  const right = o.soon ? soon : `${o.val != null ? `<span class="val">${o.val}</span>` : ''}${o.right || (o.nochev ? '' : chev)}`;
+  return `<div class="lrow ${o.soon ? 'dis' : ''} ${o.cls || ''}">${o.icon ? `<span class="ico">${ic(o.icon)}</span>` : ''}<span class="tx">${o.t}${o.em ? `<em>${o.em}</em>` : ''}</span>${right}</div>`;
+}
+const lgroup = (title, rows) => `<div class="lgroup">${title ? `<div class="gt">${title}</div>` : ''}<div class="lcard">${rows.join('')}</div></div>`;
+function bnavP(active) {
+  const t = (k, icon, label) => `<span class="tab ${active === k ? 'on' : ''}">${ic(icon, active === k ? { sw: 2.4 } : {})}${label}</span>`;
+  return `<nav class="bnav">${t('home', 'home', 'בית')}${t('search', 'search', 'חיפוש')}${t('profile', 'user', 'פרופיל')}</nav>`;
+}
+const toast = (text, icon = 'check', bottom) => `<div class="toast"${bottom ? ` style="bottom:${bottom}px"` : ''}>${ic(icon, { size: 18 })}${text}</div>`;
+
+/* avatars: an abstract scene stands in for any photo (Eli never views images) */
+const avPhoto = (size, scn = 'hills', extra = '') => `<span class="avp ${extra}" style="width:${size}px;height:${size}px">${scene(scn).replace('class="scene"', '')}</span>`;
+const PRESETS = [
+  ['#2E3A8C', '#22C3D6', 'rings'], ['#22C3D6', '#2E3A8C', 'stripes'], ['#5B8C5A', '#DDEBD4', 'dots'], ['#1B2352', '#4451A6', 'waves'],
+  ['#D97706', '#FDE7C4', 'diag'], ['#4451A6', '#C4CBEC', 'grid'], ['#157C8A', '#9FE3EC', 'arc'], ['#7C6A9C', '#E6E0F2', 'tri'],
+  ['#B08968', '#F1E4D3', 'half'], ['#2E3760', '#8A93B5', 'checker'], ['#0E7490', '#CFF3F8', 'sun'], ['#5B6B85', '#E5E8F7', 'zig'],
+];
+function presetSvg(i) {
+  const [bg, fg, k] = PRESETS[i];
+  const p = {
+    rings: `<circle cx="50" cy="50" r="42" fill="none" stroke="${fg}" stroke-width="7" opacity=".55"/><circle cx="50" cy="50" r="26" fill="none" stroke="${fg}" stroke-width="7" opacity=".55"/>`,
+    stripes: [0, 1, 2, 3, 4, 5].map(n => `<rect x="${n * 20 - 10}" y="-10" width="9" height="130" fill="${fg}" opacity=".35" transform="rotate(30 50 50)"/>`).join(''),
+    dots: [15, 38, 61, 84].flatMap(x => [15, 38, 61, 84].map(y => `<circle cx="${x}" cy="${y}" r="5" fill="${fg}" opacity=".7"/>`)).join(''),
+    waves: [20, 45, 70, 95].map(y => `<path d="M-5 ${y} Q 20 ${y - 14} 45 ${y} T 105 ${y}" fill="none" stroke="${fg}" stroke-width="7" opacity=".6"/>`).join(''),
+    diag: `<path d="M0 100 L100 0 L100 100Z" fill="${fg}" opacity=".55"/>`,
+    grid: [20, 40, 60, 80].map(n => `<path d="M${n} 0V100M0 ${n}H100" stroke="${fg}" stroke-width="3" opacity=".6"/>`).join(''),
+    arc: `<circle cx="100" cy="100" r="70" fill="${fg}" opacity=".5"/><circle cx="100" cy="100" r="40" fill="${bg}" opacity=".6"/>`,
+    tri: `<path d="M0 100 L30 45 L60 100Z M40 100 L70 55 L100 100Z" fill="${fg}" opacity=".6"/>`,
+    half: `<rect x="0" y="50" width="100" height="50" fill="${fg}" opacity=".6"/><circle cx="50" cy="50" r="24" fill="${bg}"/>`,
+    checker: [0, 25, 50, 75].flatMap(x => [0, 25, 50, 75].filter(y => (x + y) % 50 === 0).map(y => `<rect x="${x}" y="${y}" width="25" height="25" fill="${fg}" opacity=".45"/>`)).join(''),
+    sun: [0, 30, 60, 90, 120, 150].map(a => `<rect x="47" y="2" width="6" height="96" fill="${fg}" opacity=".45" transform="rotate(${a} 50 50)"/>`).join('') + `<circle cx="50" cy="50" r="24" fill="${bg}"/>`,
+    zig: [25, 50, 75].map(y => `<path d="M0 ${y} l12.5 -12 l12.5 12 l12.5 -12 l12.5 12 l12.5 -12 l12.5 12 l12.5 -12 l12.5 12" fill="none" stroke="${fg}" stroke-width="5" opacity=".7"/>`).join(''),
+  }[k];
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><rect width="100" height="100" fill="${bg}"/>${p}</svg>`;
+}
+const avPreset = (i, name, size, extra = '') => `<span class="avp ${extra}" style="width:${size}px;height:${size}px">${presetSvg(i)}<span class="lt" style="font-size:${Math.round(size * 0.42)}px">${name.trim()[0]}</span></span>`;
+
+/* public profile header — Q1, Q5 */
+const PEOPLE = {
+  david: { name: 'דוד לוינסון', bio: 'אבא לשישה, מלמד גמרא בישיבה קטנה ברמות. אוהב ספרים ישנים, טיולים קצרים בשבת אחה״צ, וקפה שחור בלי סוכר. כאן בעיקר בשביל הקהילה.', f: 214, g: 96, gr: 5 },
+  me: { name: 'אבי מזרחי', bio: 'מתנדב בגמ״ח הספרים של השכונה. כותב פה על מה שקורה אצלנו ברמות.', f: 61, g: 48, gr: 3 },
+};
+function avFor(who, size, kind) {
+  if (kind === 'photo') return avPhoto(size, 'hills');
+  if (kind === 'preset') return avPreset(0, who.name, size);
+  return av(who.name, size);
+}
+function profileHead(who, o = {}) {
+  const counts = `<div class="counts"><span class="c"><b>${who.f}</b><span>עוקבים</span></span><span class="c"><b>${who.g}</b><span>נעקבים</span></span><span class="c"><b>${who.gr}</b><span>קבוצות</span></span></div>`;
+  const msg = V.msg === 'soon' && !o.own ? `<span class="pbtn dis narrow">${ic('comment')}<span class="soon">בקרוב</span></span>` : '';
+  const btns = o.own
+    ? `<div class="pbtns"><span class="pbtn sec">${ic('pencil')}עריכת פרופיל</span><span class="pbtn sec narrow">${ic('plus')}פוסט</span><span class="pbtn sec narrow">אודות</span></div>`
+    : `<div class="pbtns">${o.following ? `<span class="pbtn sec">${ic('usercheck')}במעקב</span>` : `<span class="pbtn pri">מעקב</span>`}${msg}<span class="pbtn sec narrow">אודות</span></div>`;
+  const avatar = avFor(who, V.hdr === 'side' ? 82 : 88, o.avatar);
+  if (V.hdr === 'side') return `<div class="phead side"><div class="row1">${avatar}${counts}</div><b class="pn">${who.name}</b><div class="bio">${who.bio}</div>${btns}</div>`;
+  return `<div class="phead center">${avatar}<b class="pn">${who.name}</b><div class="bio">${who.bio}</div>${counts}${btns}</div>`;
+}
+const ptabs = (on) => `<div class="ptabs"><span class="t ${on === 'posts' ? 'on' : ''}">${ic('list')}פוסטים</span><span class="t ${on === 'grid' ? 'on' : ''}">${ic('grid')}תמונות</span></div>`;
+const gridTiles = (n) => { const s = ['street', 'hills', 'books', 'table']; return `<div class="pgrid ${V.grid}">${Array.from({ length: n }, (_, i) => `<span class="tile">${scene(s[(i * 3) % 4])}</span>`).join('')}</div>`; };
+
+/* posts used on profiles (Phase 4 card() shape) */
+const DPOSTS = [
+  { author: 'דוד לוינסון', time: 'לפני שעתיים', source: { kind: 'public' }, body: 'סיימנו היום את מסכת ברכות עם התלמידים. רגע של שמחה אמיתית — תודה לכל ההורים שליוו.', media: 'books', likes: 37, comments: 6 },
+  { author: 'דוד לוינסון', time: 'אתמול', source: { kind: 'followers' }, body: 'מי מכיר חנות טובה לכריכת ספרים ישנים באזור ירושלים?', likes: 4, comments: 9 },
+  { author: 'דוד לוינסון', time: 'לפני 3 ימים', source: { kind: 'group', ...GROUP.sfarim }, body: 'הבאתי היום לגמ״ח עוד שני ארגזים של ספרי קודש. מוזמנים.', media: 'table', likes: 21, comments: 2 },
+];
+const cardAv = (p, avHtml) => card(p).replace(av(p.author, 42), avHtml);
+const scrollWrap = (inner, cls = '') => `<div class="scroll ${cls}">${inner}</div>`;
+
+/* content-filter model (copy: plan §9, drafts) */
+const LEVEL_NAMES = ['מוסתר', 'חלקי', 'מורחב'];
+const GROUPS5 = [
+  { k: 'sex', name: 'נשים', d: ['לא יוצגו לך תמונות שמופיעות בהן נשים.', 'יוצגו לך נשים בלבוש צנוע בלבד.', 'יוצגו לך גם נשים בלבוש שאינו צנוע.'] },
+  { k: 'violence', name: 'אלימות', d: ['לא יוצג לך תוכן אלים.', 'יוצגו לך נשק, ספורט קרב ותגרות קלות.', 'יוצגו לך גם קטטות, דם ופציעות.'] },
+  { k: 'religion', name: 'סמלים דתיים', d: ['לא יוצגו לך סמלים של דתות אחרות.', 'יוצג לך סמל שולי, כמו כנסייה בנוף.', 'יוצגו לך גם סמלים בולטים, טקסים ואנשי דת.'] },
+  { k: 'addictions', name: 'התמכרויות', d: ['לא יוצג לך תוכן של התמכרויות.', 'יוצגו לך שכרות, עישון וקנאביס.', 'יוצגו לך גם סמים קשים והימורים.'] },
+];
+function levelCard(g, cur) {
+  if (V.lvl === 'cards') {
+    return `<div class="lvl"><div class="hd"><b>${g.name}</b></div>${[0, 1, 2].map(n => `<div class="rcard"><span class="radio ${n === cur ? 'on' : ''}"></span><span class="tx"><b>${LEVEL_NAMES[n]}</b><span>${g.d[n]}</span></span></div>`).join('')}</div>`;
+  }
+  return `<div class="lvl"><div class="hd"><b>${g.name}</b></div><div class="segp">${[0, 1, 2].map(n => `<span class="${n === cur ? 'on' : ''}">${LEVEL_NAMES[n]}</span>`).join('')}</div><div class="desc">${g.d[cur]}</div></div>`;
+}
+const MY_LEVELS = { sex: 0, violence: 1, religion: 0, addictions: 0 };
+function filterBody(levels = MY_LEVELS, toggles = { avatars: true, suggest: true }) {
+  return `<div class="intro">בחר מה מוצג לך. ההגדרות חלות רק עליך, ואפשר לשנות אותן בכל עת.</div>
+    ${GROUPS5.map(g => levelCard(g, levels[g.k])).join('')}
+    <div class="l3">${ic('info')}<span>תוכן בוטה — עירום, אכזריות קשה או עבודה זרה — אינו מתפרסם ב-Safe·Place כלל.</span></div>
+    ${lgroup('', [
+      lrow({ t: 'הסינון חל גם על תמונות פרופיל', em: 'כשכבוי, תמונות פרופיל של נשים יוצגו לך. שאר התחומים ממשיכים לחול.', right: `<span class="tg ${toggles.avatars ? 'on' : ''}"></span>` }),
+      lrow({ t: 'הצגת פוסטים מוצעים', em: 'פוסטים ציבוריים מאנשים שאינך עוקב אחריהם', right: `<span class="tg ${toggles.suggest ? 'on' : ''}"></span>` }),
+    ])}`;
+}
+const filterScreen = (overlay = '', o = {}) => screen(`${statusbar()}${topbar('סינון תוכן')}${scrollWrap(filterBody(o.levels, o.toggles), LISTCLS())}${overlay}`);
+
+const WARN = {
+  loosen: { from: 'נשים · מוסתר', to: 'נשים · חלקי', body: 'אתה עומד לשנות את הסינון בתחום נשים מ"מוסתר" ל"חלקי". מעכשיו יוצגו לך תמונות של נשים בלבוש צנוע. השינוי ייכנס לתוקף מיד, ואפשר לשנות שוב בכל עת.' },
+  tighten: { from: 'אלימות · חלקי', to: 'אלימות · מוסתר', body: 'אתה עומד לשנות את הסינון בתחום אלימות מ"חלקי" ל"מוסתר". מעכשיו לא יוצג לך תוכן אלים. השינוי ייכנס לתוקף מיד, ואפשר לשנות שוב בכל עת.' },
+  avatars: { from: 'סינון תמונות פרופיל · מופעל', to: 'כבוי', body: 'אתה עומד לכבות את הסינון בתמונות פרופיל. מעכשיו יוצגו לך תמונות פרופיל של נשים; שאר התחומים ממשיכים לחול. השינוי ייכנס לתוקף מיד, ואפשר להפעיל שוב בכל עת.' },
+  suggest: { from: 'פוסטים מוצעים · מוצגים', to: 'לא מוצגים', body: 'אתה עומד להפסיק את הצגת הפוסטים המוצעים. מעכשיו יוצגו לך רק פוסטים מאנשים ומקבוצות שאתה עוקב אחריהם. השינוי ייכנס לתוקף מיד, ואפשר לשנות שוב בכל עת.' },
+};
+const changeLine = (w) => `<div class="change"><span class="from">${w.from}</span>${ic('arrow')}<span>${w.to}</span></div>`;
+const warnSheet = (w) => `<div class="scrim"></div><div class="sheet"><div class="grab"></div><div class="steps"><i class="on"></i><i></i></div><span class="wic">${ic('alert')}</span><h4 class="center">שינוי סינון התוכן</h4>${changeLine(w)}<div class="sub center">${w.body}</div><button class="cta">ביטול</button><button class="cta secondary">המשך</button></div>`;
+const typeSheet = (typed) => `<div class="scrim"></div><div class="sheet"><div class="grab"></div><div class="steps"><i></i><i class="on"></i></div><h4 class="center">אישור סופי</h4>${changeLine(WARN[V.warn])}<div class="sub center">כדי לאשר, הקלד את המילה <b>מאשר</b></div><div class="tfield ${typed ? 'on' : ''}">${typed ? `מאשר<span class="caret"></span>` : 'מאשר'}</div><button class="cta ${typed ? '' : 'dim'}">אישור השינוי</button><span class="back-link">חזרה</span></div>`;
+
+/* the Phase 4 menus, with the block row added (sheet copy from packages/ui/src/sheets/copy.ts) */
+const blockRow = (name) => `<div class="srow" style="color:var(--c-danger)">${ic('ban', { color: 'var(--c-danger)' })}<span class="tx">חסימת ${name}<em>אף אחד מכם לא יראה את התוכן של השני</em></span></div>`;
+
+/* Phase 8 phone pieces, verbatim from admin-lab.html (locked 2026-11-22) */
+const appealForm = (typed) => `<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:8px"><b style="font-family:Rubik,sans-serif;font-weight:600;font-size:15px">חושב שזו טעות?</b><div style="border:1px solid var(--c-border);border-radius:14px;padding:10px 12px;min-height:84px;font-size:14.5px;line-height:1.45;color:${typed ? 'var(--c-ink)' : 'var(--c-ink-mute)'}">${typed || 'ספר לנו למה ההחלטה שגויה'}</div><span style="font-size:12px;color:var(--c-ink-mute);text-align:left">${typed ? typed.length : 0}/1000</span></div>`;
+const detailRows = (o) => `<div style="padding:4px 20px 6px;display:flex;flex-direction:column;gap:10px;font-size:14.5px;line-height:1.45">${o.map(([k, v]) => `<div style="display:flex;gap:10px"><span style="width:62px;flex:0 0 62px;color:var(--c-ink-mute);font-weight:600">${k}</span><span style="color:var(--c-ink-700);flex:1;min-width:0">${v}</span></div>`).join('')}</div>`;
+const SUSP_ROWS = [['הסיבה', 'הטרדה'], ['בגלל', 'תגובה שכתבת ב-14.11: "אתה לא מבין כלום…"'], ['עד', 'יום ראשון, 16.11.2026, 14:30'], ['אפשר', 'לצפות, לסמן אהבתי, לשמור, לעקוב ולדווח']];
+
+/* ============================ SCREENS ============================ */
+const SCREENS = {};
+const S = (k, cap, html) => { SCREENS[k] = { cap, html }; };
+
+/* ---- personal area ---- */
+const meBody = () => `<div class="${LISTCLS()}">
+  <div class="mehead">${avPhoto(60, 'hills')}<span class="tx"><b>${PEOPLE.me.name}</b><a>צפייה בפרופיל הציבורי שלי${ic('chev')}</a></span></div>
+  ${lgroup('', [lrow({ icon: 'mail', t: 'תיבת דואר', soon: true }), lrow({ icon: 'family', t: 'מרחבים משפחתיים', soon: true })])}
+  ${lgroup('', [lrow({ icon: 'bookmark', t: 'פוסטים שמורים', val: 12 }), lrow({ icon: 'users', t: 'הקבוצות שלי', soon: true })])}
+  ${lgroup('אנשים', [lrow({ icon: 'user', t: 'אנשים שאני עוקב אחריהם', val: 48 }), lrow({ icon: 'users', t: 'העוקבים שלי', val: 61 })])}
+  ${lgroup('', [lrow({ icon: 'settings', t: 'הגדרות' })])}</div>`;
+S('me', '<b>Personal area</b> (05 §3.1) — Profile tab. Six sections in spec order; inbox, Family Spaces and my groups are בקרוב (decision 1). Counts are your own.',
+  () => screen(`${statusbar()}<div class="titlebar"><h1>אזור אישי</h1></div>${scrollWrap(meBody())}${bnavP('profile')}`));
+
+const peopleRows = (list, btn) => list.map(([n, bio, k]) => `<div class="prow">${k === 'p' ? avPhoto(46, 'street') : k === 'r' ? avPreset(3, n, 46) : av(n, 46)}<span class="tx"><b>${n}</b><em>${bio}</em></span>${btn ? `<button class="mini sec">${btn}</button>` : ''}</div>`).join('');
+const PL = [['משה רוזנברג', 'רכז מתנדבים, שכונת רמות', 'p'], ['הרב אליהו כהן', 'דברי תורה קצרים לפרשת השבוע', ''], ['יעקב פרידמן', 'טיולים בארץ, בעיקר בצפון', 'r'], ['שמואל ברגר', 'גמ״ח ספרים', ''], ['נתנאל אדלר', '', ''], ['יוסף חיים', 'אוהב בישול לשבת', 'p'], ['מנחם גולד', 'אבא, מורה, רץ חובב', '']];
+S('following', '<b>People · following</b> (05 §3.1.6, decision 2) — own list only (invariant #5). Unfollow per row.',
+  () => screen(`${statusbar()}${topbar('אנשים שאני עוקב אחריהם')}${scrollWrap(`<div class="note">${ic('lock')}רק אתה רואה את הרשימה הזו.</div><div>${peopleRows(PL, 'הסרת מעקב')}</div>`)}`));
+S('followers', '<b>People · followers</b> — own list only; rows open the profile. No "remove follower" (decision 2).',
+  () => screen(`${statusbar()}${topbar('העוקבים שלי')}${scrollWrap(`<div class="note">${ic('lock')}רק אתה רואה את הרשימה הזו.</div><div>${peopleRows([...PL].reverse())}</div>`)}`));
+S('peopleEmpty', '<b>People · empty</b> — following list with nobody yet.',
+  () => screen(`${statusbar()}${topbar('אנשים שאני עוקב אחריהם')}${scrollWrap(`<div class="empty" style="padding-top:90px"><span class="ic">${ic('users')}</span><h3>עדיין אינך עוקב אחרי אף אחד</h3><p>כשתעקוב אחרי אנשים, הם יופיעו כאן. רק אתה רואה את הרשימה הזו.</p></div>`, 'white')}`));
+
+S('saved', '<b>Saved posts</b> (05 §3.1.4) — compact feed cards, newest saved first; the filter still applies (one placeholder). A saved post that became invisible is dropped.',
+  () => screen(`${statusbar()}${topbar('פוסטים שמורים')}${scrollWrap(`<div class="feed" style="padding-top:12px">${card(POSTS[3])}${card({ ...POSTS[2], source: { kind: 'public' }, saved: true })}</div>`)}`));
+S('savedEmpty', '<b>Saved posts · empty</b>.',
+  () => screen(`${statusbar()}${topbar('פוסטים שמורים')}${scrollWrap(`<div class="empty" style="padding-top:90px"><span class="ic">${ic('bookmark')}</span><h3>עדיין לא שמרת פוסטים</h3><p>אפשר לשמור פוסט מתפריט שלוש הנקודות שלו, והוא יחכה לך כאן.</p></div>`, 'white')}`));
+S('savedMenu', '<b>Saved · menu</b> — the post menu with "remove from saved" (05 §3.1.4).',
+  () => screen(`${statusbar()}${topbar('פוסטים שמורים')}${scrollWrap(`<div class="feed" style="padding-top:12px">${card(POSTS[3])}</div>`)}<div class="scrim"></div><div class="sheet"><div class="grab"></div>
+    <div class="srow">${ic('bookmark', { fill: true })}<span class="tx">הסרה מהשמורים</span></div><div class="srow">${ic('link')}<span class="tx">העתקת קישור</span></div><div class="srow">${ic('mute')}<span class="tx">השתקת דוד לוינסון<em>התגובות והפוסטים שלו לא יוצגו לך</em></span></div><div class="srow">${ic('flag')}<span class="tx">דיווח על הפוסט</span></div>${blockRow('דוד לוינסון')}</div>`));
+
+/* ---- public profile ---- */
+const profTop = (name, more = true) => topbar(name, more ? `<span class="iconbtn">${ic('more')}</span>` : '');
+S('profile', '<b>Public profile · posts</b> (05 §2.1–2.3) — another user. Numbers only, never lists (invariant #5). Profile-source posts the viewer may see; never Family Space (decision 14).',
+  () => screen(`${statusbar()}${profTop(PEOPLE.david.name)}${scrollWrap(`${profileHead(PEOPLE.david, { avatar: 'photo' })}${ptabs('posts')}<div class="feed" style="padding-top:12px">${cardAv(DPOSTS[0], avPhoto(42, 'hills'))}</div>`)}`));
+S('profileGrid', '<b>Public profile · grid</b> (05 §2.3, §2.6.2) — only posts whose media this viewer may see; filtered or processing media never appears.',
+  () => screen(`${statusbar()}${profTop(PEOPLE.david.name)}${scrollWrap(`${profileHead(PEOPLE.david, { avatar: 'photo', following: true })}${ptabs('grid')}${gridTiles(12)}`)}`));
+S('profileOwn', '<b>Own public profile</b> — how others see me; edit profile, new post (02 §2.1), about. Own processing media shows its strip.',
+  () => screen(`${statusbar()}${profTop(PEOPLE.me.name, false)}${scrollWrap(`${profileHead(PEOPLE.me, { own: true, avatar: 'photo' })}${ptabs('posts')}<div class="feed" style="padding-top:12px">${cardAv(POSTS[4], avPhoto(42, 'hills'))}</div>`)}`));
+S('profileFiltered', '<b>Public profile · filtered</b> (05 §2.6) — the photo is filtered for this viewer, so the neutral initial shows, exactly like a user without a photo (legal #17). Post media shows the Phase 4 placeholder; text stays.',
+  () => screen(`${statusbar()}${profTop('רחל מזרחי')}${scrollWrap(`${profileHead({ name: 'רחל מזרחי', bio: 'מבשלת לשבתות של כל המשפחה, ומשתפת מתכונים פשוטים.', f: '1,240', g: 88, gr: 4 })}${ptabs('posts')}<div class="feed" style="padding-top:12px">${card({ author: 'רחל מזרחי', time: 'לפני שעה', source: { kind: 'public' }, body: 'חלות לשבת — המתכון של סבתא, בפעם הראשונה בכתב.', media: 'filtered', likes: 86, comments: 14 })}</div>`)}`));
+S('profileEmpty', '<b>Public profile · no posts</b>.',
+  () => screen(`${statusbar()}${profTop('נתנאל אדלר')}${scrollWrap(`${profileHead({ name: 'נתנאל אדלר', bio: '', f: 3, g: 12, gr: 0 })}${ptabs('posts')}<div class="empty" style="padding-top:34px"><span class="ic">${ic('list')}</span><h3>עדיין אין כאן פוסטים</h3><p>כשנתנאל יפרסם, הפוסטים שלו יופיעו כאן.</p></div>`, 'white')}`));
+S('profileUnavailable', '<b>User unavailable</b> (07 §7.2) — one identical state for blocked (either way), banned, deleted and unknown. No name, no hint which.',
+  () => screen(`${statusbar()}${topbar('')}${scrollWrap(`<div class="empty" style="padding-top:150px"><span class="ic">${ic('user')}</span><h3>משתמש זה אינו זמין</h3><p>אי אפשר להציג את הפרופיל הזה.</p></div>`, 'white')}`));
+S('profileLoading', '<b>Public profile · loading</b> — skeleton (reduced motion: static).',
+  () => screen(`${statusbar()}${topbar('')}${scrollWrap(`<div class="phead center" style="padding-bottom:16px"><span class="sk" style="width:88px;height:88px;border-radius:50%"></span><span class="sk" style="width:140px;height:18px"></span><span class="sk" style="width:260px;height:13px"></span><span class="sk" style="width:220px;height:13px"></span><span class="sk" style="width:100%;height:40px;border-radius:14px;margin-top:10px"></span></div>${ptabs('posts')}<div class="feed" style="padding-top:12px"><div class="skc"><div style="display:flex;gap:11px"><span class="sk" style="width:42px;height:42px;border-radius:50%"></span><div style="flex:1;display:flex;flex-direction:column;gap:8px"><span class="sk" style="width:120px;height:14px"></span><span class="sk" style="width:70px;height:12px"></span></div></div><span class="sk" style="height:13px"></span><span class="sk" style="height:13px;width:80%"></span><span class="sk" style="height:150px;border-radius:14px"></span></div></div>`)}`));
+S('profileError', '<b>Public profile · error</b> — load failed (network).',
+  () => screen(`${statusbar()}${topbar('')}${scrollWrap(`<div class="empty" style="padding-top:140px"><span class="ic">${ic('wifi')}</span><h3>לא הצלחנו לטעון את הפרופיל</h3><p>כדאי לבדוק את החיבור ולנסות שוב.</p><button class="cta">נסה שוב</button></div>`, 'white')}`));
+S('profileMenu', '<b>Profile menu</b> (07 §7.3) — report the user, block.',
+  () => screen(`${statusbar()}${profTop(PEOPLE.david.name)}${scrollWrap(`${profileHead(PEOPLE.david, { avatar: 'photo' })}${ptabs('posts')}`)}<div class="scrim"></div><div class="sheet"><div class="grab"></div><h4>${PEOPLE.david.name}</h4>
+    <div class="srow">${ic('flag')}<span class="tx">דיווח על המשתמש</span></div>${blockRow(PEOPLE.david.name)}</div>`));
+S('about', '<b>About</b> (05 §2.4, decision 11) — full bio + member since. No other fields until backlog §I is decided.',
+  () => screen(`${statusbar()}${topbar('אודות')}${scrollWrap(`<div style="display:flex;align-items:center;gap:12px;padding:18px">${avPhoto(54, 'hills')}<b style="font-family:Rubik,sans-serif;font-weight:600;font-size:18px">${PEOPLE.david.name}</b></div>
+    <div style="padding:0 18px 18px;font-size:16px;line-height:1.7;color:var(--c-ink)">${PEOPLE.david.bio} מי שמחפש ספר מסוים — מוזמן לכתוב לי, אולי יש אצלי עותק מיותר.</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:0 18px;padding-top:14px;border-top:1px solid var(--c-line);font-size:14.5px;color:var(--c-ink-soft)">${ic('calendar', { size: 18 })}חבר מאז אוקטובר 2026</div>`, 'white')}`));
+
+/* ---- block ---- */
+S('blockConfirm', '<b>Block · confirm</b> — copy verbatim from 07 §7.3. Blocking also removes follows both ways (decision 13); the other user is not told.',
+  () => screen(`${statusbar()}${profTop(PEOPLE.david.name)}${scrollWrap(`${profileHead(PEOPLE.david, { avatar: 'photo', following: true })}${ptabs('posts')}`)}<div class="scrim"></div><div class="sheet"><div class="grab"></div><span class="wic" style="background:#FBEAEA;color:var(--c-danger)">${ic('ban')}</span><h4 class="center">חסימת ${PEOPLE.david.name}</h4><div class="sub center">אתה עומד לחסום את ${PEOPLE.david.name}. אחרי החסימה, אף אחד מכם לא יראה את התוכן של השני.</div><button class="cta danger">חסימה</button><button class="cta secondary">ביטול</button></div>`));
+S('blockedToast', '<b>Block · done</b> — back on the feed; their content is gone at once.',
+  () => screen(`${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>${scrollWrap(`<div class="feed">${card(POSTS[1])}${card(POSTS[0])}</div>`)}${toast('דוד לוינסון נחסם')}${bnavP('home')}`));
+S('postMenuBlock', '<b>Post menu + block</b> — the locked Phase 4 menu (packages/ui sheets copy) with the block row added (07 §7.3).',
+  () => screen(`${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>${scrollWrap(`<div class="feed">${card(POSTS[0])}</div>`)}<div class="scrim"></div><div class="sheet"><div class="grab"></div>
+    <div class="srow">${ic('bookmark')}<span class="tx">שמירת הפוסט</span></div><div class="srow">${ic('link')}<span class="tx">העתקת קישור</span></div><div class="srow">${ic('mute')}<span class="tx">השתקת משה רוזנברג<em>התגובות והפוסטים שלו לא יוצגו לך</em></span></div><div class="srow">${ic('flag')}<span class="tx">דיווח על הפוסט</span></div>${blockRow('משה רוזנברג')}</div>${bnavP('home')}`));
+S('commentMenuBlock', '<b>Comment menu + block</b> — the Phase 4 comment menu (theirs) with the block row.',
+  () => screen(`${statusbar()}<div class="ptop"><span class="iconbtn">${ic('back')}</span><span class="ttl">פוסט</span></div>${scrollWrap(`<div class="comments"><div class="cmt">${av('שמואל ברגר', 34)}<div><div class="bub"><b>שמואל ברגר</b><p>יישר כח! מתי החלוקה הבאה?</p></div><div class="meta"><span>לפני שעה</span><span>אהבתי</span><span>הגב</span></div></div></div></div>`, 'white')}<div class="scrim"></div><div class="sheet"><div class="grab"></div><div class="sgroup">תגובה של שמואל ברגר</div>
+    <div class="srow">${ic('flag')}<span class="tx">דיווח על התגובה</span></div><div class="srow">${ic('mute')}<span class="tx">השתקת שמואל ברגר<em>התגובות והפוסטים שלו לא יוצגו לך</em></span></div>${blockRow('שמואל ברגר')}</div>`));
+
+/* ---- edit profile + avatar ---- */
+const editBody = (o = {}) => `<div class="avedit"><span class="avwrap">${o.avatar === 'initial' ? av(PEOPLE.me.name, 96) : o.avatar === 'preset' ? avPreset(o.preset ?? 6, PEOPLE.me.name, 96) : avPhoto(96, 'hills')}${o.stt || `<span class="badge">${ic('camera')}</span>`}</span><span class="lnk">שינוי תמונה</span></div>
+  ${o.strip || ''}${o.err ? `<div class="errbar">${ic('alert')}השמירה לא הצליחה. כדאי לבדוק את החיבור ולנסות שוב.</div>` : ''}
+  <div class="fld"><label>שם</label><div class="in">${PEOPLE.me.name}</div><div class="row"><span class="hint">2–30 תווים</span><span class="cnt">9/30</span></div></div>
+  <div class="fld"><label>ביו</label><div class="in ta on">${PEOPLE.me.bio}</div><div class="row"><span class="hint">שתי השורות הראשונות מוצגות בפרופיל, והכול בעמוד "אודות".</span><span class="cnt">67/300</span></div></div>`;
+const editScreen = (o = {}, overlay = '') => screen(`${statusbar()}${topbar('עריכת פרופיל', `<span class="act ${o.dim ? 'dim' : ''}">שמירה</span>`)}${scrollWrap(editBody(o), 'white')}${overlay}`);
+S('editProfile', '<b>Edit profile</b> (06 §3.1) — name, bio, photo. Gender, email and password are Phase 6.', () => editScreen());
+S('avatarSheet', '<b>Avatar · choose</b> (decision 9) — upload a photo (goes through the content filter like any media), pick from the gallery, or remove.',
+  () => editScreen({}, `<div class="scrim"></div><div class="sheet"><div class="grab"></div><h4>תמונת פרופיל</h4>
+    <div class="srow">${ic('image')}<span class="tx">העלאת תמונה<em>גם תמונת הפרופיל עוברת את סינון התוכן, כמו כל מדיה</em></span></div><div class="srow">${ic('palette')}<span class="tx">בחירה מהגלריה</span></div><div class="srow" style="color:var(--c-danger)">${ic('trash', { color: 'var(--c-danger)' })}<span class="tx">הסרת התמונה<em>תוצג האות הראשונה של שמך</em></span></div></div>`));
+S('avatarGallery', '<b>Avatar · gallery</b> (decision 9) — 12 non-figurative presets drawn in code from the palette, with your initial. App assets, not user media: no pipeline.',
+  () => screen(`${statusbar()}${topbar('גלריית אווטרים', '<span class="act">שמירה</span>')}${scrollWrap(`<div class="intro" style="padding-top:14px">בחר עיצוב. האות הראשונה של שמך תופיע עליו.</div><div class="pregrid">${PRESETS.map((_, i) => `<span class="p ${i === 6 ? 'sel' : ''}">${avPreset(i, PEOPLE.me.name, 66)}</span>`).join('')}</div>`, 'white')}`));
+S('avatarProcessing', '<b>Avatar · processing</b> (decision 10) — you see your photo; others see your initial until it is classified.',
+  () => editScreen({ stt: `<span class="stt" style="background:var(--c-cyan100);color:var(--c-accent-700)">${ic('clock')}</span>`, strip: `<div class="state-strip proc" style="margin:0 18px 16px;border-radius:12px">${ic('clock')}התמונה בעיבוד. בינתיים אחרים רואים את האות הראשונה של שמך.</div>` }));
+S('avatarReview', '<b>Avatar · under review</b> — frozen for a human (Phase 8 task context "profile photo").',
+  () => editScreen({ stt: `<span class="stt" style="background:#FBF3E2;color:#8A5A12">${ic('clock')}</span>`, strip: `<div class="state-strip review" style="margin:0 18px 16px;border-radius:12px">${ic('clock')}התמונה בבדיקה. בינתיים אחרים רואים את האות הראשונה של שמך.</div>` }));
+S('avatarNotice', '<b>Avatar · notice</b> — the general notice card; the title is an avatar variant of CONTENT_NOTICE_HE (new draft: the post wording says "in the current post"). "Remove photo" is the back action.',
+  () => editScreen({ stt: ' ', strip: `<div class="notice">${ic('info')}<div><p>זוהה בתמונת הפרופיל שהעלית תוכן שמשתמשים רבים ברשת בחרו שלא לראות. עליך לדעת שבעקבות זאת חלק מהמשתמשים יראו במקומה את האות הראשונה של שמך.</p><div class="acts"><button class="mini pri">אישור</button><button class="mini sec">הסרת התמונה</button><button class="mini ghost">ערער</button><span style="flex:1"></span><span style="font-size:13px;font-weight:700;color:var(--c-primary)">מה זוהה?</span></div></div></div>` }));
+S('editSuspended', '<b>Edit profile · suspended</b> — Phase 8\'s blocked sheet (verbatim) when a suspended user saves a name / bio / photo change.',
+  () => editScreen({}, `<div class="scrim"></div><div class="sheet"><div class="grab"></div><div style="padding:6px 20px 10px;font-family:Rubik,sans-serif;font-weight:600;font-size:19px">החשבון מוגבל זמנית</div>${detailRows(SUSP_ROWS)}${appealForm('')}<button class="cta" style="opacity:.5">שליחת ערעור</button></div>`));
+S('editError', '<b>Edit profile · save failed</b>.', () => editScreen({ err: true }));
+
+/* ---- settings ---- */
+const setTop = (t) => `${statusbar()}${topbar(t)}`;
+S('settings', '<b>Settings</b> (06 §2.2, decision 3) — six categories in spec order; Notifications and Danger zone are בקרוב. Sign out at the bottom.',
+  () => screen(`${setTop('הגדרות')}${scrollWrap(`<div class="${LISTCLS()}" style="padding-top:14px">
+    ${lgroup('', [lrow({ icon: 'user', t: 'חשבון', em: 'שם, תמונה וביו' }), lrow({ icon: 'lock', t: 'פרטיות', em: 'חשיפה, מעקב, חסימות' }), lrow({ icon: 'shield', t: 'סינון תוכן', em: 'מה מוצג לך' }), lrow({ icon: 'bell', t: 'התראות', soon: true }), lrow({ icon: 'sliders', t: 'העדפות פיד' })])}
+    ${lgroup('', [lrow({ icon: 'alert', t: 'אזור מסוכן', soon: true, cls: 'danger' })])}
+    ${lgroup('', [lrow({ icon: 'logout', t: 'התנתקות', nochev: true })])}</div>`)}`));
+S('settingsAccount', '<b>Settings · Account</b> (06 §3.1) — name / photo / bio live; email, password, gender are Phase 6.',
+  () => screen(`${setTop('חשבון')}${scrollWrap(`<div class="${LISTCLS()}" style="padding-top:14px">
+    ${lgroup('', [lrow({ icon: 'pencil', t: 'שם, תמונה וביו', em: PEOPLE.me.name })])}
+    ${lgroup('', [lrow({ icon: 'mail', t: 'אימייל', soon: true }), lrow({ icon: 'key', t: 'סיסמה', soon: true }), lrow({ icon: 'user', t: 'מגדר', soon: true })])}</div>`)}`));
+const radioRows = (opts, on) => opts.map(([t, s], i) => lrow({ t, em: s === true ? '' : s, right: s === true ? soon : `<span class="radio ${i === on ? 'on' : ''}"></span>`, cls: `radio-row ${s === true ? 'dis' : ''}` }));
+S('settingsPrivacy', '<b>Settings · Privacy</b> (06 §3.2, decisions 7–8) — default exposure seeds every new post; "groups only" waits for 5b; "only with approval" for Phase 7.',
+  () => screen(`${setTop('פרטיות')}${scrollWrap(`<div class="${LISTCLS()}" style="padding-top:8px">
+    ${lgroup('חשיפת פוסטים כברירת מחדל', [...radioRows([['ציבורי', ''], ['עוקבים בלבד', ''], ['קבוצות בלבד', true]], 0), `<div class="lrow"><span class="tx"><em>כל פוסט חדש יתחיל מהבחירה הזו. אפשר לשנות בכל פוסט בנפרד.</em></span></div>`])}
+    ${lgroup('מי יכול לעקוב אחריי', radioRows([['כולם', ''], ['רק באישור', true]], 0))}
+    ${lgroup('מי יכול למצוא אותי', [...radioRows([['כולם', ''], ['רק העוקבים שלי', ''], ['אף אחד', '']], 0), `<div class="lrow"><span class="tx"><em>משפיע על הצעות למעקב, ובהמשך גם על החיפוש.</em></span></div>`])}
+    ${lgroup('', [lrow({ icon: 'ban', t: 'רשימת חסומים', val: 3 }), lrow({ icon: 'activity', t: 'הצגת פעילות', soon: true })])}</div>`)}`));
+S('feedPrefs', '<b>Settings · Feed preferences</b> (06 §3.5) — the suggested-posts toggle is the same setting as in Content filter, behind the same double confirm (decision 4).',
+  () => screen(`${setTop('העדפות פיד')}${scrollWrap(`<div class="${LISTCLS()}" style="padding-top:14px">
+    ${lgroup('', [lrow({ t: 'הצגת פוסטים מוצעים', em: 'פוסטים ציבוריים מאנשים שאינך עוקב אחריהם', right: '<span class="tg on"></span>' })])}
+    ${lgroup('', [lrow({ icon: 'moon', t: 'מצב לילה', soon: true }), lrow({ icon: 'globe', t: 'שפה', soon: true })])}</div>`)}`));
+const BLOCKED = [['יהודה שטרן', 'נחסם ב-18.11'], ['אהרן קליין', 'נחסם ב-02.11'], ['ברוך וייס', 'נחסם ב-21.10']];
+const blockedRows = () => BLOCKED.map(([n, d], i) => `<div class="prow">${i === 1 ? avPreset(9, n, 44) : av(n, 44)}<span class="tx"><b>${n}</b><em>${d}</em></span><button class="mini sec">ביטול חסימה</button></div>`).join('');
+S('blockedList', '<b>Block list</b> (07 §7.4) — names and initials only (no photos); unblock does not need the other side, and does not restore follows.',
+  () => screen(`${setTop('רשימת חסומים')}${scrollWrap(`<div class="note">${ic('info')}אתם לא רואים זה את התוכן של זה. ביטול חסימה לא מחזיר מעקב קודם.</div><div>${blockedRows()}</div>`)}`));
+S('blockedEmpty', '<b>Block list · empty</b>.',
+  () => screen(`${setTop('רשימת חסומים')}${scrollWrap(`<div class="empty" style="padding-top:110px"><span class="ic">${ic('ban')}</span><h3>לא חסמת אף אחד</h3><p>אפשר לחסום משתמש מתפריט שלוש הנקודות בפוסט, בתגובה או בפרופיל שלו.</p></div>`, 'white')}`));
+S('unblockConfirm', '<b>Unblock · confirm</b> — short confirm, no typed step.',
+  () => screen(`${setTop('רשימת חסומים')}${scrollWrap(`<div>${blockedRows()}</div>`)}<div class="scrim"></div><div class="sheet"><div class="grab"></div><h4 class="center" style="padding-top:12px">לבטל את החסימה של יהודה שטרן?</h4><div class="sub center">תוכלו שוב לראות זה את התוכן של זה. המעקב הקודם לא יחזור.</div><button class="cta">ביטול חסימה</button><button class="cta secondary">השארת החסימה</button></div>`));
+S('signOut', '<b>Sign out · confirm</b>.',
+  () => screen(`${setTop('הגדרות')}${scrollWrap(`<div class="${LISTCLS()}" style="padding-top:14px">${lgroup('', [lrow({ icon: 'user', t: 'חשבון' }), lrow({ icon: 'lock', t: 'פרטיות' }), lrow({ icon: 'shield', t: 'סינון תוכן' })])}</div>`)}<div class="scrim"></div><div class="sheet"><div class="grab"></div><h4 class="center" style="padding-top:12px">להתנתק מ-Safe·Place במכשיר הזה?</h4><div class="sub center">ההגדרות והתוכן שלך נשמרים. אפשר להיכנס שוב בכל עת.</div><button class="cta">התנתקות</button><button class="cta secondary">ביטול</button></div>`));
+
+/* ---- content filter + double confirm ---- */
+S('filter', '<b>Content filter</b> (06 §3.3, ADR 0018) — four groups × 0–2, the level-3 line (legal #27), avatars and suggested-posts toggles. Every change → double confirm (decision 4).', () => filterScreen());
+S('filterWarn', '<b>Double confirm · step 1</b> (06 §4.2) — what changes, effective now, changeable anytime. "Cancel" is the prominent button. State control picks the change.', () => filterScreen(warnSheet(WARN[V.warn])));
+S('filterType', '<b>Double confirm · step 2</b> (decision 5) — type מאשר; the button stays disabled until an exact match.', () => filterScreen(typeSheet(false)));
+S('filterTypeReady', '<b>Double confirm · step 2, typed</b> — exact match; button enabled.', () => filterScreen(typeSheet(true)));
+S('filterDone', '<b>Double confirm · done</b> — written; the screen shows the new level and a toast.',
+  () => filterScreen(toast('ההגדרה עודכנה', 'check', 28), { levels: { ...MY_LEVELS, sex: 1 } }));
+S('whyConfirm', '<b>"Why am I seeing this?" → confirm</b> — the Phase 4 sheet\'s suggested-posts toggle now opens step 1 (decision 4).',
+  () => screen(`${statusbar()}<div class="appbar"><span class="wordmark">Safe<span class="mid">·</span>Place</span></div>${scrollWrap(`<div class="feed">${card(POSTS[2])}</div>`)}${warnSheet(WARN.suggest)}${bnavP('home')}`));
+
+/* ---- onboarding step 3 (decision 16) ---- */
+S('onbDefaults', '<b>Onboarding step 3</b> (decision 16) — clean message instead of the toggle list; same title and button. Departs from master §6.2.3; noted against legal #3.',
+  () => screen(`${statusbar(true)}<div class="wrap"><div class="pdots"><i></i><i></i><i class="on"></i></div><div class="glass"><span class="shield">${ic('shield')}</span><h2 style="margin-top:4px">ברירות המחדל שלך</h2><p>שמרנו עבורך הגדרות סינון תוכן מומלצות. תוכל/י לראות ולשנות אותן בכל עת בהגדרות › סינון תוכן.</p><span class="lnk">מה הוגדר?</span><button class="octa">הבנתי, המשך</button></div></div>`, 'onb'));
+S('onbDefaultsSheet', '<b>Onboarding · "what was set?"</b> — read-only levels for the declared gender (state control). Same rows and mechanism for both; only the women value differs (invariants #3, #4).',
+  () => { const lv = V.gender === 'female' ? { sex: 1, violence: 0, religion: 0, addictions: 0 } : { sex: 0, violence: 0, religion: 0, addictions: 0 };
+    return screen(`${statusbar(true)}<div class="wrap"><div class="pdots"><i></i><i></i><i class="on"></i></div><div class="glass"><span class="shield">${ic('shield')}</span><h2 style="margin-top:4px">ברירות המחדל שלך</h2><p>שמרנו עבורך הגדרות סינון תוכן מומלצות. תוכל/י לראות ולשנות אותן בכל עת בהגדרות › סינון תוכן.</p><span class="lnk">מה הוגדר?</span><button class="octa">הבנתי, המשך</button></div></div>
+    <div class="scrim"></div><div class="sheet"><div class="grab"></div><h4>הגדרות הסינון שלך</h4>${GROUPS5.map(g => `<div class="lvrow"><b>${g.name}</b><span>${LEVEL_NAMES[lv[g.k]]}</span></div>`).join('')}<div class="sub" style="padding-top:12px">${GROUPS5[0].d[lv.sex]} אפשר לשנות בכל עת בהגדרות.</div><button class="cta">סגירה</button></div>`, 'onb'); });
+
+const ORDER = ['me', 'following', 'followers', 'peopleEmpty', 'saved', 'savedEmpty', 'savedMenu',
+  'profile', 'profileGrid', 'profileOwn', 'profileFiltered', 'profileEmpty', 'profileUnavailable', 'profileLoading', 'profileError', 'profileMenu', 'about',
+  'blockConfirm', 'blockedToast', 'postMenuBlock', 'commentMenuBlock',
+  'editProfile', 'avatarSheet', 'avatarGallery', 'avatarProcessing', 'avatarReview', 'avatarNotice', 'editSuspended', 'editError',
+  'settings', 'settingsAccount', 'settingsPrivacy', 'feedPrefs', 'blockedList', 'blockedEmpty', 'unblockConfirm', 'signOut',
+  'filter', 'filterWarn', 'filterType', 'filterTypeReady', 'filterDone', 'whyConfirm',
+  'onbDefaults', 'onbDefaultsSheet'];
+
+function renderAll() {
+  const likeColor = { primary: '#2E3A8C', accent: '#1AA6B8', rose: '#D24D6B' }[V.like];
+  const only = params.get('screen');
+  const list = only ? [only] : ORDER;
+  document.getElementById('stage').innerHTML = list.map(k => SCREENS[k]
+    ? `<div class="cell"><div class="phone" style="--like:${likeColor}">${SCREENS[k].html()}</div><div class="cap">${SCREENS[k].cap}</div></div>`
+    : `<div class="cell"><div class="cap">Unknown screen: ${k}</div></div>`).join('');
+  if (!params.has('bare')) renderPanel();
+}
+if (params.has('bare')) document.body.classList.add('bare');
+if (params.has('reduce')) document.documentElement.style.setProperty('--reduce', '1');
+renderAll();
+</script>
+</body>
+</html>

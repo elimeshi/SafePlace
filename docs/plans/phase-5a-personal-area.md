@@ -7,8 +7,9 @@ open question (§11): ask Eli, don't guess (CLAUDE.md §3).
 Branch: `phase-5a-personal`, from `origin/main` @ `ea20471` (Phase 8 plan and locked lab
 on main; Phase 8a is being implemented in parallel on `phase-8-admin`).
 
-Status: **plan approved by Eli 2026-11-23 (four design sections). Lab in progress; then
-Eli reviews and locks it.** The same session implements the phase (roadmap "How we work").
+Status: **plan approved by Eli 2026-11-23 (four design sections). Lab built
+(`docs/design/phase-5a-personal/personal-lab.html`, 45 screens), waiting for Eli's
+review and lock.** The same session implements the phase (roadmap "How we work").
 
 **Dependency on Phase 8a.** This phase designs against Phase 8's data tier as written in
 `docs/plans/phase-8-admin-portal.md` §4.3–4.5: the `banned` account status,
@@ -424,24 +425,34 @@ own `תוכל/י` convention. Group names reuse the accepted `CONTENT_GROUP_LABE
   `לבטל את החסימה של <שם>?` / `ביטול חסימה`.
 - **Avatar:** `העלאת תמונה`, `בחירה מהגלריה`, `הסרת התמונה`; processing
   `התמונה בעיבוד. בינתיים אחרים רואים את האות הראשונה של שמך.`; review
-  `התמונה בבדיקה. בינתיים אחרים רואים את האות הראשונה של שמך.`; notice = the accepted
-  `CONTENT_NOTICE_HE` with the action `הסרת התמונה`.
+  `התמונה בבדיקה. בינתיים אחרים רואים את האות הראשונה של שמך.`; notice: the accepted
+  `CONTENT_NOTICE_HE` buttons, but the title says "in the current post", so the avatar
+  needs its own title (new draft): `זוהה בתמונת הפרופיל שהעלית תוכן שמשתמשים רבים ברשת
+  בחרו שלא לראות. עליך לדעת שבעקבות זאת חלק מהמשתמשים יראו במקומה את האות הראשונה של
+  שמך.`; back action `הסרת התמונה`. Gallery: `גלריית אווטרים`, `בחר עיצוב. האות הראשונה
+  של שמך תופיע עליו.`
 - **Content filter:** intro `בחר מה מוצג לך. ההגדרות חלות רק עליך, ואפשר לשנות אותן בכל
-  עת.` Levels per group (0 / 1 / 2):
-  - נשים: `לא מוצג` / `לבוש צנוע בלבד` / `כולל לבוש שאינו צנוע`;
-  - אלימות: `לא מוצג` / `נשק, ספורט קרב ותגרות קלות` / `כולל קטטות, דם ופציעות`;
-  - סמלים דתיים: `לא מוצג` / `סמל שולי, כמו כנסייה בנוף` / `כולל סמלים בולטים, טקסים ואנשי דת`;
-  - התמכרויות: `לא מוצג` / `שכרות, עישון וקנאביס` / `כולל סמים קשים והימורים`.
+  עת.` Level names (segments): `מוסתר` / `חלקי` / `מורחב`. One line per group and level:
+  - נשים: `לא יוצגו לך תמונות שמופיעות בהן נשים.` / `יוצגו לך נשים בלבוש צנוע בלבד.` /
+    `יוצגו לך גם נשים בלבוש שאינו צנוע.`;
+  - אלימות: `לא יוצג לך תוכן אלים.` / `יוצגו לך נשק, ספורט קרב ותגרות קלות.` /
+    `יוצגו לך גם קטטות, דם ופציעות.`;
+  - סמלים דתיים: `לא יוצגו לך סמלים של דתות אחרות.` / `יוצג לך סמל שולי, כמו כנסייה
+    בנוף.` / `יוצגו לך גם סמלים בולטים, טקסים ואנשי דת.`;
+  - התמכרויות: `לא יוצג לך תוכן של התמכרויות.` / `יוצגו לך שכרות, עישון וקנאביס.` /
+    `יוצגו לך גם סמים קשים והימורים.`
   - Level-3 line: `תוכן בוטה — עירום, אכזריות קשה או עבודה זרה — אינו מתפרסם ב-Safe·Place
     כלל.` (touches legal #27).
   - Toggles: `הסינון חל גם על תמונות פרופיל` (hint `כשכבוי, תמונות פרופיל של נשים יוצגו לך.
     שאר התחומים ממשיכים לחול.`); `הצגת פוסטים מוצעים` (hint `פוסטים ציבוריים מאנשים שאינך
     עוקב אחריהם`).
 - **Double confirm** (pattern of 06 §4.3.1): step 1 title `שינוי סינון התוכן`; body built
-  from the change, e.g. `אתה עומד לשנות את הסינון בתחום נשים מ"לא מוצג" ל"לבוש צנוע
-  בלבד". מעכשיו יוצגו לך תמונות של נשים בלבוש צנוע. השינוי ייכנס לתוקף מיד, ואפשר לשנות
-  שוב בכל עת.`; buttons `ביטול` (prominent) / `המשך`. Step 2: `כדי לאשר, הקלד את המילה
-  מאשר`, button `אישור השינוי`. Toast `ההגדרה עודכנה`.
+  from the change, e.g. `אתה עומד לשנות את הסינון בתחום נשים מ"מוסתר" ל"חלקי". מעכשיו
+  יוצגו לך תמונות של נשים בלבוש צנוע. השינוי ייכנס לתוקף מיד, ואפשר לשנות שוב בכל עת.`
+  (the lab carries four variants: loosen, tighten, avatars, suggested posts); a
+  from → to line above it; buttons `ביטול` (prominent) / `המשך`. Step 2 title `אישור
+  סופי`, `כדי לאשר, הקלד את המילה מאשר`, button `אישור השינוי`, link `חזרה`. Toast
+  `ההגדרה עודכנה`.
 - **Privacy:** `חשיפת פוסטים כברירת מחדל`: `ציבורי` / `עוקבים בלבד` / `קבוצות בלבד`
   (hint `כל פוסט חדש יתחיל מהבחירה הזו. אפשר לשנות בכל פוסט בנפרד.`); `מי יכול לעקוב
   אחריי`: `כולם` / `רק באישור`; `מי יכול למצוא אותי`: `כולם` / `רק העוקבים שלי` /
@@ -507,3 +518,16 @@ None blocking. Raised during the lab review if Eli wants them:
   files (§4.4); `profiles` exposes every user's gender and privacy columns to any
   signed-in user (§4.1).
 - 16 forks settled with Eli (§2). Design approved in four sections.
+- Lab built: `docs/design/phase-5a-personal/personal-lab.html`, 45 phone screens.
+  - Assembled from the Phase 4 feed lab: its head, phone CSS and helper JS (icons,
+    scene, avatar, source label, card, interaction bar, bottom nav) are copied verbatim,
+    with Phase 4's locked choices; Phase 8's phone pieces (blocked sheet, appeal form)
+    are copied verbatim for `editSuspended`. Phase 5a CSS and screens are appended.
+  - Every screen rendered with Edge headless (`--window-size=390,844
+    --force-prefers-reduced-motion`, `?bare=1&screen=<name>`) and checked by eye.
+    Fixed in that pass: the onboarding sheet inherited white text; two presets had a
+    white letter on a light fill; the avatar notice reused the post wording ("in the
+    current post"), so it got an avatar-specific draft (§9).
+  - No image of a person anywhere: avatar photos and post media are abstract scenes;
+    presets are geometric patterns.
+- Waiting for Eli: lab review and lock (Q1–Q5), copy drafts (§9).
